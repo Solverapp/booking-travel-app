@@ -1,0 +1,173 @@
+
+.card{
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top:50px;
+    width: 313px;
+    max-height: 413px;
+    padding: 16px;
+    border-radius: 15px;
+    background-color: var(--green10);
+
+    span{
+        font-size: 16px;
+        font-weight: 600;
+        text-align: left;
+    }
+}
+.cart-box{
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+    gap: 5px;
+
+    .cart-item{
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    border-bottom: solid 1px;
+    border-bottom-color: var(--white);
+    padding: 6px;
+
+    .cart-item-price{
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    p{
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--green);
+    }
+    h4{
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--green);
+    }
+}
+}
+
+.room-content{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+.rooms-box{
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-right:10px ;
+}
+.romm-info{
+    
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+    padding-right: 27px;
+
+    img{
+        display: flex;
+       height: 233px;
+        width: 300px;
+        object-fit: cover;
+        border-radius: 25px;
+
+    }
+    h4{
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--green);
+    }
+    span{
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--red);
+    }
+}
+
+.rate-box{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 15px;
+    background-color: var(--gray2);
+
+}
+.rate-item{
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 20px 16px 16px 20px;
+    border-radius: 20px;
+    background-color: var(--white);
+    min-height: 151px;
+    height: fit-content;
+    width: 100%;
+
+    h2{
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--black);
+    }
+    span {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gray_text);
+    }
+    .guest{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 74px;
+        height: 56px;
+
+        img{
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    .infoitem{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 50px;
+
+        .infoprice{
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            
+            align-items: flex-start;
+            gap: 4px;
+            width: fit-content;
+        }
+        .rate-amenit{
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            
+            align-items: flex-start;
+            gap: 12px;
+            width: fit-content;
+            button{
+                display: flex;
+                gap: 12px;
+            }
+            img {
+                width: 27px;
+                height: 20px;
+            }
+        }
+    }
+
+}

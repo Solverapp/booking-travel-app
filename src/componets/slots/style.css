@@ -1,0 +1,38 @@
+.slot-box{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+}
+.slot-checkbox{
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    cursor: pointer;
+    border: solid 1px var(--light_gray);
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    height: auto;
+    :disabled{
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+}
+.slot-checkbox.active {
+    background-color: var(--green);
+    color: var(--white);
+    span {
+        color: var(--white);
+    }
+}
+
+.slot-checkbox img{
+    display: flex;
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+}

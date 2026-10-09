@@ -1,0 +1,254 @@
+.hmaincontent{
+  display: flex;
+  flex-direction: column;
+  width: 100%;;
+    
+}
+.hpagecontainer{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 16px;
+    
+    padding:32px 70px 20px 70px ;
+    background-color: var(--bg);
+    width: 100%;;
+    
+
+}
+.hotinfo{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    
+}
+.backoption{
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    height: 45px;
+}
+.backoption button{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 16px 24px;
+    border-radius: 12px;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 600;
+    height: 45px;
+    width: auto;
+}
+.backoption img{
+    width: 20px;
+    height: 20px;
+}
+.infoheder{
+    display: flex;
+    justify-content: space-between;
+    padding: 32px;
+    border-radius: 30px;
+    background-color: var(--white);
+    width: 100%;
+    max-height: 192px;
+
+}
+.hederleft{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    height: 128px;
+    width: auto;
+}
+.info-left-star{
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+.left-location{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: auto;
+
+}
+.loc-name{
+  display: flex;
+  gap: 16px;
+  width: auto;
+  
+}
+.loc-name img{
+  width: 20px;
+  height: 20px;
+}
+.loc-name button{
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: underline;
+    height: 22px;
+    width: auto;
+    gap: 8px;
+}
+.loc-dist{
+  display: flex;
+  gap: 8px;
+  width: 243px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+.hederrigth{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 128px;
+    max-width: 370px;
+}
+
+.hederrigth img{
+    width: 20px;
+    height: 20px;
+}
+.hederrigth button{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 16px 24px;
+    border: solid 1px var(--light_gray);
+    border-radius: 15px;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 600;
+    height: 45px;
+    width: auto;
+}
+.hederrigth-btn{
+    display: flex;
+    gap: 12px;
+    height: 45px;
+}
+.hederpricehotel{
+    display: flex;
+    flex-direction: column;
+    justify-content: right;
+    align-items: flex-end;
+    gap: 8px;
+    span{
+        font-size: 16px;
+        font-weight: 400;
+        color: var(--black);
+    }
+}
+.hcarusel{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+    /* height: 594px; */
+    width: 100%;
+}
+.hcarusell-left{
+    
+    display: flex;
+    align-self: stretch;
+  flex-grow: 1;
+    height: 100%;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+.hcarusell-rigth{
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  flex-grow: 1;
+    flex-wrap: wrap;
+    gap: 10px;
+    background-color: var(--white);
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    padding: 10px 16px;
+    height: 100%;
+    overflow: hidden;
+    h2{
+        text-align: left;
+        font-size: 24px;
+        font-weight: 700;
+    }
+}
+
+.facti-box{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+.hinfo-box{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.hinfo-box span{
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--black);
+}
+.facti-btn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    border: solid 1px var(--gray_stoke);
+    border-radius: 15px;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--black);
+    width: auto;
+    height: 32px;
+    cursor: auto;
+    svg {
+        width: 16px;
+        min-height: 16px;
+    }
+}
+.loader-not{
+display: flex;
+flex-direction: column;
+flex-wrap: wrap;
+gap: 8px;
+justify-content: center;
+position: relative;
+width: 300px;
+top: 400px;
+left: 50%;
+align-items: center;
+
+}
+.loader-not h3{
+font-size: 24px;
+font-weight: 700;
+color: var(--black);
+}
+.loader-not span{
+font-size: 16px;
+font-weight: 400;
+color: var(--black);
+}
+.loader-not img{
+  width: 188px;
+  height: 208px;
+}

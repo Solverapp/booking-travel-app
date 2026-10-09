@@ -1,0 +1,107 @@
+.quest-box{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px 16px 12px 16px;
+    border: solid 1px var(--gray_stoke);
+    border-radius: 20px;
+    width: 248px;
+}
+
+.qb-wrapper {
+	position: relative;
+    width: 100%;
+}
+.qb{
+    display: flex;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--black);
+}
+.selects-wrapper{
+    display: flex;
+    flex-direction: column;
+    
+    position: absolute;
+    left: -13px;
+	top: 38px;
+    gap: 10px;
+    text-align:left ;
+    padding: 32px 24px 32px 24px;
+    border: solid 1px var(--light_gray);
+    border-radius: 20px;
+    background-color: var(--white);
+    z-index: 1;
+    width: 362px;
+    height: auto;
+}
+.selector-box{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.selector-item{
+    display: flex;
+    justify-content: space-between;
+    height: 46px;
+}
+.selector-item p{
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--black);
+}
+.selector-item span{
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gray_text);
+}
+.item-left{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 70px;
+}
+.item-counter{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 142px;
+}
+.item-counter button:disabled{
+opacity: 0.35;
+}
+.counter-btn{
+    display: block;
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+}
+.counter-btn img{
+    width: 46px;
+    height: 46px;
+}
+.selector-ages{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
+    
+}
+.ages-left{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    
+}
+.ages-box{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.age-select {
+    border: solid 1px var(--gray_text);
+}

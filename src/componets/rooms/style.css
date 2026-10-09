@@ -1,0 +1,222 @@
+.rooms-item{
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border: solid 1px var(--gray2);
+    box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.15);
+    border-radius: 30px;
+    padding:10px ;
+    margin-bottom: 16px;
+}
+.romm-item-info{
+    
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 10px;
+    max-width: 400px;
+
+    img{
+        display: flex;
+       height: 233px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 25px;
+
+    }
+    h4{
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--green);
+        text-align: left;
+    }
+    span{
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--red);
+    }
+}
+.romm-info-detalis{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+ span{
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--black);
+    }
+    p{
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--black);
+        text-align: left;
+    }
+}
+.detalis-heder{
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: flex-start;
+
+}
+.detalis-heder-item{
+    display: flex;
+    gap:10px;
+    width: auto;
+    height: auto;
+}
+.detalis-heder svg{
+    width: 22px;
+    height: 22px;
+}
+.amenites-box{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.amenites-btn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    border: solid 1px var(--gray_stoke);
+    border-radius: 15px;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--black);
+    width: auto;
+    height: 32px;
+    svg {
+        width: 16px;
+        min-height: 16px;
+    }
+}
+
+.rate-box{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 15px;
+    background-color: var(--gray2);
+
+}
+.rates-item{
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 16px 16px 20px;
+    border-radius: 20px;
+    background-color: var(--white);
+    min-height: 151px;
+    height: fit-content;
+    width: 100%;
+
+    h2{
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--black);
+    }
+    span {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gray_text);
+    }
+    .canseletion{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 30px;
+         .rfn{
+            font-size: 14px;
+            font-weight: 500;
+            padding: 4px 12px;
+            color: var(--white);
+            background-color: var(--green10);
+            border-radius: 30px;
+         }
+            .rf {
+                font-size: 14px;
+            font-weight: 500;
+            padding: 4px 12px;
+            color: var(--white);
+                background-color: var(--green2);
+                border-radius: 30px;
+            }
+        
+
+       
+    }
+.addCard{
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            
+            align-items: flex-start;
+            gap: 4px;
+            width: fit-content;
+            button{
+                display: flex;
+                gap: 8px;
+                padding: 8px 18px;
+                border-radius: 15px;
+                background-color: var(--red);
+                color: var(--white);
+            }
+            button:disabled{
+                opacity: 0.35;
+                cursor: not-allowed;
+
+            }
+        }
+    .infoitem{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 50px;
+
+        .infoprice{
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            
+            align-items: flex-start;
+            gap: 4px;
+            width: fit-content;
+            
+        }
+        
+        .rate-amenit{
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            
+            align-items: flex-start;
+            gap: 12px;
+            width: fit-content;
+            button{
+                display: flex;
+                gap: 12px;
+                cursor: none;
+            }
+            img {
+                width: 27px;
+                height: 20px;
+            }
+        }
+    }
+
+}

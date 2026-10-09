@@ -1,0 +1,132 @@
+@import './reset.css';
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+
+
+:root {
+/* Colors primary */
+--black: #131313;
+--red: #B42626;
+--white: #FFFFFF;
+--green: #153534;
+--green3: #2A9D90;
+
+/*Colors Secondary */
+--bg: #F4F4F4;
+--light_gray: #E9E9E9;
+--gray_text: #454444;
+--yellow: #F5A207;
+--green2: #0D964B;
+--greenbg: #f6ffed;
+--blue: #4367B0;
+--gray2: #F8F8F8;
+
+/*Colors Tetrary */
+
+--gray_stoke:#AEAEAE;
+--tab: #C9CACA;
+--yellow12: #FEF4E1;
+--blue12: rgba(67, 103, 176, 0.12);
+--red15: rgba(180, 38, 38, 0.15);
+--green10: rgba(21, 53, 52, 0.7);
+
+
+--sidebar-collapsed-width: 70px; /* Ширина только с иконками */
+--sidebar-expanded-width: 240px;  /* Ширина в раскрытом виде */
+
+
+
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 1900px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.App {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.container {
+	display: flex;
+	flex: 1;
+	flex-grow: 1;
+	flex-direction: column;
+	
+	background-image: url(../img/fon/startfon1x.jpg);
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: cover;
+	align-items: center;
+	min-height:  1000px;
+}
+.section{
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	gap: 28px;
+	justify-items: center;
+	text-align: center;
+	margin-top: 28px;
+	max-width: 984px;
+	color: var(--white);
+}
+
+.hconteiner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    flex: 1;
+    background: var(--bg);
+}
+
+.status-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+	justify-content: center;
+    width: 100%;
+	height: 100vh;
+    background: var(--bg);
+}
+a, a:link, a:visited {
+color: inherit;
+}
+
+/* Typograpy */
+
+h1{
+	font-size: 32px;
+	font-weight: 700;
+	line-height: 40px;
+}
+h1.H1_big{
+font-size: 70px;
+font-weight: 700;
+line-height: 80px;
+}
+
+@media (max-width: 1200px) {
+    h1.H1_big{
+font-size: 40px;
+font-weight: 700;
+line-height: 80px;
+}
+}

@@ -1,0 +1,217 @@
+.maincontent{
+  display: flex;
+  flex-direction: column;
+  width: 100%;;
+    height: 100%;
+}
+.hcontainer{
+    display: flex;
+    flex-direction: column;
+    
+    gap: 16px;
+    
+    padding:32px 70px 20px 70px ;
+    background-color: var(--bg);
+    width: 100%;;
+    height: 100%;
+
+}
+.hinfo{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    
+}
+.backoption{
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    height: 45px;
+}
+.backoption button{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 16px 24px;
+    border-radius: 12px;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 600;
+    height: 45px;
+    width: auto;
+}
+.backoption img{
+    width: 20px;
+    height: 20px;
+}
+.infoheder{
+    display: flex;
+    justify-content: space-between;
+    padding: 32px;
+    border-radius: 30px;
+    background-color: var(--white);
+    width: 100%;
+    max-height: 192px;
+
+}
+.hederleft{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    height: 128px;
+    width: auto;
+}
+.info-left-star{
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+.left-location{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: auto;
+
+}
+.loc-name{
+  display: flex;
+  gap: 16px;
+  width: auto;
+  
+}
+.loc-name img{
+  width: 20px;
+  height: 20px;
+}
+.loc-name button{
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: underline;
+    height: 22px;
+    width: auto;
+    gap: 8px;
+}
+.loc-dist{
+  display: flex;
+  gap: 8px;
+  width: 243px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+.hederrigth{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 128px;
+    max-width: 370px;
+}
+
+.hederrigth img{
+    width: 20px;
+    height: 20px;
+}
+.hederrigth button{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 16px 24px;
+    border: solid 1px var(--light_gray);
+    border-radius: 15px;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 600;
+    height: 45px;
+    width: auto;
+}
+.hederrigth-btn{
+    display: flex;
+    gap: 12px;
+    height: 45px;
+}
+.hederprice{
+    display: flex;
+    justify-content: right;
+    align-items: flex-end;
+    gap: 8px;
+    span{
+        font-size: 16px;
+        font-weight: 400;
+        color: var(--black);
+    }
+}
+.carusel{
+    display: flex;
+    flex-wrap: wrap;
+  justify-content: flex-start;
+  /* align-items: stretch;
+  align-content: stretch; */
+    gap: 10px;
+    height: 594px;
+    width: 100%;
+}
+.carusel-left{
+    flex: 1;
+    display: flex;
+    /* width: 880px; */
+    height: 594px;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+    object-fit: cover;
+    overflow: hidden;
+}
+.carusel-rigth{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 10px;
+    /* width: 890px; */
+    height: 594px;
+    
+    overflow: hidden;
+}
+.carusel-rigth-img{
+    flex: 1;
+    display: flex;
+    height: 291px;
+    object-fit: cover;
+}
+.carusel-rigth-border-t{
+    flex: 1;
+    display: flex;
+    border-top-right-radius: 30px;
+   object-fit: cover;
+    height: 291px;
+}
+.carusel-rigth-border-b{
+    flex: 1;
+    display: flex;
+    object-fit: cover;
+    border-bottom-right-radius: 30px;
+    height: 291px;
+}
+.acord-box{
+    padding: 16px;
+    border: solid 1px var(--light_gray);
+    border-radius: 15px;
+    background-color: var(--white);
+}
+.css-rizt0-MuiTypography-root {
+    margin: 0;
+    
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0.00938em;
+    text-align: start;
+}

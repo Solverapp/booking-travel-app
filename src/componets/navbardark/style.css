@@ -1,0 +1,52 @@
+.navdark{
+display: flex;
+justify-content: space-between;
+background-color: var(--green);
+position: sticky;
+top: 0px;
+
+margin-top: 0px;
+padding: 20px 50px 20px 50px;
+height: 90px;
+width: 100%;
+z-index: 1000;
+}
+.logosite{
+    display: flex;
+    align-items: center;
+    width: 126px;
+    height: 66px;
+}
+.nav-list-dark{
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    height: 66px;
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    font-style: normal;
+
+}
+.nav-list-item{
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 4px 28px 4px 0;
+    border-right: solid 1px rgba(255, 255, 255, 0.3);
+}
+.nav-list-item-end{
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 4px 28px 4px 0;
+    
+}
+.nav-icons{
+    width: 32px;
+    height: 32px;
+}
+.nav-icons-flag{
+    width: 32px;
+    height: 23px;
+}

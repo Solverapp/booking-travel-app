@@ -1,21 +1,5 @@
-.hmaincontent{
-  display: flex;
-  flex-direction: column;
-  width: 100%;;
-    
-}
-.hpagecontainer{
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 16px;
-    
-    padding:32px 70px 20px 70px ;
-    background-color: var(--bg);
-    width: 100%;;
-    
+/* .maincontent / .hcontainer вынесены в styles/detail-common.css (общие с /tour/:id и бронью тура) */
 
-}
 .hotinfo{
     display: flex;
     flex-direction: column;
@@ -49,11 +33,13 @@
 .infoheder{
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
     padding: 32px;
     border-radius: 30px;
     background-color: var(--white);
     width: 100%;
-    max-height: 192px;
+    height: auto;
 
 }
 .hederleft{
@@ -61,7 +47,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    height: 128px;
+    height: auto;
+    min-width: 0;
     width: auto;
 }
 .info-left-star{
@@ -102,7 +89,8 @@
 .loc-dist{
   display: flex;
   gap: 8px;
-  width: 243px;
+  width: auto;
+  max-width: 100%;
   font-size: 12px;
   font-weight: 400;
   color: var(--gray_text);
@@ -111,7 +99,11 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 128px;
+    gap: 12px;
+    height: auto;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     max-width: 370px;
 }
 
@@ -231,12 +223,11 @@ flex-direction: column;
 flex-wrap: wrap;
 gap: 8px;
 justify-content: center;
-position: relative;
-width: 300px;
-top: 400px;
-left: 50%;
 align-items: center;
-
+width: 100%;
+max-width: 300px;
+margin: auto;
+text-align: center;
 }
 .loader-not h3{
 font-size: 24px;
@@ -251,4 +242,55 @@ color: var(--black);
 .loader-not img{
   width: 188px;
   height: 208px;
+}
+
+/* ============ Адаптив: страница отеля ============ */
+
+@media (max-width: 1200px) {
+    .hcarusel {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 968px) {
+    .infoheder {
+        padding: 24px;
+    }
+    .hederrigth {
+        flex: none;
+        width: 100%;
+        max-width: none;
+    }
+    /* галерея: слева фото, справа блок — одна колонка */
+    .hcarusel {
+        flex-direction: column;
+    }
+    .hcarusell-left,
+    .hcarusell-rigth {
+        width: 100%;
+        border-radius: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .infoheder {
+        padding: 16px;
+        border-radius: 20px;
+    }
+    .backoption {
+        height: auto;
+    }
+    .backoption button {
+        padding: 12px 16px;
+        height: 44px;
+        font-size: 13px;
+    }
+    .facti-btn {
+        height: 30px;
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+    .loader-not {
+        margin: 20px auto;
+    }
 }

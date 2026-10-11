@@ -1,0 +1,316 @@
+/* From Uiverse.io by santhosh_2608 */ 
+.mains{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;;
+  height: 100vh;
+}
+.authcontainer{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    
+    gap: 16px;
+    
+    padding:32px 70px 20px 70px ;
+    background-color: var(--bg);
+    width: 100%;;
+    height: 100%;
+
+}
+
+.autpage{
+    display: flex;
+    justify-content: center;
+    padding: 32px;
+    border-radius: 30px;
+    background-color: var(--white);
+    max-width: 800px;
+    max-height: 100vh;
+
+}
+.login-wrapper,
+.login-wrapper * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+.login-wrapper {
+  --blob-1-color: #ff5e00;
+  --blob-2-color: #7000ff;
+  --btn-hover-glow: rgba(112, 0, 255, 0.25);
+  --input-focus-glow: rgba(112, 0, 255, 0.15);
+  position: relative;
+  animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+@keyframes floatUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-card {
+  position: relative;
+  width: 430px;
+  background-color: #0d0f14;
+  border-radius: 24px;
+  padding: 36px 28px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-wrapper:hover .login-card {
+  transform: translateY(-6px);
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.3),
+    0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.glow-blob {
+  position: absolute;
+  filter: blur(45px);
+  border-radius: 50%;
+  z-index: 0;
+  opacity: 0.6;
+  animation: pulseGlow 4s infinite alternate ease-in-out;
+  transition:
+    opacity 0.5s ease,
+    filter 0.5s ease;
+}
+
+.login-wrapper:hover .glow-blob {
+  opacity: 0.75;
+  filter: blur(40px);
+}
+
+.blob-1 {
+  top: -30px;
+  right: -30px;
+  width: 170px;
+  height: 170px;
+  background: var(--blob-1-color);
+}
+
+.blob-2 {
+  bottom: -50px;
+  left: -50px;
+  width: 210px;
+  height: 210px;
+  background: var(--blob-2-color);
+  animation-delay: -2s;
+}
+
+@keyframes pulseGlow {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+.dark-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(5, 5, 8, 0.85) 30%,
+    transparent 100%
+  );
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: inherit;
+}
+
+.view-container {
+  position: relative;
+  z-index: 10;
+}
+
+.form-view {
+  display: flex;
+  flex-direction: column;
+  animation: fadeInView 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#signup-view {
+  display: none;
+}
+
+.reg-toggle:checked ~ .view-container #login-view {
+  display: none;
+}
+
+.reg-toggle:checked ~ .view-container #signup-view {
+  display: flex;
+}
+
+@keyframes fadeInView {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.decorative-dot {
+  width: 2.2em;
+  height: 2.2em;
+  margin: 0 auto 1em auto;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.decorative-dot::after {
+  content: "";
+  width: 1.1em;
+  height: 1.1em;
+  background-image: radial-gradient(
+    circle at center,
+    #ffffff 40%,
+    transparent 50%
+  );
+  background-size: 3.5px 3.5px;
+  mask-image: radial-gradient(circle at center, black 100%, transparent 100%);
+  -webkit-mask-image: -webkit-radial-gradient(
+    circle at center,
+    black 100%,
+    transparent 100%
+  );
+}
+
+.titlee {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.input-group {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.input-field {
+  width: 100%;
+  padding: 1.05em 1.2em;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.input-field::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.input-field:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 20px var(--input-focus-glow);
+  transform: translateY(-2px);
+}
+
+.forgot-link {
+  display: block;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  text-decoration: none;
+  margin-top: -6px;
+  margin-bottom: 24px;
+  transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+  color: #ffffff;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 1em;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.btn-submit:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--btn-hover-glow);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.signup-prompt {
+  margin-top: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+.signup-prompt .toggle-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.signup-prompt .toggle-link:hover {
+  border-color: #ffffff;
+}

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Rating } from "@mui/material";
 import SearchOption from "../hotelsearch/Toursearch";
 import TourFilters from "../hotelFilters/TourFilters";
+import FilterDrawer from "../filterdrawer/FilterDrawer";
 import Loader from "../loaders/loading";
 import loc from "../../img/icons/tabicons/location.svg";
 import hotel from "../../img/icons/tabicons/not.svg";
@@ -10,7 +11,7 @@ import formatPrice from "../../utils/priceFormater";
 import "./style.css";
 
 // Импортируем наш новый сервис
-import { bubbleService } from "../../services/bubbleService";
+import { supabaseTourService } from "../../services/supabaseTourService";
 
 const Tour = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,7 @@ const Tour = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const data = await bubbleService.fetchToursByCity(city);
+        const data = await supabaseTourService.fetchToursByCity(city);
         if (isMounted) {
           setItems(data);
         }
@@ -91,7 +92,7 @@ const Tour = () => {
     <div className="maincontent">
       <SearchOption />
       <div className="mcontainer">
-        <div className="filter-wrapper">
+        <FilterDrawer>
           <TourFilters
             priceChange={handlePriceChange}
             selectedAmenities={selectedAmenities}
@@ -100,7 +101,7 @@ const Tour = () => {
             sortType={sortType}
             setSortType={setSortType}
           />
-        </div>
+        </FilterDrawer>
         <div className="hotel-box">
           <div className="hotel-grid">
             {isLoading ? (

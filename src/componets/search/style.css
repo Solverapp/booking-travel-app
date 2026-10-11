@@ -14,6 +14,7 @@
     align-items: center;
     margin-top: 30px;
     min-height: 284px;
+    width: 100%;
     max-width: 1479px;
 
 }
@@ -25,6 +26,7 @@
     padding: 18px 23px 18px 23px;
     border-radius: 30px;
     background-color: var(--white);
+    width: 100%;
     max-width: 1479px;
     min-height: 90px;
 }
@@ -34,9 +36,10 @@
 .s-optiontour{
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    align-items: stretch;
     gap: 16px;
     min-height: 69px;
+    min-width: 0;
 }
 .s-optiontour p{
     color: var(--gray_text);
@@ -112,7 +115,9 @@ height: 16px;
     padding: 12px 16px 12px 16px;
     border: solid 1px var(--gray_stoke);
     border-radius: 20px;
-    width: 248px;
+    flex: 1.2 1 160px;
+    min-width: 0;
+    width: auto;
 }
 
 
@@ -121,15 +126,23 @@ height: 16px;
     justify-content: center;
     align-items: center;
     gap: 16px;
-    padding: 16px 32px 16px 32px;
+    padding: 16px 24px;
     background-color: var(--red);
     border-radius: 20px;
-    width: 235px;
+    flex: 1 1 150px;
+    min-width: 0;
+    width: auto;
     height: 69px;
     color: var(--white);
     font-size: 16px;
     font-weight: 600;
 
+}
+.sop-btn span{
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .sop-btn img{
     width: 32px;
@@ -203,3 +216,115 @@ background-color: rgba(255, 255, 255, 0.15);
     width: 24px;
     height: 24px;
 }
+
+/* ============ Адаптив ============ */
+
+@media (max-width: 1440px) {
+    .searchcontainer {
+        width: 100%;
+        padding: 0 16px;
+    }
+    .searchbox {
+        width: 100%;
+    }
+}
+
+@media (max-width: 968px) {
+    .searchcontainer {
+        min-height: auto;
+        width: 100%;
+        padding: 0 16px;
+    }
+    .searchbox {
+        padding: 16px;
+        border-radius: 20px;
+        min-height: auto;
+    }
+
+    .s-optiontour {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        min-height: auto;
+    }
+
+    /* В колонке поля и кнопка — во всю ширину */
+    .sop-box-theme,
+    .sop-btn {
+        flex: none;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+    .sop-btn {
+        height: 56px;
+        padding: 12px 16px;
+    }
+
+    /* Горизонтальный ряд «From → To» */
+    .sop-box-search-air {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .air-item {
+        min-width: 0;
+        flex: 1;
+        height: auto;
+        padding: 10px 14px;
+    }
+
+    /* Кнопка обмена — в обычный поток, иначе наезжает на поля */
+    .air-item-revers {
+        position: static;
+        left: auto;
+        box-shadow: none;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        flex: 0 0 auto;
+    }
+
+    .sop-box-theme {
+        width: 100%;
+    }
+    .sop-btn {
+        width: 100%;
+    }
+
+    .tabswraper,
+    .tabsoption {
+        max-width: 100%;
+        width: 100%;
+    }
+    .tab-btn {
+        min-width: 0;
+        flex: 1 1 40%;
+        height: 48px;
+        padding: 12px 16px;
+    }
+    .tourTypes {
+        flex-wrap: wrap;
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .searchcontainer {
+        padding: 0 12px;
+        margin-top: 20px;
+    }
+    .searchbox {
+        padding: 12px;
+        gap: 12px;
+        border-radius: 16px;
+    }
+    .tab-btn {
+        flex: 1 1 100%;
+    }
+    .sop-btn {
+        height: 56px;
+        padding: 14px 20px;
+    }
+}
+

@@ -4,10 +4,18 @@ import "./style.css";
 import transferData from "../../mock/transfers";
 import Loader from "../loaders/loading";
 import Slots from "../slots/Slotsnew";
-import OptionData from "../../mock/option";
 import RateConter from "../Tourguest/guestCounter";
+import {FamilyRestroom, People, NotInterestedOutlined, Block, Group, DirectionsCar} from '@mui/icons-material';
 import guest from "../../img/icons/Hotelicons/Guest.svg";
+// Импортируем наши обновленные сервисы
 import { fetchTourOptions, fetchTourStatic, processTourData } from "../../services/raynaService";
+import { supabaseTourService } from "../../services/supabaseTourService"; // <--- Наш сервис скидок
+
+const transferIcons = {
+  block: Block,
+  group: Group,
+  car: DirectionsCar,
+};
 
 const Rates = ({ id, tur }) => {
   const tourid = id;
@@ -27,10 +35,11 @@ const Rates = ({ id, tur }) => {
   const infants = parseInt(infantsParams || "0");
   const quests = adults + childern + infants;
 
-  const customOptions = OptionData;
+  
 
   const [rawOptions, setRawOptions] = useState([]);
   const [staticData, setStaticData] = useState([]);
+  const [dbDiscounts, setDbDiscounts] = useState([]); // <--- СТЕЙТ ДЛЯ ХРАНЕНИЯ СКИДОК ИЗ БАЗЫ
   const [transfer, setTransfer] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,9 +50,7 @@ const Rates = ({ id, tur }) => {
   const [selectedSlot, setSelectedSlot] = useState([]);
   const [cartItem, setcartItem] = useState([]);
 
-  const activTab = (tab) => {
-    setTransfer(tab);
-  };
+  const activTab = (tab) => { setTransfer(tab); };
 
   const queryParams = {
     tourId: tourid,
@@ -53,22 +60,28 @@ const Rates = ({ id, tur }) => {
     infants: infants,
   };
 
+  // --- ЭФФЕКТ 1: Инициализация данных (Склеиваем API и Supabase) ---
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
       setError('');
       try {
-        const [options, statics] = await Promise.all([
+        // Параллельно тянем данные из Rayna API и промо-цены из вашей таблицы Supabase!
+        const [options, statics, discounts] = await Promise.all([
           fetchTourOptions(queryParams),
-          fetchTourStatic(tourid)
+          fetchTourStatic(tourid),
+          supabaseTourService.fetchDiscountRates(tourid) // <--- Запрос в вашу базу скидок
         ]);
+
+        setDbDiscounts(discounts);
         setRawOptions(options);
         setStaticData(statics);
+
         if (options && options.length > 0) {
           setTransfer(options[0].transferId);
         }
       } catch (err) {
-        setError('Failed to load hotel details');
+        setError('Failed to load tour details');
       } finally {
         setLoading(false);
       }
@@ -76,6 +89,7 @@ const Rates = ({ id, tur }) => {
     loadInitialData();
   }, [id]);
 
+  // --- ЭФФЕКТ 2: Обновление цен при изменении счетчиков гостей ---
   useEffect(() => {
     const updatePrices = async () => {
       setLoading(true);
@@ -93,9 +107,11 @@ const Rates = ({ id, tur }) => {
     }
   }, [adultsTotal, childsTotal]);
 
+  // --- ОПТИМИЗАЦИЯ: Передаем dbDiscounts в процессор данных ---
   const processedOptions = useMemo(() => {
-    return processTourData(rawOptions, staticData, customOptions);
-  }, [rawOptions, staticData]);
+    // Теперь процессор берет скидки из вашей реальной базы Supabase!
+    return processTourData(rawOptions, staticData, dbDiscounts);
+  }, [rawOptions, staticData, dbDiscounts]);
 
   const filteredOptions = useMemo(() => {
     return processedOptions.filter((tr) => tr.transferId === transfer);
@@ -120,12 +136,12 @@ const Rates = ({ id, tur }) => {
     const ty = type;
 
     setTotals((prev) => {
-      if (ty === 'adult') setAdultsTotal(c);
-      if (ty === 'child') setChildsTotal(c);
+      if (ty === "adult") setAdultsTotal(c);
+      if (ty === "child") setChildsTotal(c);
       const exists = prev.some((item) => item.id === key);
       if (exists) {
         return prev.map((item) =>
-          item.id === key ? { ...item, qty: c, price: p, total: t } : item
+          item.id === key ? { ...item, qty: c, price: p, total: t } : item,
         );
       }
       return [...prev, { id: key, qty: c, total: t, price: p, type: ty }];
@@ -133,7 +149,7 @@ const Rates = ({ id, tur }) => {
   };
 
   const addToCart = (option, rateTotal, optionName, slotId) => {
-    const comission = 1 + (15 / 100);
+    const comission = 1 + 15 / 100;
     const newItem = {
       tourId: tourid,
       optionId: option.tourOptionId,
@@ -142,7 +158,7 @@ const Rates = ({ id, tur }) => {
       tourName: tur,
       tourDate: checkInParam,
       tourTime: slotId?.time || "10:00",
-      slotId: slotId?.id,
+      slotId: slotId?.id || 0,
       adult: adultsTotal,
       child: childsTotal,
       adultb2b: option.adultPrice,
@@ -150,11 +166,12 @@ const Rates = ({ id, tur }) => {
       childb2b: option.childPrice,
       childb2c: option.childPrice * comission,
       b2cTotal: rateTotal,
-      b2bTotal: option.adultPrice * adultsTotal + option.childPrice * childsTotal,
+      b2bTotal:
+        option.adultPrice * adultsTotal + option.childPrice * childsTotal,
       referNo: Math.floor(100000 + Math.random() * 900000),
       uniqNo: Math.floor(100000 + Math.random() * 900000),
       leadPassangers: adultsTotal + childsTotal,
-      city: city
+      city: city,
     };
     const next = [...cartItem, newItem];
     setcartItem(next);
@@ -165,18 +182,24 @@ const Rates = ({ id, tur }) => {
     <div className="rcontainer">
       <div className="content-t">
         <h2>Tickets Price & Offers</h2>
-        <div className={`transferoption ${rawOptions.length === 0 ? "hiden" : ""}`}>
+        <div
+          className={`transferoption ${rawOptions.length === 0 ? "hiden" : ""}`}
+        >
           {rawOptions.length > 0 ? (
-            transferData.map((tab) => (
-              <button
-                className={`tr-btn ${transfer === tab.transferId ? "activee" : ""}`}
-                onClick={() => activTab(tab.transferId)}
-                key={tab.id}
-                disabled={!availableTransferIds.has(tab.transferId)}
-              >
-                <p>{tab.name}</p>
-              </button>
-            ))
+            transferData.map((tab) => {
+              const TransferIcon = transferIcons[tab.icon];
+              return (
+                <button
+                  className={`tr-btn ${transfer === tab.transferId ? "activee" : ""}`}
+                  onClick={() => activTab(tab.transferId)}
+                  key={tab.id}
+                  disabled={!availableTransferIds.has(tab.transferId)}
+                >
+                  {TransferIcon && <TransferIcon className="tr-icon" />}
+                  <p>{tab.short}</p>
+                </button>
+              );
+            })
           ) : (
             <Loader />
           )}
@@ -188,27 +211,42 @@ const Rates = ({ id, tur }) => {
                 <Loader />
                 <span>Please wait..</span>
               </div>
-            ) : !Array.isArray(filteredOptions) || filteredOptions.length === 0 ? (
+            ) : !Array.isArray(filteredOptions) ||
+              filteredOptions.length === 0 ? (
               <div className="option-not">
-                <img src={guest} alt="hotel" />
+                < NotInterestedOutlined/>
                 <h3>Nothing found matching your request</h3>
                 <span>Please specify other search parameters</span>
               </div>
             ) : (
               filteredOptions.map((opt, index) => {
-                const adultTotal = totals.find((it) => it.id === opt.tourOptionId + "adult" + opt.transferId)?.total || 0;
-                const childTotal = totals.find((it) => it.id === opt.tourOptionId + "child" + opt.transferId)?.total || 0;
+                const adultTotal =
+                  totals.find(
+                    (it) =>
+                      it.id === opt.tourOptionId + "adult" + opt.transferId,
+                  )?.total || 0;
+                const childTotal =
+                  totals.find(
+                    (it) =>
+                      it.id === opt.tourOptionId + "child" + opt.transferId,
+                  )?.total || 0;
                 const rateTotal = adultTotal + childTotal;
                 const isSlot = opt.isSlot || false;
-                const slotDisabled = selectedSlot.opId !== opt.tourOptionId || null;
+                const slotDisabled =
+                  selectedSlot.opId !== opt.tourOptionId || null;
 
                 return (
-                  <div className="option-box" key={`${opt.tourOptionId}-${opt.transferId}-${index}`}>
+                  <div
+                    className="option-box"
+                    key={`${opt.tourOptionId}-${opt.transferId}-${index}`}
+                  >
                     <div className="option-info">
-                      <h4>{opt.optionName} - {opt.tourOptionId} - {opt.transferId}</h4>
+                      <h4>
+                        {opt.optionName} - {opt.tourOptionId} - {opt.transferId}
+                      </h4>
                       {isSlot === true && (
-                        <Slots 
-                          option={opt} 
+                        <Slots
+                          option={opt}
                           traveldate={checkInParam}
                           isSlot={true}
                           selectedSlot={selectedSlot}
@@ -221,15 +259,23 @@ const Rates = ({ id, tur }) => {
                     <div className="rate-box">
                       <div className="rate-item">
                         <div className="rate-guest">
-                          <img src={guest} alt="adult" />
+                          <People />
                           <span>Adult price: {opt.prices.adult} AED</span>
                         </div>
                         <div className="inforate">
-                          <div className="rate-counter" id={opt.tourOptionId + "adult"}>
+                          <div
+                            className="rate-counter"
+                            id={opt.tourOptionId + "adult"}
+                          >
                             <RateConter
                               id={opt.tourOptionId + "adult" + opt.transferId}
                               onRoomChange={(newCounts, newPrice) =>
-                                handleCounthange(opt.tourOptionId + "adult" + opt.transferId, newCounts, newPrice, "adult")
+                                handleCounthange(
+                                  opt.tourOptionId + "adult" + opt.transferId,
+                                  newCounts,
+                                  newPrice,
+                                  "adult",
+                                )
                               }
                               count={10}
                               price={opt.prices.adult}
@@ -243,15 +289,23 @@ const Rates = ({ id, tur }) => {
                       </div>
                       <div className="rate-item">
                         <div className="rate-guest">
-                          <img src={guest} alt="child" />
+                          <FamilyRestroom/>
                           <span>Child price: {opt.prices.child} AED</span>
                         </div>
                         <div className="inforate">
-                          <div className="rate-counter" id={opt.tourOptionId + "child"}>
+                          <div
+                            className="rate-counter"
+                            id={opt.tourOptionId + "child"}
+                          >
                             <RateConter
                               id={opt.tourOptionId + "child" + opt.transferId}
                               onRoomChange={(newCounts, newPrice) =>
-                                handleCounthange(opt.tourOptionId + "child" + opt.transferId, newCounts, newPrice, "child")
+                                handleCounthange(
+                                  opt.tourOptionId + "child" + opt.transferId,
+                                  newCounts,
+                                  newPrice,
+                                  "child",
+                                )
                               }
                               count={10}
                               price={opt.prices.child}
@@ -260,13 +314,31 @@ const Rates = ({ id, tur }) => {
                           </div>
                           <div className="rprice">
                             <h4>{childTotal}</h4>
-                            </div>
+                          </div>
                         </div>
                       </div>
 
-<div className="rate-button">
-                        <h2>Total {opt.transferId === 41865 ? rateTotal : opt.prices.totalAuto} AED</h2>
-                        <button disabled= {isSlot === true && slotDisabled } onClick={() => addToCart(opt, rateTotal, opt.optionName, selectedSlot || 0)} >Buy Now </button>
+                      <div className="rate-button">
+                        <h2>
+                          Total{" "}
+                          {opt.transferId === 41865
+                            ? rateTotal
+                            : opt.prices.totalAuto}{" "}
+                          AED
+                        </h2>
+                        <button
+                          disabled={isSlot === true && slotDisabled}
+                          onClick={() =>
+                            addToCart(
+                              opt,
+                              rateTotal,
+                              opt.optionName,
+                              selectedSlot || 0,
+                            )
+                          }
+                        >
+                          Buy Now{" "}
+                        </button>
                       </div>
                     </div>
                   </div>

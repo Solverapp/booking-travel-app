@@ -1,4 +1,4 @@
-import Login from "../componets/auth/login/Login";
+import Login from "../componets/auth/signform/Login";
 
 const login = () => {
     return (<Login/> );

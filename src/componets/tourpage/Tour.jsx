@@ -4,12 +4,8 @@ import { Rating } from "@mui/material";
 import formatPrice from "../../utils/priceFormater";
 import Acordion from "../tourpage/Acordion"
 import Rates from "../touroption/Optionew";
+import {Share, Place, FavoriteBorder, NavigateBefore, Search} from '@mui/icons-material';
 
-import left from "../../img/icons/tabicons/arrow-left.svg";
-import search from "../../img/icons/tabicons/search-normal.svg";
-import loc from "../../img/icons/tabicons/location.svg";
-import faf from "../../img/icons/Hotelicons/heart.svg";
-import share from "../../img/icons/Hotelicons/share.svg";
 
  
 
@@ -29,11 +25,7 @@ const childern = parseInt(childrenParams);
 const infants = parseInt(infantsParams);
 const quests = adults + childern + infants;
 const checkIn = checkInParam ? new Date(checkInParam) : null;
-const checkOut = checkOutParam ? new Date(checkOutParam) : null;
 
-
-
-console.log(tour.tourName);
 
 
 
@@ -42,7 +34,6 @@ const handleBack = () => {
   const params = new URLSearchParams({
     city: city,
     checkIn: checkInParam,
-    // checkOut: checkOutParam,
     adults: adultsParams,
     children: childrenParams,
     infants: infantsParams,
@@ -56,11 +47,11 @@ const handleBack = () => {
         <div className="hinfo">
           <div className="backoption">
             <button onClick={() => handleBack()}>
-              <img src={left} alt="back" />
+              <NavigateBefore/>
               <span>Back</span>
             </button>
             <button>
-              <img src={search} alt="new search" />
+              <Search />
               <span>New search</span>
             </button>
           </div>
@@ -81,30 +72,27 @@ const handleBack = () => {
               <div className="left-location">
                 <div className="loc-name">
                   <button>
-                    <img src={loc} alt="location" />
+                    <Place/>
                     <span>{`${tour.cityName},${tour.countryName}`}</span>
                   </button>
                   <button>
                     <span>Show on map</span>
                   </button>
                   <button>
-                    <img src={share} alt="location" />
+                    <Share/>
                     <span>Share</span>
                   </button>
-                </div>
-                <div className="info-left-star">
-                  <span>6.3 km from the center . Near the metro</span>
                 </div>
               </div>
             </div>
             <div className="hederrigth">
               <div className="hederrigth-btn">
                 <button>
-                  <img src={faf} alt="faf" />
+                  <FavoriteBorder/>
                   <span>Add to favorites</span>
                 </button>
                 <button>
-                  <img src={share} alt="share" />
+                  <Share/>
                   <span>Share</span>
                 </button>
               </div>

@@ -1,38 +1,17 @@
-.maincontent{
-  display: flex;
-  flex-direction: column;
-  width: 100%;;
-  height: 100%;
-}
-.mcontainer{
-    display: flex;
-    justify-content: left;
-    gap: 16px;
-    
-    padding:32px 70px 20px 70px ;
-    background-color: var(--bg);
-    width: 100%;;
-    height: 100%;
+/* Стили страницы /hotels — только специфика карточек отелей.
+   Общие для /hotels и /tours — в src/styles/results-common.css */
 
-}
-.hotel-box{
-display: flex;
-flex-direction: column;
-flex-wrap: wrap;
-align-items: center;
-width: 1259px;
-}
 .found-not{
 display: flex;
 flex-direction: column;
 flex-wrap: wrap;
 gap: 8px;
 justify-content: center;
-position: relative;
-top: 100px;
-left: 10%;
 align-items: center;
-
+width: 100%;
+max-width: 400px;
+margin: 40px auto;
+text-align: center;
 }
 .found-not h3{
 font-size: 22px;
@@ -59,7 +38,7 @@ color: var(--black);
 .grid-card {
     display: flex;
     flex-direction: row;
-    min-width: 356px;
+    min-width: 0;
     max-width: 950px;
     padding: 0px 9px 0px 0px;
     height: 250px;
@@ -78,7 +57,6 @@ color: var(--black);
   display: flex;
   width: 30%;
   height: 100%;
-  /* border-radius: 25px; */
   border-top-left-radius: 25px;
   border-bottom-left-radius: 25px;
   position: relative;
@@ -88,21 +66,20 @@ color: var(--black);
   flex-direction: column;
   width: 70%;
   height: 100%;
-  /* border-radius: 25px; */
   border-top-right-radius: 25px;
   border-bottom-right-radius: 25px;
- 
+
 }
 
 .grid-card-img-box img {
-  width: 350px;
+  width: 100%;
+  max-width: 350px;
   height: 100%;
-  /* border-radius: 25px; */
   border-top-left-radius: 25px;
   border-bottom-left-radius: 25px;
   object-fit: cover;
   position: absolute;
-  
+
 }
 
 .card-heder {
@@ -112,7 +89,7 @@ color: var(--black);
     min-height: 100px;
   padding: 15px;
   justify-content: space-between;
-  
+
 }
 .card-heder-info{
     display: flex;
@@ -123,7 +100,7 @@ color: var(--black);
     display: flex;
     flex-direction: column;
     gap: 4px;
-    
+
 }
 .locname{
   display: flex;
@@ -152,7 +129,7 @@ color: var(--black);
 .locdist{
   display: flex;
   gap: 8px;
-  
+
   font-size: 12px;
   font-weight: 400;
   color: var(--gray_text);
@@ -186,7 +163,7 @@ color: var(--black);
   padding: 8px 8px 8px 8px;
   width: 120px;
   height: 50px;
-  
+
   p{
     font-size: 16px;
   font-weight: 700;
@@ -250,42 +227,57 @@ color: var(--black);
   font-weight: 400 ;
   color: var(--gray_text);
 }
-.filter-wrapper{
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 430px;
-  height: 100%;
-}
-.filter-map{
-  display: block;
-  border-radius: 30px;
-  overflow: hidden;
-  width: 100%;
-  height: 229px;
-}
-.filter-map iframe {
-  width: 100%;
-  height: 229px;
-  display: block;
-}
-.filter-box{
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 32px 24px 32px 24px;
-  border-radius: 30px;
-  background-color: var(--white);
-  width: 430px;
-  height: 100%;
-}
 
-@media (max-width:1300px) {
-  .hotel-grid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 10px;
-  padding: 6px;
-  width: 100%;
-}
+@media (max-width: 640px) {
+  .hotelbox-grid {
+    gap: 12px;
+    padding: 0;
+  }
+
+  /* Горизонтальная карточка → вертикальная */
+  .grid-card {
+    flex-direction: column;
+    height: auto;
+    min-width: 0;
+    max-width: none;
+    border-radius: 20px;
+    padding: 8px 8px 12px;
+  }
+  .grid-card-img-box {
+    width: 100%;
+    height: 180px;
+    border-radius: 16px;
+  }
+  .grid-card-img-box img {
+    position: static;
+    height: 180px;
+    max-width: none;
+    border-radius: 16px;
+  }
+  .grid-card-rigth-box {
+    width: 100%;
+  }
+  .card-heder-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .infoleft {
+    max-width: 100%;
+  }
+  .card-footer {
+    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cardfooter-price {
+    max-width: 100%;
+  }
+  .rating-card-ab {
+    left: auto;
+    right: 12px;
+    top: 12px;
+    width: 96px;
+    height: 44px;
+  }
 }

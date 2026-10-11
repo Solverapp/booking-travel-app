@@ -1,0 +1,72 @@
+/* Единый каркас страницы детализации: отель (/hotel/:id), тур (/tour/:id), бронь тура.
+   Раньше каждая страница объявляла свой .hmaincontent/.hpagecontainer/.maincontents/.hcontainer
+   и последний в bundle (tourbook, padding: 70px без медиа-запросов) перетирал адаптив. */
+
+.maincontent {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	/* Фото-фон живёт на html — на время загрузки нужна сплошная подложка */
+	min-height: 100dvh;
+	background-color: var(--bg);
+}
+
+.hcontainer {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	gap: 16px;
+	padding: 32px var(--pad-page) 20px;
+	background-color: var(--bg);
+	width: 100%;
+	min-width: 0;
+}
+
+@media (max-width: 640px) {
+	.hcontainer {
+		padding: 20px var(--pad-page) 16px;
+		gap: 12px;
+	}
+}
+
+/* .rcontainer использовался дважды (hotels/rooms и touroption) — второй в бандле
+   перетирал адаптив. Единая карточка секции. */
+.rcontainer {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	padding: 40px var(--pad-page);
+	border-radius: 30px;
+	background-color: var(--white);
+	width: 100%;
+	min-width: 0;
+}
+
+.rcontainer h2 {
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--black);
+}
+
+@media (max-width: 968px) {
+	/* Внутри .hcontainer белая карточка избыточна — каждая опция сама по себе карточка */
+	.rcontainer {
+		background-color: transparent;
+		border-radius: 0;
+		padding: 0;
+		flex-wrap: nowrap;
+	}
+	.rcontainer h2 {
+		font-size: 22px;
+	}
+}
+
+@media (max-width: 640px) {
+	.rcontainer {
+		gap: 16px;
+	}
+	.rcontainer h2 {
+		font-size: 20px;
+	}
+}
+

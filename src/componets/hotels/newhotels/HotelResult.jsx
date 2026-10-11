@@ -7,6 +7,7 @@ import SingleBedIcon from "@mui/icons-material/SingleBed";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SearchOption from "../../hotelsearch/NewHotelSearch";
 import HotelFilters from "../../hotelFilters/Filterss";
+import FilterDrawer from "../../filterdrawer/FilterDrawer";
 // import { useFacilities } from "../../hotelFilters/Filterss";
 
 import hotel from "../../../img/icons/tabicons/not.svg";
@@ -240,13 +241,13 @@ const HotelList = () => {
     <main className="maincontent">
       <SearchOption />
       <div className="mcontainer">
-        <div className="filter-wrapper">
+        <FilterDrawer>
           <HotelFilters
             filters={filters}
             onChange={setFilters}
             onClear={() => setFilters(DEFAULT_FILTERS)}
           />
-        </div>
+        </FilterDrawer>
         <div className="hotel-box">
           <Sorting sort={sort} onChange={setSort} />
           <div className="hotelbox-grid">

@@ -1,38 +1,17 @@
-.maincontent{
-  display: flex;
-  flex-direction: column;
-  width: 100%;;
-    height: 100%;
-}
-.mcontainer{
-    display: flex;
-    justify-content: left;
-    gap: 16px;
-    
-    padding:32px 70px 20px 70px ;
-    background-color: var(--bg);
-    width: 100%;;
-    height: 100%;
+/* Стили страницы /tours — только специфика карточек туров.
+   Общие для /hotels и /tours — в src/styles/results-common.css */
 
-}
-.hotel-box{
-display: flex;
-flex-direction: column;
-flex-wrap: wrap;
-align-items: center;
-width: 1259px;
-}
 .hotel-not{
 display: flex;
 flex-direction: column;
 flex-wrap: wrap;
 gap: 8px;
 justify-content: center;
-position: relative;
-top: 200px;
-left: 50%;
 align-items: center;
-
+width: 100%;
+max-width: 400px;
+margin: 40px auto;
+text-align: center;
 }
 .hotel-not h3{
 font-size: 24px;
@@ -59,7 +38,7 @@ color: var(--black);
 .tourgrid-item {
     display: flex;
     flex-direction: column;
-    min-width: 356px;
+    min-width: 0;
     max-width: 656px;
     padding: 9px 9px 20px 9px;
     height: 450px;
@@ -99,7 +78,8 @@ color: var(--black);
 .loc-name{
   display: flex;
   gap: 8px;
-  width: 243px;
+  width: auto;
+  max-width: 100%;
   font-size: 14px;
   font-weight: 600;
   color: var(--green2);
@@ -111,7 +91,8 @@ color: var(--black);
 .loc-dist{
   display: flex;
   gap: 8px;
-  width: 243px;
+  width: auto;
+  max-width: 100%;
   font-size: 12px;
   font-weight: 400;
   color: var(--gray_text);
@@ -169,7 +150,7 @@ color: var(--black);
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  
+
 }
 .footer-price p{
   font-size: 20px;
@@ -181,43 +162,41 @@ color: var(--black);
   font-weight: 400 ;
   color: var(--gray_text);
 }
-.filter-wrapper{
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 430px;
-  height: 100%;
-  
-}
-.filter-map{
-  display: block;
-  border-radius: 30px;
-  overflow: hidden;
-  width: 100%;
-  height: 229px;
-}
-.filter-map iframe {
-  width: 100%;
-  height: 229px;
-  display: block;
-}
-.filter-box{
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 32px 24px 32px 24px;
-  border-radius: 30px;
-  background-color: var(--white);
-  width: 430px;
-  height: 100%;
+
+@media (max-width: 1200px) {
+  .hotel-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 
-@media (max-width:1300px) {
+@media (max-width: 640px) {
   .hotel-grid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 10px;
-  padding: 6px;
-  width: 100%;
-}
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0;
+  }
+  .tourgrid-item {
+    height: auto;
+    min-width: 0;
+    max-width: none;
+    border-radius: 20px;
+    padding: 8px 8px 16px;
+  }
+  .tourgrid-item img {
+    height: 200px;
+    border-radius: 16px;
+  }
+  .item-heder-info {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .info-left {
+    max-width: 100%;
+  }
+  .item-footer {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
 }

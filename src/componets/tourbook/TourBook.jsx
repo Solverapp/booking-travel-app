@@ -1,4 +1,4 @@
-
+﻿
 import {  useNavigate } from "react-router-dom";
 import {  useState } from "react";
 import "./style.css";
@@ -23,21 +23,21 @@ const TourBook = ( { cardItem, setCardItem }) => {
 const [formData, setFormData] = useState({ firstname: '',  lastname: '', email: '', phone: '', });
 
 const handleChange = (e) => {
-    const { name, value } = e.target; // извлекаем name и value из изменённого инпута
+    const { name, value } = e.target; // Ð¸Ð·Ð²Ð»ÐµÐºÐ°ÐµÐ¼ name Ð¸ value Ð¸Ð· Ð¸Ð·Ð¼ÐµÐ½Ñ‘Ð½Ð½Ð¾Ð³Ð¾ Ð¸Ð½Ð¿ÑƒÑ‚Ð°
 
     setFormData((prevData) => ({
-      ...prevData,     // копируем всё старое состояние
-      [name]: value,   // обновляем только то поле, у которого совпал name
+      ...prevData,     // ÐºÐ¾Ð¿Ð¸Ñ€ÑƒÐµÐ¼ Ð²ÑÑ‘ ÑÑ‚Ð°Ñ€Ð¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ
+      [name]: value,   // Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ñ‚Ð¾ Ð¿Ð¾Ð»Ðµ, Ñƒ ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð³Ð¾ ÑÐ¾Ð²Ð¿Ð°Ð» name
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Отправляемые данные:', formData);
+    console.log('ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ:', formData);
   };
 console.log(cardItem);
   return (
-    <div className="maincontents">
+    <div className="maincontent">
       <div className="hcontainer">
         <div className="hinfo">
           <div className="backoption">

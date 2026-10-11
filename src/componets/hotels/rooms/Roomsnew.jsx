@@ -82,14 +82,16 @@ const navigate = useNavigate();
     return <Icon />;
   };
 
-  const addCheckout = (offerId, roomname, totalamount) => {
+  const addCheckout = (offerId, roomname, totalamount, boardName, refundableTag) => {
     const guests = adults + children;
     const newItem = {
       offerId : offerId,
       hid: hotelId,
       imgurl: hotel.main_photo,
       roomName : roomname,
+      boardName: boardName,
       hotelName : hotel.name,
+      refundableTag : refundableTag,
       checkinDate : checkin,
       checkoutDate : checkout,
       adults : adults,
@@ -182,7 +184,7 @@ const navigate = useNavigate();
                             </div>
                           </div>
                           <div className="addCard">
-                            <button onClick={() => addCheckout(item.offerId, roomName, ratePrice)}>
+                            <button onClick={() => addCheckout(item.offerId, roomName, ratePrice, item.rate.boardName, item.rate.cancellationPolicies?.refundableTag)}>
                               <ShoppingCart />
                               Buy Now
                               

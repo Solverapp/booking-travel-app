@@ -35,6 +35,7 @@
     background-color: var(--white);
     z-index: 1;
     width: 332px;
+    max-width: calc(100vw - 32px);
     height: auto;
 }
 .dp-days{
@@ -75,7 +76,7 @@
 .wekday{
     display: grid;
 	grid-template-rows: 30px;
-	grid-template-columns: repeat(7, 40px);
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 0px 4px;
 	width: 100%;
 	height: 30px;
@@ -84,7 +85,8 @@
 }
 .wekday-block{
     display: flex;
-    padding: 0 8px 10px 8px;
+    justify-content: center;
+    padding: 0 2px 10px 2px;
     font-size: 16px;
     font-weight: 600;
     color: var(--gray_text);
@@ -92,18 +94,18 @@
 .days{
     display: grid;
 	grid-template-rows: 42px;
-	grid-template-columns: repeat(7, 40px);
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 0px 4.5px;
 	width: 100%;
-	height: 100%;
+    height: auto;
     
 
 }
 .days button{
-    width: 44px;
+    width: 100%;
     height: 42px;
     gap: 10px;
-    padding: 10px;
+    padding: 0;
     font-size: 16px;
     font-weight: 600;
     color: var(--black);

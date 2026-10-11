@@ -1,8 +1,7 @@
 Deno.serve(async (req) => {
-  // 1. Считываем ВСЕ секретные ключи, которые вы сохраните в Supabase
+  // 1. Извлекаем секретные ключи из защищенной среды Supabase
   const LITE_API_KEY = Deno.env.get("LITE_API_KEY");
-  const FLIGHTS_API_KEY = Deno.env.get("FLIGHTS_API_KEY"); // Ключ для авиабилетов
-  const TOURS_API_KEY = Deno.env.get("TOURS_API_KEY");     // Ключ для туров
+  const RAYNA_API_KEY = Deno.env.get("RAYNA_API_KEY");
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -15,25 +14,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 2. Получаем из заголовков полный URL и тип сервиса
-    const targetUrl = req.headers.get('x-target-url'); // Например: https://liteapi.travel
-    const serviceType = req.headers.get('x-service-type'); // Например: hotels, flights, tours
+    // 2. Получаем метаданные назначения из заголовков React
+    const targetUrl = req.headers.get('x-target-url');
+    const serviceType = req.headers.get('x-service-type'); // 'hotels' или 'tours'
 
     if (!targetUrl) throw new Error("Missing 'x-target-url' header");
-
-    // 3. Выбираем правильный секретный ключ в зависимости от сервиса
-    let apiKey = "";
-    let authHeaderName = "X-API-Key"; // По умолчанию для LiteAPI
-
-    if (serviceType === "flights") {
-      apiKey = FLIGHTS_API_KEY || "";
-      authHeaderName = "Authorization"; // Например, авиабилеты требуют 'Authorization: Bearer ...'
-    } else if (serviceType === "tours") {
-      apiKey = TOURS_API_KEY || "";
-      authHeaderName = "apikey"; // Например, туры требуют заголовок 'apikey'
-    } else {
-      apiKey = LITE_API_KEY || ""; // По умолчанию берем ключ отелей
-    }
 
     // Читаем тело запроса, если это не GET
     let bodyParams = null;
@@ -41,15 +26,18 @@ Deno.serve(async (req) => {
       bodyParams = await req.json();
     }
 
-    // 4. Формируем заголовки для внешнего сервиса
+    // 3. Формируем заголовки и динамически определяем авторизацию
     const headers: Record<string, string> = {
       'accept': 'application/json',
       'content-type': 'application/json'
     };
     
-    // Динамически подставляем нужный ключ под нужным именем заголовка
-    if (apiKey) {
-      headers[authHeaderName] = serviceType === "flights" ? `Bearer ${apiKey}` : apiKey;
+    if (serviceType === "tours") {
+      // Для Rayna Tour передаем ключ в заголовок Authorization в чистом виде
+      headers['Authorization'] = RAYNA_API_KEY || '';
+    } else {
+      // По умолчанию для LiteAPI отелей
+      headers['X-API-Key'] = LITE_API_KEY || '';
     }
 
     const requestOptions: RequestInit = {
@@ -61,7 +49,7 @@ Deno.serve(async (req) => {
       requestOptions.body = JSON.stringify(bodyParams);
     }
 
-    // 5. Отправляем запрос на любой адрес в интернете
+    // 4. Отправляем запрос на реальный сервер шлюза (LiteAPI или Rayna)
     const res = await fetch(targetUrl, requestOptions);
     const data = await res.json();
 

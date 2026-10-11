@@ -7,7 +7,8 @@
   background-color: var(--white);
   
 
-  width: 430px;
+  width: 100%;
+  min-width: 0;
   height: 100%;
 }
 .filter-box h3{
@@ -63,6 +64,8 @@ color: var(--red);
      align-items: flex-start;
     border-radius: 20px;
     height: 52px;
+    width: 100%;
+    min-width: 0;
 }
 .price-box input{
     width: 100%;
@@ -86,7 +89,8 @@ color: var(--red);
     border-bottom: solid 1px var(--gray_stoke);
     border-top-left-radius: 15px;
     border-bottom-left-radius: 15px;
-    width: 190px;
+    flex: 1;
+    min-width: 0;
 }
 .max{
     display: flex;
@@ -100,7 +104,8 @@ color: var(--red);
     border: solid 1px var(--gray_stoke);
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
-    width: 192px;
+    flex: 1;
+    min-width: 0;
 }
 
 .fb-amenities{
@@ -129,6 +134,8 @@ color: var(--red);
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 12px;
+    width: 100%;
+    min-width: 0;
     
 }
 .rating-btn{
@@ -143,8 +150,20 @@ color: var(--red);
     font-size: 16px;
     font-weight: 600;
     color: var(--black);
-    width: 185px;
+    /* flex-basis: 0 (как было у flex: 1) не даёт flex-wrap сработать —
+       элементы всегда «влезают» в строку и сжимаются. Нужен реальный basis */
+    flex: 1 1 160px;
+    min-width: 160px;
     height: 52px;
+}
+.rating-btn span{
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rating-btn img{
+    flex: none;
 }
 .rating-btn-active{
     display: flex;
@@ -158,7 +177,8 @@ color: var(--red);
     font-size: 16px;
     font-weight: 600;
     color: var(--black);
-    width: 185px;
+    flex: 1 1 160px;
+    min-width: 160px;
     height: 52px;
 }
 .fb-rating-box img{
@@ -234,9 +254,12 @@ color: var(--red);
     height: 48px;
 }
 .rating-box{
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
     justify-content: space-between;
     width: 100%;
+    min-width: 0;
     height: 52px;
 }
 .rating-item{
@@ -248,7 +271,8 @@ color: var(--red);
     border: solid 1px var(--gray_stoke);
     border-radius: 15px;
     
-    width: 70px;
+    width: 100%;
+    min-width: 0;
     height: 52px;
 }
 .rating-item img{
@@ -264,7 +288,8 @@ color: var(--red);
     border: solid 1px var(--gray_stoke);
     border-radius: 15px;
     
-    width: 70px;
+    width: 100%;
+    min-width: 0;
     height: 52px;
     background-color: var(--green);
     
@@ -272,4 +297,70 @@ color: var(--red);
 }
 .rating-item-actived p.bold{
     color: var(--white);
+}
+
+/* ============ Адаптив ============ */
+
+@media (max-width: 968px) {
+    /* 4 кнопки сортировки не влезают в один ряд — пусть переносятся */
+    .fb-rating-box {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 640px) {
+    .filter-box {
+        padding: 24px 16px;
+        gap: 24px;
+        border-radius: 20px;
+    }
+    .fb-heder {
+        height: auto;
+        padding-bottom: 16px;
+    }
+    .fb-heder h3 {
+        font-size: 18px;
+    }
+    /* На узком экране drawer уже — опускаем порог переноса,
+       чтобы кнопки шли по 2 в ряд, а не по одной */
+    .fb-rating-box {
+        gap: 8px;
+    }
+    .rating-btn,
+    .rating-btn-active {
+        padding-left: 12px;
+        padding-right: 10px;
+        font-size: 14px;
+        flex: 1 1 130px;
+        min-width: 130px;
+        height: 48px;
+    }
+    .rating-btn svg,
+    .rating-btn-active svg {
+        flex-shrink: 0;
+    }
+    .min {
+        padding-left: 12px;
+    }
+    .max {
+        padding-left: 12px;
+        padding-right: 10px;
+    }
+    .price-box input {
+        font-size: 14px;
+    }
+    .rating-item,
+    .rating-item-actived {
+        padding: 8px 4px;
+        gap: 4px;
+    }
+    .rating-item img {
+        width: 16px;
+        height: 16px;
+    }
+    .filter-checkbox {
+        font-size: 15px;
+        height: auto;
+        min-height: 24px;
+    }
 }

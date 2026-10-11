@@ -1,0 +1,59 @@
+/* Единые стили навбара для всех страниц (navbar + navbardark) */
+
+.nav-list-item,
+.nav-list-item-end {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	padding: 4px 28px 4px 0;
+}
+
+.nav-list-item {
+	border-right: solid 1px rgba(255, 255, 255, 0.3);
+}
+
+.nav-icons {
+	width: 32px;
+	height: 32px;
+	flex-shrink: 0;
+}
+
+.nav-icons-flag {
+	width: 32px;
+	height: 23px;
+	flex-shrink: 0;
+}
+
+/* Кнопка бургера */
+.nav-burger {
+	display: none;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+	width: 44px;
+	height: 44px;
+	padding: 10px;
+	cursor: pointer;
+	background: transparent;
+	flex-shrink: 0;
+}
+
+.nav-burger span {
+	display: block;
+	width: 24px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--white);
+	transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.nav-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.is-open span:nth-child(2) { opacity: 0; }
+.nav-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 1200px) {
+	.nav-burger {
+		display: flex;
+	}
+}

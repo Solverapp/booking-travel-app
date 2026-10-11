@@ -5,7 +5,14 @@ import { AccessTime, PeopleOutlined } from "@mui/icons-material";
 // Импортируем чистую функцию запроса слотов из вашего сервиса
 import { fetchTourSlots } from "../../services/raynaService";
 
-const Slots = ({ option, traveldate, isSlot, selectedSlot, handleSlotToggle, count }) => {
+const Slots = ({
+  option,
+  traveldate,
+  isSlot,
+  selectedSlot,
+  handleSlotToggle,
+  count,
+}) => {
   const [slotsData, setSlotsData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +21,12 @@ const Slots = ({ option, traveldate, isSlot, selectedSlot, handleSlotToggle, cou
 
   useEffect(() => {
     // Если слоты не нужны или параметров не хватает, очищаем массив и выходим
-    if (!isSlot || !traveldate || !option?.tourOptionId || !option?.transferId) {
+    if (
+      !isSlot ||
+      !traveldate ||
+      !option?.tourOptionId ||
+      !option?.transferId
+    ) {
       setSlotsData([]);
       return;
     }
@@ -31,7 +43,7 @@ const Slots = ({ option, traveldate, isSlot, selectedSlot, handleSlotToggle, cou
           tourOptionId: option.tourOptionId,
           transferId: option.transferId,
         });
-        
+
         setSlotsData(data);
       } catch (err) {
         setError("Failed to load slots");
@@ -55,27 +67,29 @@ const Slots = ({ option, traveldate, isSlot, selectedSlot, handleSlotToggle, cou
       ) : (
         slotsData.map((slot) => {
           const slotKey = slot.timeSlotId || slot.id || slot.timeSlot;
-          const slotLabel = slot.timeSlot || slot.slotName || slot.name || slot.time;
+          const slotLabel =
+            slot.timeSlot || slot.slotName || slot.name || slot.time;
           const isChecked = selectedSlot.id === slotKey;
           const slotDisabled = slot.available < count;
-          
-          const onChange = () => handleSlotToggle({
-            id: slotKey, 
-            opId: option.tourOptionId, 
-            count: slot.available, 
-            time: slotLabel
-          });
+
+          const onChange = () =>
+            handleSlotToggle({
+              id: slotKey,
+              opId: option.tourOptionId,
+              count: slot.available,
+              time: slotLabel,
+            });
 
           return (
-            <button 
+            <button
               className={`slot-checkbox ${isChecked ? "active" : ""}`}
-              onClick={onChange} 
-              key={slotKey} 
+              onClick={onChange}
+              key={slotKey}
               disabled={slotDisabled}
             >
-              <AccessTime/>
+              <AccessTime />
               <span>{slotLabel}</span>
-              <PeopleOutlined/>
+              <PeopleOutlined />
               <span>{slot.available}</span>
             </button>
           );

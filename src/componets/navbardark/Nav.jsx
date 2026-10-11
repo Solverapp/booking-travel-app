@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import  {useAuth}  from '../../context/AuthContext.jsx';
+import MobileMenu from "../mobilemenu/MobileMenu.jsx";
 import "./style.css";
 import logo from "../../img/logo/Solver.png";
 import ru from "../../img/icons/Navicons/ru.svg";
@@ -58,6 +59,7 @@ const NavBar = () => {
           <img src={message} className="nav-icons" />
         </div>
       </div>
+      <MobileMenu user={user} />
     </div>
   );
 };

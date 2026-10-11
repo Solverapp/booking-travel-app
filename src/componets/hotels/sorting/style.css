@@ -4,7 +4,8 @@
     align-items: flex-start;
     gap: 16px;
     width: 100%;
-    height: 45px;
+    min-height: 45px;
+    height: auto;
 }
 .sorting-box{
     display: flex;
@@ -50,4 +51,62 @@
 }
 .sorting-box button:hover{
     border-color: var(--green);
+}
+
+/* ============ Адаптив ============ */
+
+@media (max-width: 1200px) {
+    .sorting-box {
+        gap: 8px;
+    }
+    .sorting-btn,
+    .sorting-btn-active {
+        padding-left: 12px;
+        padding-right: 10px;
+        font-size: 15px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 968px) {
+    .sorting {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+}
+
+/* На телефоне — сетка 2×2, иначе длинные подписи обрезаются */
+@media (max-width: 640px) {
+    .sorting-box {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+    .sorting-btn,
+    .sorting-btn-active {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        padding: 8px 10px;
+        font-size: 13px;
+        gap: 4px;
+        justify-content: center;
+    }
+    .sorting-btn span,
+    .sorting-btn-active span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sorting-btn img,
+    .sorting-btn-active img {
+        flex-shrink: 0;
+    }
+    .sorting-btn svg,
+    .sorting-btn-active svg {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
 }

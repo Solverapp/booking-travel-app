@@ -1,15 +1,21 @@
 .sop-box-dpicker{
     display: flex;
     
-    align-items: flex-start;
+    align-items: stretch;
     
     border-radius: 20px;
-    width: 416px;
+    flex: 1.8 1 220px;
+    min-width: 0;
+    width: auto;
 }
 .sop-box-dpicker span{
     color: var(--black);
     font-size: 16px;
     font-weight: 600;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .dpicker-checkin{
     display: flex;
@@ -24,7 +30,8 @@
     border-bottom: solid 1px var(--gray_stoke);
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
-    width: 207px;
+    flex: 1 1 0;
+    min-width: 0;
 }
 .dpicker-checout{
     display: flex;
@@ -38,7 +45,8 @@
     border: solid 1px var(--gray_stoke);
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;
-    width: 207px;
+    flex: 1 1 0;
+    min-width: 0;
 }
 .dp-wrapper {
 	position: relative;
@@ -68,6 +76,8 @@
     background-color: var(--white);
     z-index: 1;
     width: 332px;
+    /* Не шире экрана, иначе popup вылезает за вьюпорт */
+    max-width: calc(100vw - 32px);
     height: auto;
 }
 .dp-days{
@@ -108,7 +118,7 @@
 .wekday{
     display: grid;
 	grid-template-rows: 30px;
-	grid-template-columns: repeat(7, 40px);
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 0px 4px;
 	width: 100%;
 	height: 30px;
@@ -117,7 +127,8 @@
 }
 .wekday-block{
     display: flex;
-    padding: 0 8px 10px 8px;
+    justify-content: center;
+    padding: 0 2px 10px 2px;
     font-size: 16px;
     font-weight: 600;
     color: var(--gray_text);
@@ -125,18 +136,18 @@
 .days{
     display: grid;
 	grid-template-rows: 42px;
-	grid-template-columns: repeat(7, 40px);
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 0px 4.5px;
 	width: 100%;
-	height: 100%;
+    height: auto;
     
 
 }
 .days button{
-    width: 44px;
+    width: 100%;
     height: 42px;
     gap: 10px;
-    padding: 10px;
+    padding: 0;
     font-size: 16px;
     font-weight: 600;
     color: var(--black);
@@ -175,4 +186,21 @@
     border-bottom-right-radius: 15px;
     background-color: var(--green);
     color: var(--white) !important;
+}
+
+@media (max-width: 968px) {
+    .sop-box-dpicker {
+        flex: none;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+    /* Календарь привязан к .dp-wrapper внутри левой половины поля,
+       поэтому ширина фиксирована (не 100% — родитель ~половина поля),
+       но ограничена вьюпортом */
+    .date-wrapper {
+        left: 0;
+        width: 332px;
+        max-width: calc(100vw - 32px);
+    }
 }

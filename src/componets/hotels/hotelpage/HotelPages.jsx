@@ -1,4 +1,4 @@
-import { useSearchParams, useNavigate } from "react-router-dom";
+﻿import { useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import "./style.css";
 import { Rating } from "@mui/material";
@@ -11,10 +11,9 @@ import left from "../../../img/icons/tabicons/arrow-left.svg";
 import search from "../../../img/icons/tabicons/search-normal.svg";
 import loc from "../../../img/icons/tabicons/location.svg";
 import faf from "../../../img/icons/Hotelicons/heart.svg";
-import share from "../../../img/icons/Hotelicons/share.svg";
+import Share from "../../../img/icons/Hotelicons/share.svg";
 
-// Импортируем наш сервис
-// import { hotelService } from "../../../services/hotelService";
+// Ð˜Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ñˆ ÑÐµÑ€Ð²Ð¸Ñ
 import { hotelService } from "../../../services/SupebaseService";
 import { hotelIdService } from "../../../services/SupebaseHotelIdService";
 
@@ -154,8 +153,8 @@ console.log(data);
 console.log(hotel);
 
   return (
-    <div className="hmaincontent">
-      <div className="hpagecontainer">
+    <div className="maincontent">
+      <div className="hcontainer">
         {loading ? (
           <div className="loader-not">
             <Loader />
@@ -202,7 +201,7 @@ console.log(hotel);
                     </button>
                     <button><span>Show on map</span></button>
                     <button>
-                      <img src={share} alt="share" />
+                      <img src={Share} alt="share" />
                       <span>Share</span>
                     </button>
                   </div>
@@ -219,7 +218,7 @@ console.log(hotel);
                     <span>Add to favorites</span>
                   </button>
                   <button>
-                    <img src={share} alt="share" />
+                    <img src={Share} alt="share" />
                     <span>Share</span>
                   </button>
                 </div>

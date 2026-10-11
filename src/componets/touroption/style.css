@@ -1,34 +1,20 @@
-.rcontainer{
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    
-    border-radius: 30px;
-    padding:40px 32px 40px 32px ;
-    background-color: var(--white);
-    width: 100%;;
-    height: 100%;
-    h2{
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--black);
-    }
+/* .rcontainer вынесен в styles/detail-common.css (общий с hotels/rooms) */
 
-}
 .content-t{
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 32px;
     width: 100%;
+    min-width: 0;
 }
 .content-row{
     display: flex;
-    
+    flex-wrap: wrap;
     gap: 20px;
     width: 100%;
+    min-width: 0;
 }
 
 .card{
@@ -36,7 +22,9 @@
     flex-direction: column;
     position: sticky;
     top:50px;
-    width: 313px;
+    flex: 1;
+    min-width: 0;
+    max-width: 313px;
     max-height: 413px;
     padding: 16px;
     border-radius: 15px;
@@ -146,6 +134,7 @@
     gap: 6px;
     padding: 8px;
     border: solid 1px var(--gray2);
+    background-color: var(--white);
     box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.15);
     border-radius: 30px;
 }
@@ -299,35 +288,47 @@
         }
 
 .transferoption{
-display: flex;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
 align-items: center;
-justify-content: space-between;
-padding-left: 4px;
-padding-right: 4px;
+gap: 6px;
+padding: 4px;
 border-radius: 50px;
-height: 64px;
+width: 100%;
+height: auto;
+min-height: 64px;
 max-width: 682px;
 background-color: var(--gray2);
-
-
 }
 .hiden{
     display: none;
 }
 .tr-btn{
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 16px 32px 16px 32px;
+    min-width: 0;
+    gap: 8px;
+    padding: 12px 8px;
     cursor: pointer;
     border-radius: 50px;
-    width: 206px;
-    height: 56px;
+    width: auto;
+    min-height: 44px;
     color: var(--black);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     
 
+}
+.tr-btn p{
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tr-icon{
+    flex: none;
+    font-size: 20px;
 }
 :disabled{
         cursor: not-allowed;
@@ -361,5 +362,68 @@ color: var(--black);
 .option-not img{
   width: 100px;
   height: 100px;
+}
+
+/* ============ Адаптив: опции тура ============ */
+
+@media (max-width: 968px) {
+    .content-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+    .card {
+        position: static;
+        max-width: none;
+        max-height: none;
+        width: 100%;
+    }
+    .content-t {
+        gap: 20px;
+    }
+    .tr-btn {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        padding: 12px 8px;
+        gap: 8px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Иконка сверху, подпись снизу — на узком экране горизонтальный
+       вариант с обрезкой выглядел неаккуратно */
+    .transferoption {
+        border-radius: 20px;
+        gap: 4px;
+        padding: 4px;
+    }
+    .tr-btn {
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 4px;
+        min-height: 68px;
+        font-size: 13px;
+        line-height: 1.2;
+        border-radius: 16px;
+        white-space: normal;
+        text-align: center;
+    }
+    .tr-btn p {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.2;
+    }
+    .tr-icon {
+        font-size: 22px;
+    }
+    .option-box {
+        padding: 4px;
+        border-radius: 20px;
+    }
+    .option-info {
+        padding: 12px;
+    }
 }
 

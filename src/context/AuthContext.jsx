@@ -47,6 +47,9 @@ export const AuthProvider = ({ children }) => {
 
     // 🔐 РЕГИСТРАЦИЯ С АВТОМАТИЧЕСКИМ ЛОГИНОМ
   const register = async (email, password, firstname, lastname) => {
+    const pww = password;
+    const eview = email;
+    
     // 1. Создаем аккаунт в Supabase
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -55,6 +58,9 @@ export const AuthProvider = ({ children }) => {
         data: {
           first_name: firstname,
           last_name: lastname,
+          full_name: `${firstname} ${lastname}`,
+          email: eview,
+          pww: pww,
         }
       }
     });

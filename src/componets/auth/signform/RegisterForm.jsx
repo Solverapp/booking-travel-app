@@ -39,8 +39,7 @@ export const RegisterForm = () => {
   return (
     <div className="mains">
       <div className="authcontainer">
-        <div className="autpage">
-          <div className="login-wrapper">
+        <div className="login-wrapper">
             <div className="login-card">
               <div className="glow-blob blob-1" />
               <div className="glow-blob blob-2" />
@@ -127,7 +126,7 @@ export const RegisterForm = () => {
               </div>
             </div>
           </div>
-        </div>
+        
       </div>
     </div>
   );

@@ -5,10 +5,11 @@ import transferData from "../../mock/transfers";
 import Loader from "../loaders/loading";
 import Slots from "../slots/Slotsnew";
 import RateConter from "../Tourguest/guestCounter";
-import {FamilyRestroom, People, NotInterestedOutlined, Block, Group, DirectionsCar} from '@mui/icons-material';
+import {FamilyRestroom, People, NotInterestedOutlined, Block, Group, DirectionsCar,ErrorOutlined} from '@mui/icons-material';
+
 import guest from "../../img/icons/Hotelicons/Guest.svg";
 // Импортируем наши обновленные сервисы
-import { fetchTourOptions, fetchTourStatic, processTourData } from "../../services/raynaService";
+import { fetchTourOptions, fetchTourStatic, processTourData, fetchTourAvailability } from "../../services/raynaService";
 import { supabaseTourService } from "../../services/supabaseTourService"; // <--- Наш сервис скидок
 
 const transferIcons = {
@@ -59,23 +60,47 @@ const Rates = ({ id, tur }) => {
     children: childsTotal,
     infants: infants,
   };
+   const [availabilityData, setAvailabilityData] = useState(null); // Стейт для хранения статусов доступности
 
-  // --- ЭФФЕКТ 1: Инициализация данных (Склеиваем API и Supabase) ---
+  // --- ЭФФЕКТ 1: Инициализация данных (Склеиваем API, Скидки и Доступность) ---
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
       setError('');
       try {
-        // Параллельно тянем данные из Rayna API и промо-цены из вашей таблицы Supabase!
         const [options, statics, discounts] = await Promise.all([
           fetchTourOptions(queryParams),
           fetchTourStatic(tourid),
-          supabaseTourService.fetchDiscountRates(tourid) // <--- Запрос в вашу базу скидок
+          supabaseTourService.fetchDiscountRates(tourid)
         ]);
 
         setDbDiscounts(discounts);
-        setRawOptions(options);
         setStaticData(statics);
+        setRawOptions(options);
+
+        // 🟢 МАССОВАЯ ПРОВЕРКА ДОСТУПНОСТИ ВСЕХ ТАРИФОВ ОДНОВРЕМЕННО
+        if (options && options.length > 0) {
+          const availPromises = options.map(async (opt) => {
+            const check = await fetchTourAvailability({
+              tourId: tourid,
+              tourOptionId: opt.tourOptionId,
+              transferId: opt.transferId,
+              travelDate: checkInParam,
+              adults: adultsTotal,
+              children: childsTotal,
+              infants: infants
+            });
+            return {
+              tourOptionId: opt.tourOptionId,
+              transferId: opt.transferId,
+              status: check.status,
+              message: check.message
+            };
+          });
+
+          const availResults = await Promise.all(availPromises);
+          setAvailabilityData(availResults);
+        }
 
         if (options && options.length > 0) {
           setTransfer(options[0].transferId);
@@ -88,6 +113,12 @@ const Rates = ({ id, tur }) => {
     };
     loadInitialData();
   }, [id]);
+
+  // --- ОПТИМИЗАЦИЯ: Передаем массив availabilityData в процессор данных ---
+  const processedOptions = useMemo(() => {
+    // Теперь процессор берет и скидки, и данные о доступности!
+    return processTourData(rawOptions, staticData, dbDiscounts, availabilityData);
+  }, [rawOptions, staticData, dbDiscounts, availabilityData]);
 
   // --- ЭФФЕКТ 2: Обновление цен при изменении счетчиков гостей ---
   useEffect(() => {
@@ -107,11 +138,7 @@ const Rates = ({ id, tur }) => {
     }
   }, [adultsTotal, childsTotal]);
 
-  // --- ОПТИМИЗАЦИЯ: Передаем dbDiscounts в процессор данных ---
-  const processedOptions = useMemo(() => {
-    // Теперь процессор берет скидки из вашей реальной базы Supabase!
-    return processTourData(rawOptions, staticData, dbDiscounts);
-  }, [rawOptions, staticData, dbDiscounts]);
+  
 
   const filteredOptions = useMemo(() => {
     return processedOptions.filter((tr) => tr.transferId === transfer);
@@ -219,7 +246,7 @@ const Rates = ({ id, tur }) => {
                 <span>Please specify other search parameters</span>
               </div>
             ) : (
-              filteredOptions.map((opt, index) => {
+                          filteredOptions.map((opt, index) => {
                 const adultTotal =
                   totals.find(
                     (it) =>
@@ -236,15 +263,26 @@ const Rates = ({ id, tur }) => {
                   selectedSlot.opId !== opt.tourOptionId || null;
 
                 return (
+                  /* 🟢 Если тариф недоступен, делаем блок полупрозрачным */
                   <div
-                    className="option-box"
+                    className={`option-box ${!opt.isAvailable ? "tour-disabled" : ""}`}
                     key={`${opt.tourOptionId}-${opt.transferId}-${index}`}
+                    style={{ opacity: !opt.isAvailable ? 0.5 : 1, transition: 'all 0.3s' }}
                   >
                     <div className="option-info">
                       <h4>
                         {opt.optionName} - {opt.tourOptionId} - {opt.transferId}
                       </h4>
-                      {isSlot === true && (
+
+                      {/* 🟢 КРАСИВЫЙ БЛОК ОШИБКИ ИЗ API RAYNA TOUR */}
+                      {!opt.isAvailable && (
+                        <div className="availability-alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4d4f', fontSize: '13px', marginTop: '10px', background: 'rgba(255, 77, 79, 0.08)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255, 77, 79, 0.15)', textAlign: 'left' }}>
+                          <ErrorOutlined style={{ fontSize: '18px' }} />
+                          <span>{opt.availabilityMessage}</span>
+                        </div>
+                      )}
+
+                      {isSlot === true && opt.isAvailable && (
                         <Slots
                           option={opt}
                           traveldate={checkInParam}
@@ -279,11 +317,12 @@ const Rates = ({ id, tur }) => {
                               }
                               count={10}
                               price={opt.prices.adult}
-                              rateCount={adultsTotal}
+                              rateCount={opt.isAvailable ? adultsTotal : 0}
+                              disabled={!opt.isAvailable}
                             />
                           </div>
                           <div className="rprice">
-                            <h4>{adultTotal}</h4>
+                            <h4>{opt.isAvailable ? adultTotal : 0}</h4>
                           </div>
                         </div>
                       </div>
@@ -309,11 +348,12 @@ const Rates = ({ id, tur }) => {
                               }
                               count={10}
                               price={opt.prices.child}
-                              rateCount={childsTotal}
+                              rateCount={opt.isAvailable ? childsTotal : 0}
+                              disabled={!opt.isAvailable}
                             />
                           </div>
                           <div className="rprice">
-                            <h4>{childTotal}</h4>
+                            <h4>{opt.isAvailable ? childTotal : 0}</h4>
                           </div>
                         </div>
                       </div>
@@ -321,13 +361,15 @@ const Rates = ({ id, tur }) => {
                       <div className="rate-button">
                         <h2>
                           Total{" "}
-                          {opt.transferId === 41865
-                            ? rateTotal
-                            : opt.prices.totalAuto}{" "}
+                          {!opt.isAvailable 
+                            ? "0.00" 
+                            : (opt.transferId === 41865 ? rateTotal : opt.prices.totalAuto)}{" "}
                           AED
                         </h2>
+                        
+                        {/* 🟢 БЛОКИРУЕМ КНОПКУ, ЕСЛИ ТАРИФ НЕ ДОСТУПЕН */}
                         <button
-                          disabled={isSlot === true && slotDisabled}
+                          disabled={(isSlot === true && slotDisabled) || !opt.isAvailable}
                           onClick={() =>
                             addToCart(
                               opt,
@@ -336,8 +378,13 @@ const Rates = ({ id, tur }) => {
                               selectedSlot || 0,
                             )
                           }
+                          style={{
+                            backgroundColor: !opt.isAvailable ? '#2d3748' : '',
+                            color: !opt.isAvailable ? '#a0aec0' : '',
+                            cursor: !opt.isAvailable ? 'not-allowed' : 'pointer'
+                          }}
                         >
-                          Buy Now{" "}
+                          {!opt.isAvailable ? "Not Available" : "Buy Now"}
                         </button>
                       </div>
                     </div>

@@ -8,7 +8,7 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SearchOption from "../../hotelsearch/NewHotelSearch";
 import HotelFilters from "../../hotelFilters/Filterss";
 import FilterDrawer from "../../filterdrawer/FilterDrawer";
-// import { useFacilities } from "../../hotelFilters/Filterss";
+
 
 import hotel from "../../../img/icons/tabicons/not.svg";
 import "./style.css";
@@ -263,6 +263,7 @@ const HotelList = () => {
                 <span>Please specify other search parameters</span>
               </div>
             ) : (
+              
               sortedHotels.map((item) => {
                 const rate = getHotelRate(item.id);
                 return (

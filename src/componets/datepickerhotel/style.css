@@ -1,14 +1,16 @@
-.sop-box-dpicker{
+/* Обёртка поля дат отеля (check-in / check-out).
+   Сетка календаря и общая оболочка полей — в src/componets/datepicker/style.css
+   (единый источник, использовался дубль до рефакторинга). */
+
+.sop-box-dpicker {
     display: flex;
-    
     align-items: stretch;
-    
     border-radius: 20px;
     flex: 1.8 1 220px;
     min-width: 0;
     width: auto;
 }
-.sop-box-dpicker span{
+.sop-box-dpicker span {
     color: var(--black);
     font-size: 16px;
     font-weight: 600;
@@ -17,7 +19,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.dpicker-checkin{
+.dpicker-checkin {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -33,7 +35,7 @@
     flex: 1 1 0;
     min-width: 0;
 }
-.dpicker-checout{
+.dpicker-checout {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -48,145 +50,6 @@
     flex: 1 1 0;
     min-width: 0;
 }
-.dp-wrapper {
-	position: relative;
-    width: 100%;
-}
-
-.dp{
-    display: flex;
-    width: 100%;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--black);
-}
-
-
-.date-wrapper{
-    display: flex;
-    flex-direction: column;
-    
-    position: absolute;
-    left: -23px;
-	top: 38px;
-    text-align:left ;
-    padding: 16px 12px 12px 12px;
-    border: solid 1px var(--light_gray);
-    border-radius: 30px;
-    background-color: var(--white);
-    z-index: 1;
-    width: 332px;
-    /* Не шире экрана, иначе popup вылезает за вьюпорт */
-    max-width: calc(100vw - 32px);
-    height: auto;
-}
-.dp-days{
-    margin-top: 10px;
-   
-}
-.month{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 12px;
-    height: 52px;
-    width: 100%;
-}
-.month span{
-    font-size: 18px;
-    font-weight: 700;
-
-}
-.month-btn-left{
-    width: 40px;
-    height: 40px;
-    padding: 8px;
-}
-.month-btn-left image{
-    width: 24px;
-    height: 24px;
-}
-.month-btn-right{
-    width: 40px;
-    height: 40px;
-    padding: 8px;
-}
-.month-btn-right image{
-    width: 24px;
-    height: 24px;
-}
-.wekday{
-    display: grid;
-	grid-template-rows: 30px;
-	grid-template-columns: repeat(7, minmax(0, 1fr));
-	gap: 0px 4px;
-	width: 100%;
-	height: 30px;
-    padding-bottom: 8px;
-
-}
-.wekday-block{
-    display: flex;
-    justify-content: center;
-    padding: 0 2px 10px 2px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--gray_text);
-}
-.days{
-    display: grid;
-	grid-template-rows: 42px;
-	grid-template-columns: repeat(7, minmax(0, 1fr));
-	gap: 0px 4.5px;
-	width: 100%;
-    height: auto;
-    
-
-}
-.days button{
-    width: 100%;
-    height: 42px;
-    gap: 10px;
-    padding: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--black);
-    cursor: pointer;
-    border: none;
-   
-}
-
-
-.days button:hover{
-    background-color: #1535341A;
-    border-radius: 15px;
-    
-}
-.disabled {
-  color: var(--gray_stoke) !important;
-  cursor: not-allowed !important;
-  background-color: transparent !important;
-  pointer-events: none !important;
-}
-
-.disabled:hover {
-  background-color: transparent !important;
-}
-.check-in{
-    border-top-left-radius: 15px;
-    border-bottom-left-radius: 15px;
-    background-color: var(--green);
-    color: var(--white)!important;
-}
-.in-range{
-    background-color: #1535341A;
-}
-.check-out{
-    border-top-right-radius: 15px;
-    border-bottom-right-radius: 15px;
-    background-color: var(--green);
-    color: var(--white) !important;
-}
 
 @media (max-width: 968px) {
     .sop-box-dpicker {
@@ -194,13 +57,5 @@
         width: 100%;
         max-width: none;
         min-width: 0;
-    }
-    /* Календарь привязан к .dp-wrapper внутри левой половины поля,
-       поэтому ширина фиксирована (не 100% — родитель ~половина поля),
-       но ограничена вьюпортом */
-    .date-wrapper {
-        left: 0;
-        width: 332px;
-        max-width: calc(100vw - 32px);
     }
 }

@@ -1,0 +1,157 @@
+/* Счётчики гостей (GuestsContent) — единый стиль для попапа и нижней шторки.
+   Всё в scope .gcontent: классы .counter-btn / .item-counter есть ещё в
+   roomcounter/style.css с другими размерами (26px) — без scope они перетирают друг друга. */
+
+.gcontent-popup {
+    position: absolute;
+    left: -13px;
+    top: 38px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+    padding: 32px 24px;
+    border: solid 1px var(--light_gray);
+    border-radius: 20px;
+    background-color: var(--white);
+    z-index: 1;
+    width: 362px;
+    max-width: calc(100vw - 32px);
+    height: auto;
+    box-sizing: border-box;
+}
+
+.gcontent-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+}
+
+.gcontent .selector-box {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.gcontent .selector-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    min-height: 46px;
+}
+
+.gcontent .selector-item p {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--black);
+}
+
+.gcontent .selector-item span {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gray_text);
+}
+
+.gcontent .item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.gcontent .item-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 142px;
+    flex-shrink: 0;
+}
+
+.gcontent .item-counter button:disabled {
+    opacity: 0.35;
+}
+
+.gcontent .counter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+}
+
+.gcontent .counter-btn img {
+    width: 46px;
+    height: 46px;
+}
+
+.gcontent .selector-ages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gcontent .ages-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gcontent .ages-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.gcontent .ages-box span {
+    font-size: 14px;
+    color: var(--gray_text);
+}
+
+.gcontent .age-select {
+    border: solid 1px var(--gray_text);
+    border-radius: 8px;
+    padding: 6px 8px;
+    min-height: 36px;
+    background: var(--white);
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .gcontent-popup {
+        left: 0;
+        width: 100%;
+        padding: 20px 16px;
+    }
+
+    .gcontent-sheet {
+        gap: 14px;
+    }
+
+    .gcontent .selector-box {
+        gap: 18px;
+    }
+
+    /* Тап-цели на телефоне */
+    .gcontent .counter-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .gcontent .counter-btn img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .gcontent .age-select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+}

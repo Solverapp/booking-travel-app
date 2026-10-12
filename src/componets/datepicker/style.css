@@ -1,25 +1,4 @@
-.dp-box{
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 12px 16px 12px 16px;
-    border: solid 1px var(--gray_stoke);
-    border-radius: 20px;
-    min-width: 248px;
-}
-.dp-wrapper {
-	position: relative;
-    width: 100%;
-}
-.dp{
-    display: flex;
-    width: 100%;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--black);
-}
-
+/* Оболочка полей (.dp-box, .dp-wrapper, .dp) — в src/styles/field-common.css */
 
 .date-wrapper{
     display: flex;
@@ -151,4 +130,44 @@
     border-bottom-right-radius: 15px;
     background-color: var(--green);
     color: var(--white) !important;
+}
+
+/* Контент в нижней шторке: статичный, во всю ширину (без absolute-попапа) */
+.calendar-sheet {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+}
+.calendar-sheet .dp-days {
+    margin-top: 0;
+}
+.calendar-sheet .month {
+    height: auto;
+    padding-bottom: 8px;
+}
+.calendar-sheet .days button {
+    height: 44px;
+    border-radius: 12px;
+}
+
+@media (max-width: 968px) {
+    /* Попап привязан к половине поля дат отеля — сдвиг влево уводил его за экран */
+    .date-wrapper {
+        left: 0;
+        width: 332px;
+        max-width: calc(100vw - 32px);
+    }
+}
+
+@media (max-width: 640px) {
+    .calendar-sheet .days button {
+        height: 42px;
+        font-size: 15px;
+    }
+    .calendar-sheet .wekday-block {
+        font-size: 14px;
+        padding-bottom: 6px;
+    }
 }

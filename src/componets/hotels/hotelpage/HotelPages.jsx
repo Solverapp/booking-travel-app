@@ -11,7 +11,7 @@ import left from "../../../img/icons/tabicons/arrow-left.svg";
 import search from "../../../img/icons/tabicons/search-normal.svg";
 import loc from "../../../img/icons/tabicons/location.svg";
 import faf from "../../../img/icons/Hotelicons/heart.svg";
-import Share from "../../../img/icons/Hotelicons/share.svg";
+
 
 // Ð˜Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ñˆ ÑÐµÑ€Ð²Ð¸Ñ
 import { hotelService } from "../../../services/SupebaseService";
@@ -173,11 +173,7 @@ console.log(hotel);
                 <img src={left} alt="back" />
                 <span>Back</span>
               </button>
-              <button>
-                <img src={search} alt="new search" />
-                <span>New search</span>
-              </button>
-            </div>
+              </div>
             
             <div className="infoheder">
               <div className="hederleft">
@@ -200,28 +196,16 @@ console.log(hotel);
                       <span>{`${hotel.city || ""}, ${hotel.country || ""}`}</span>
                     </button>
                     <button><span>Show on map</span></button>
-                    <button>
-                      <img src={Share} alt="share" />
-                      <span>Share</span>
-                    </button>
+                    
                   </div>
                   <div className="info-left-star">
-                    <span>6.3 km from the center . Near the metro</span>
+                    <span>6.3 km from the center</span>
                   </div>
                 </div>
               </div>
               
               <div className="hederrigth">
-                <div className="hederrigth-btn">
-                  <button>
-                    <img src={faf} alt="faf" />
-                    <span>Add to favorites</span>
-                  </button>
-                  <button>
-                    <img src={Share} alt="share" />
-                    <span>Share</span>
-                  </button>
-                </div>
+                
                 <div className="hederpricehotel">
                   {rates.length > 0 && rates[0]?.offerInitialPrice ? (
                     <h1>from {rates[0].offerInitialPrice.amount} AED</h1>

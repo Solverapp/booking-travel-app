@@ -76,26 +76,14 @@ const handleBack = () => {
                     <span>{`${tour.cityName},${tour.countryName}`}</span>
                   </button>
                   <button>
-                    <span>Show on map</span>
-                  </button>
-                  <button>
-                    <Share/>
-                    <span>Share</span>
+                    <FavoriteBorder/>
+                    <span>Add to favorites</span>
                   </button>
                 </div>
               </div>
             </div>
             <div className="hederrigth">
-              <div className="hederrigth-btn">
-                <button>
-                  <FavoriteBorder/>
-                  <span>Add to favorites</span>
-                </button>
-                <button>
-                  <Share/>
-                  <span>Share</span>
-                </button>
-              </div>
+              
               <div className="hederprice">
                 <h1>from {`${formatPrice(tour.price)}`} AED</h1>
                 

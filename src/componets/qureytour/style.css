@@ -47,9 +47,6 @@
     width: 372px;
     min-height: 220px;
 }
-.dest-wrapper--hidden {
-	display: none;
-}
 .dest-wrapper p{
     font-size: 14px;
     font-weight: 400;
@@ -78,6 +75,29 @@
 .list-itemleft{
     display: flex;
     gap: 12px;
+}
+
+/* Режим нижней шторки: список идёт в потоке, а не попапом под инпутом.
+   Специфичность .dropdown .dest-wrapper--sheet (0,2,0) перебивает
+   .dest-wrapper из медиа-блока ниже (0,1,0). */
+.dropdown .dest-wrapper--sheet {
+    position: static;
+    left: auto;
+    top: auto;
+    margin-top: 12px;
+    width: 100%;
+    min-height: 0;
+    max-height: 46dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
+    border-radius: 14px;
+}
+.dropdown .dest-wrapper--sheet .dest__list-item {
+    min-height: 44px;
+    height: auto;
+    padding: 10px;
+    box-sizing: border-box;
 }
 
 @media (max-width: 968px) {

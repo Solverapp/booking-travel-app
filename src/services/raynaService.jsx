@@ -8,13 +8,57 @@ export const roundTo = (num, places = 2) => {
   return Math.round(num * factor) / factor;
 };
 
-// 1. Безопасный запрос динамических опций и цен через Supabase
+// 🟢 1. НОВЫЙ МЕТОД: Проверка доступности тарифа через Supabase шлюз
+export async function fetchTourAvailability(params) {
+  try {
+    const response = await supabase.functions.invoke('liteapi-proxy', {
+      method: 'POST',
+      headers: {
+        'x-target-url': `${BASE_URL}/availability`,
+        'x-service-type': 'tours'
+      },
+      body: {
+        tourId: Number(params.tourId),
+        tourOptionId: Number(params.tourOptionId),
+        transferId: Number(params.transferId),
+        travelDate: params.travelDate,
+        adult: Number(params.adults || 1),
+        child: Number(params.children || 0),
+        infant: Number(params.infants || 0),
+        contractId: 300
+      }
+    });
+
+    if (response.error) {
+      return { status: "error", message: "Availability check failed" };
+    }
+
+    const resObj = response.data?.result;
+    
+    // Приводим к строке и очищаем от пробелов
+    const status = String(resObj?.status || "").toLowerCase().trim();
+
+    console.log(`Фильтрованный статус для опции ${params.tourOptionId}:`, status);
+
+    // 🟢 УЛУЧШЕННОЕ УСЛОВИЕ: Считаем доступным, если статус "success", "1" или "true"
+    const isSuccess = status === "success" || status === "1" || status === "true";
+
+    return {
+      status: isSuccess ? "success" : "unavailable",
+      message: resObj?.message || "This option is currently not available."
+    };
+  } catch (err) {
+    return { status: "error", message: "System error checking availability" };
+  }
+}
+
+// 2. Безопасный запрос динамических опций и цен через Supabase
 export async function fetchTourOptions(params) {
   const response = await supabase.functions.invoke('liteapi-proxy', {
     method: 'POST',
     headers: {
       'x-target-url': `${BASE_URL}/touroption`,
-      'x-service-type': 'tours' // Шлюз подставит RAYNA_API_KEY
+      'x-service-type': 'tours'
     },
     body: {
       tourId: params.tourId,
@@ -30,7 +74,7 @@ export async function fetchTourOptions(params) {
   return response.data?.result || [];
 }
 
-// 2. Безопасный запрос статических данных тура через Supabase
+// 3. Безопасный запрос статических данных тура через Supabase
 export async function fetchTourStatic(tourId) {
   const response = await supabase.functions.invoke('liteapi-proxy', {
     method: 'POST',
@@ -48,7 +92,7 @@ export async function fetchTourStatic(tourId) {
   return response.data?.result?.touroption || [];
 }
 
-// 3. Безопасный запрос тайм-слотов через Supabase
+// 4. Безопасный запрос тайм-слотов через Supabase
 export async function fetchTourSlots(params) {
   const response = await supabase.functions.invoke('liteapi-proxy', {
     method: 'POST',
@@ -69,62 +113,48 @@ export async function fetchTourSlots(params) {
   return Array.isArray(response.data?.result) ? response.data.result : [];
 }
 
-// Улучшенный процессор данных: строгое и безопасное сравнение с базой Supabase
-export function processTourData(options, staticData, dbDiscounts = []) {
-  // Хелпер для очистки и безопасного превращения любого ID в чистую строку
+// 🟢 5. ОБНОВЛЕННЫЙ ПРОЦЕССОР ДАННЫХ: Принимает массив результатов доступности
+export function processTourData(options, staticData, dbDiscounts = [], availabilityList = []) {
   const cleanId = (value) => String(value ?? "").trim().toLowerCase();
-
-  // Если из базы прилетел пустой массив или null, маппим стандартные цены от API
-  if (!dbDiscounts || dbDiscounts.length === 0) {
-    return options.map((opt) => {
-      const staticInfo = staticData.find((s) => cleanId(s.tourOptionId) === cleanId(opt.tourOptionId));
-      return {
-        ...opt,
-        optionName: staticInfo?.optionName || "Unknown Option",
-        prices: {
-          adult: roundTo(opt.adultPrice * COMISSION),
-          child: roundTo(opt.childPrice * COMISSION),
-          totalAuto: roundTo(opt.finalAmount * COMISSION),
-        },
-      };
-    });
-  }
 
   return options.map((opt) => {
     const staticInfo = staticData.find((s) => cleanId(s.tourOptionId) === cleanId(opt.tourOptionId));
     
-    // СВЕРЯЕМ СТРОГО ПО tourOptionId (Убираем проверку transfer_id, чтобы типы данных не конфликтовали)
+    // Сверяем скидки Supabase
     const discountOpt = dbDiscounts.find(
       (d) => cleanId(d.tour_option_id) === cleanId(opt.tourOptionId)
     );
 
-    // Если нашли точное совпадение тарифа и типа трансфера в нашей базе скидок Supabase
-    if (discountOpt) {
-      console.log(`🔥 СКИДКА НАЙДЕНА для тарифа ${opt.tourOptionId} с трансфером ${opt.transferId}!`);
-      
-      const finalAdultPrice = Number(discountOpt.discount_adult_price);
-      const finalChildPrice = Number(discountOpt.discount_child_price);
+    // 1. НАХОДИМ РЕЗУЛЬТАТ ДОСТУПНОСТИ СТРОГО ПО tourOptionId
+    const availCheck = availabilityList && availabilityList.length > 0
+      ? availabilityList.find(
+          (a) => cleanId(a.tourOptionId) === cleanId(opt.tourOptionId)
+        )
+      : null;
 
-      return {
-        ...opt,
-        optionName: staticInfo?.optionName || "Unknown Option",
-        prices: {
-          adult: finalAdultPrice,
-          child: finalChildPrice,
-          // Пересчитываем общую сумму авторасчета на основе количества гостей
-          totalAuto: roundTo((finalAdultPrice * (opt.noOfAdult || 1)) + (finalChildPrice * (opt.noOfChild || 0))),
-        },
-      };
-    }
+    // 2. 🟢 ИСПРАВЛЕНИЕ: Если данных о доступности ЕЩЕ НЕТ в стейте (массив пустой),
+    // то по умолчанию ставим true (доступен). Как только API ответит — подставится реальный статус!
+    const isAvailable = availabilityList && availabilityList.length > 0
+      ? (availCheck ? availCheck.status === "success" : false)
+      : true;
 
-    // Если скидки для этой комбинации нет — оставляем оригинальную цену Rayna API + 15% комиссии
+    const finalAdultPrice = discountOpt?.discount_adult_price > 0 
+      ? Number(discountOpt.discount_adult_price)
+      : roundTo(opt.adultPrice * COMISSION);
+
+    const finalChildPrice = discountOpt?.discount_child_price > 0 
+      ? Number(discountOpt.discount_child_price)
+      : roundTo(opt.childPrice * COMISSION);
+
     return {
       ...opt,
       optionName: staticInfo?.optionName || "Unknown Option",
+      isAvailable: isAvailable, // Наш защищенный флаг
+      availabilityMessage: availCheck && availCheck.status !== "success" ? availCheck.message : "",
       prices: {
-        adult: roundTo(opt.adultPrice * COMISSION),
-        child: roundTo(opt.childPrice * COMISSION),
-        totalAuto: roundTo(opt.finalAmount * COMISSION),
+        adult: finalAdultPrice,
+        child: finalChildPrice,
+        totalAuto: roundTo((finalAdultPrice * (opt.noOfAdult || 1)) + (finalChildPrice * (opt.noOfChild || 0))),
       },
     };
   });

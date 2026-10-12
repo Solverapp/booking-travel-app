@@ -154,30 +154,20 @@ height: 16px;
     font-weight: 600;
 }
 
-.tabswraper{
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    top: 0px; 
-    padding: 6px 12px 6px 12px;
-    background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(2px);
-    border-radius: 50px;
-    min-height: 72px;
-    max-width: 726px;
-}
+/* Единственная оболочка табов (бывший .tabswraper слит сюда:
+   периметр 10/16, тонированный фон + blur — десктоп вид не изменил) */
 .tabsoption{
 display: flex;
 flex-wrap: wrap;
 align-items: center;
 justify-content: space-between;
-padding-left: 4px;
-padding-right: 4px;
+padding: 10px 16px;
 border-radius: 50px;
-min-height: 64px;
-max-width: 682px;
-background-color: rgba(255, 255, 255, 0.15);
+min-height: 72px;
+max-width: 726px;
+background-color: rgba(255, 255, 255, 0.17);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
 }
 
 .tab-btn{
@@ -194,6 +184,10 @@ background-color: rgba(255, 255, 255, 0.15);
     font-size: 16px;
     font-weight: 600;
 
+}
+.tab-btn img{
+    width: 24px;
+    height: 24px;
 }
 .actives{
     background-color: var(--white);
@@ -291,16 +285,30 @@ background-color: rgba(255, 255, 255, 0.15);
         width: 100%;
     }
 
-    .tabswraper,
+    /* Табы: одна горизонтальная строка вместо трёх рядов */
     .tabsoption {
         max-width: 100%;
         width: 100%;
+        flex-wrap: nowrap;
+        gap: 4px;
+        padding: 6px;
+        min-height: 60px;
+        border-radius: 18px;
+        margin-bottom: 6px;
     }
     .tab-btn {
+        flex: 1 1 0;
         min-width: 0;
-        flex: 1 1 40%;
-        height: 48px;
-        padding: 12px 16px;
+        height: 46px;
+        padding: 8px 6px;
+        gap: 6px;
+        font-size: 14px;
+        border-radius: 14px;
+        align-items: center;
+    }
+    .tab-btn img {
+        width: 18px;
+        height: 18px;
     }
     .tourTypes {
         flex-wrap: wrap;
@@ -319,8 +327,22 @@ background-color: rgba(255, 255, 255, 0.15);
         gap: 12px;
         border-radius: 16px;
     }
+    .tabsoption {
+        padding: 4px;
+        min-height: 52px;
+        border-radius: 14px;
+    }
     .tab-btn {
-        flex: 1 1 100%;
+        flex: 1 1 0;
+        height: 44px;
+        padding: 6px 4px;
+        gap: 4px;
+        font-size: 13px;
+        border-radius: 12px;
+    }
+    .tab-btn img {
+        width: 16px;
+        height: 16px;
     }
     .sop-btn {
         height: 56px;

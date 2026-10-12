@@ -4,7 +4,10 @@ import "./style.css";
 import search from "../../img/icons/tabicons/search-normal.svg";
 import checkk from "../../img/icons/tabicons/tick-circle.svg";
 
-const QureyTour = ({ onCityChange, initialCity }) => {
+/* Выбор локации из списка (туры).
+   variant="popup" — список-попап под инпутом (десктоп),
+   variant="sheet" — тот же список внутри нижней шторки (статичный, скроллится). */
+const QureyTour = ({ onCityChange, initialCity, variant = "popup" }) => {
   const destantion = [
     {
       id: 13668,
@@ -22,54 +25,37 @@ const QureyTour = ({ onCityChange, initialCity }) => {
       location: "Singapore",
     },
   ];
-  const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+
+  const [query, setQuery] = useState(() => {
+    if (!initialCity) return "";
+    const city = destantion.find(
+      (item) => item.name.toLowerCase() === initialCity.toLowerCase(),
+    );
+    return city ? `${city.name}, ${city.location}` : "";
+  });
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedType, setSelectedType] = useState("location");
   const dropdownRef = useRef(null);
 
-  // Инициализируем и обновляем из URL параметра
-  useEffect(() => {
-    if (initialCity) {
-      const city = destantion.find(
-        (item) => item.name.toLowerCase() === initialCity.toLowerCase(),
-      );
-      if (city) {
-        setQuery(`${city.name}, ${city.location}`);
-      }
-    } else {
-      setQuery("");
-    }
-  }, [initialCity]);
+  const trimmed = query.trim().toLowerCase();
+  const filtered = trimmed
+    ? destantion.filter(
+        (item) =>
+          item.name.toLowerCase().includes(trimmed) ||
+          item.location.toLowerCase().includes(trimmed),
+      )
+    : [];
 
   const handleInputChange = (e) => {
-    const value = e.target.value;
-    setQuery(value);
-
-    if (value.trim()) {
-      const filtered = destantion.filter(
-        (item) =>
-          item.name.toLowerCase().includes(value.toLowerCase()) ||
-          item.location.toLowerCase().includes(value.toLowerCase()),
-      );
-      setSuggestions(filtered);
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(true);
-    }
+    setQuery(e.target.value);
+    setShowSuggestions(true);
   };
 
   const handleSelectItem = (item) => {
-    const cityName = `${item.name}, ${item.location}`;
-    setQuery(cityName);
+    setQuery(`${item.name}, ${item.location}`);
     setShowSuggestions(false);
-    setSuggestions([]);
 
     // Отправляем город в родительский компонент
-    if (onCityChange) {
-      onCityChange(item.name);
-    }
+    onCityChange?.(item.name);
   };
 
   useEffect(() => {
@@ -85,6 +71,25 @@ const QureyTour = ({ onCityChange, initialCity }) => {
     };
   }, []);
 
+  const destClassName =
+    variant === "sheet" ? "dest-wrapper dest-wrapper--sheet" : "dest-wrapper";
+
+  const renderItem = (item) => (
+    <div
+      className="dest__list-item"
+      key={`${item.id}`}
+      onClick={() => handleSelectItem(item)}
+    >
+      <div className="list-itemleft">
+        <img src={search} alt="search" />
+        {item.location}, {item.name}
+      </div>
+      {query === `${item.name}, ${item.location}` && (
+        <img src={checkk} alt="ch" />
+      )}
+    </div>
+  );
+
   return (
     <div className="sop-box-search">
       <p>Where to?</p>
@@ -98,39 +103,9 @@ const QureyTour = ({ onCityChange, initialCity }) => {
         />
 
         {showSuggestions && (
-          <div className="dest-wrapper">
+          <div className={destClassName}>
             <p>Popular destinations</p>
-            {suggestions.length > 0
-              ? suggestions.map((item) => (
-                  <div
-                    className="dest__list-item"
-                    key={`${item.id}`}
-                    onClick={() => handleSelectItem(item)}
-                  >
-                    <div className="list-itemleft">
-                      <img src={search} alt="search" />
-                      {item.location}, {item.name}
-                    </div>
-                    {query === `${item.name}, ${item.location}` && (
-                      <img src={checkk} alt="ch" />
-                    )}
-                  </div>
-                ))
-              : destantion.map((item) => (
-                  <div
-                    className="dest__list-item"
-                    key={`${item.id}`}
-                    onClick={() => handleSelectItem(item)}
-                  >
-                    <div className="list-itemleft">
-                      <img src={search} alt="search" />
-                      {item.name}, {item.location}
-                    </div>
-                    {query === `${item.name}, ${item.location}` && (
-                      <img src={checkk} alt="ch" />
-                    )}
-                  </div>
-                ))}
+            {filtered.length > 0 ? filtered.map(renderItem) : destantion.map(renderItem)}
           </div>
         )}
       </div>

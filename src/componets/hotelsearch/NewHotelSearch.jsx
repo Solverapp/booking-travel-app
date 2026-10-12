@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import QureyTour from "../qureytour/Pleasenew";
 import DatePickerH from "../datepickerhotel/DatePickerH";
 import Questselector from "../quest/QuestSelector";
+import MobileSearch from "../searchfields/MobileSearch";
+import useMediaQuery from "../../utils/useMediaQuery";
 import defaultdates from "../../utils/defaultdates";
 import sbtn from "../../img/icons/tabicons/search.svg";
 
@@ -28,6 +30,7 @@ const parseChildrenAges = (value) => {
 const SearchOption = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useMediaQuery("(max-width: 968px)");
 
   const [checkInH, setCheckInH] = useState(null);
   const [checkOutH, setCheckOutH] = useState(null);
@@ -132,6 +135,27 @@ const SearchOption = () => {
     return null;
   }
 
+  // Мобильный режим: липкая панель полей убирается, вместо неё
+  // кнопка-саммари (видна над кнопкой Filters) с одной шторкой поиска
+  if (isMobile) {
+    return (
+      <MobileSearch
+        variant="results"
+        mode="hotel"
+        city={city}
+        onCityChange={handleCityChange}
+        dateMode="range"
+        checkIn={checkInH}
+        checkOut={checkOutH}
+        onCheckInChange={setCheckInH}
+        onCheckOutChange={setCheckOutH}
+        guests={guestsHotel}
+        onGuestsChange={handleGuestsChangeHotel}
+        onSearch={handleSearchHotel}
+      />
+    );
+  }
+
   return (
     <div className="s-container">
       <div className="s-option">
@@ -147,9 +171,8 @@ const SearchOption = () => {
           onCheckOutChangeH={setCheckOutH}
         />
         <Questselector
+          value={guestsHotel}
           onGuestsChange={handleGuestsChangeHotel}
-          initialGuests={guestsHotel}
-          key={`guests-${guestsHotel.adults}-${guestsHotel.children}-${guestsHotel.childrenAges.join(",")}`}
         />
         <div className="sop-btn" onClick={handleSearchHotel}>
           <img src={sbtn} alt="sbtn" />

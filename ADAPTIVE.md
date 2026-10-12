@@ -412,8 +412,11 @@ import MobileMenu from "../mobilemenu/MobileMenu.jsx";
   .sop-box-theme { width: 100%; }
   .sop-btn { width: 100%; }
 
-  .tabswraper, .tabsoption { max-width: 100%; }
-  .tab-btn { min-width: 0; flex: 1 1 40%; height: 48px; padding: 12px 16px; }
+  /* табы: одна горизонтальная строка (реализовано — .tabswraper удалён,
+     см. «Мобильный поиск ≤968» в статусе) */
+  .tabsoption { max-width: 100%; width: 100%; flex-wrap: nowrap; gap: 4px; padding: 6px; min-height: 60px; border-radius: 18px; margin-bottom: 6px; }
+  .tab-btn { flex: 1 1 0; min-width: 0; height: 46px; padding: 8px 6px; gap: 6px; font-size: 14px; border-radius: 14px; align-items: center; }
+  .tab-btn img { width: 18px; height: 18px; }
   .tourTypes { flex-wrap: wrap; max-width: 100%; height: auto; }
 }
 
@@ -421,12 +424,16 @@ import MobileMenu from "../mobilemenu/MobileMenu.jsx";
   .searchbox { padding: 12px; gap: 12px; border-radius: 16px; }
   .s-optiontour { gap: 12px; min-height: auto; }
   .air-item { width: 100%; }
-  .tab-btn { flex: 1 1 100%; }
+  .tabsoption { padding: 4px; min-height: 52px; border-radius: 14px; }
+  .tab-btn { flex: 1 1 0; height: 44px; padding: 6px 4px; gap: 4px; font-size: 13px; border-radius: 12px; }
+  .tab-btn img { width: 16px; height: 16px; }
   .sop-btn { height: 56px; padding: 14px 20px; }
 }
 ```
 
 ### 4.3 Липкая панель поиска — `src/componets/hotelsearch/style.css`
+
+> **Апдейт:** на ≤968 `NewHotelSearch`/`Toursearch` **не рендерят** `.s-container` вообще — вместо него `MobileSearch variant="results"` (кнопка-саммари + шторка). Правила ниже остаются справочно; на десктопе `.s-container` по-прежнему `position: sticky; top: 84px; z-index: 1000`.
 
 ```css
 @media (max-width: 968px) {
@@ -790,7 +797,8 @@ document.documentElement.scrollWidth > window.innerWidth
 Проверка перед любым шагом:
 ```bash
 npm run build   # обязан пройти
-npm run lint    # базовая линия: 192 problems (170 errors, 22 warnings) — НЕ УВЕЛИЧИВАТЬ
+npm run lint    # базовая линия: 80 problems (69 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
+                # (до чистки мёртвого кода было 192)
 ```
 
 ## Выполнено
@@ -812,6 +820,29 @@ npm run lint    # базовая линия: 192 problems (170 errors, 22 warnin
 | 5 | Сортировка фильтра: рабочий `flex-wrap` | `hotelFilters/style.css` |
 | 5 | Номера / опции / бронь тура | `hotels/rooms/`, `touroption/`, `tourbook/` |
 | 6 | Checkout/Confirmation | `main.css` |
+| 7 | Адаптив auth: стекло `rgba(244,244,244,.55)+blur` на `.mains`, инпуты 16px, тапы 44px, `min-height:100dvh` | `auth/signform/style.css` |
+| 7 | **Нижняя шторка** `BottomSheet` (оверлей 2100 / панель 2150, `inert`, Escape, body-lock, возврат фокуса на триггер); `filterdrawer` z-index → 2100/2150 | `bottomsheet/` |
+| 7 | **Общие поля поиска**: `field-common.css` (`.dp-box/.dp-wrapper/.qb-wrapper/.dp`), `CalendarGrid` (single/range × popup/sheet), `GuestsContent` + `guestsUtils`, `Pleasenew`/`CityTour` получили `variant`, селекторы → тонкие обёртки, гости у родителей через `value=` (без remount) | `styles/field-common.css`, `datepicker/CalendarGrid.jsx`, `quest/`, `qureytour/` |
+| 7 | **Мобильный поиск ≤968**: `useMediaQuery` + `searchfields/MobileSearch` (см. ниже), подключён в `Search`, `NewHotelSearch`, `Toursearch` | `utils/useMediaQuery.js`, `searchfields/` |
+| 7 | **Табы главной**: `tabswraper` удалён, `tabsoption` — единственная оболочка; ≤968 один горизонтальный ряд | `search/Search.jsx`, `search/style.css` |
+| 7 | **Чистка мёртвого кода**: 16 файлов удалено (Hotelsearch, Please, QureyTour, DatePicker, themeTour/, rooms/, card/, roomcounter/, Option, sorting, HotelFilters, Confirmation_old, Checkout_old, tours/Tour, Slots, succeses) + мёртвые импорты/стейты в `Search`/`Toursearch` → lint 192 → 80 | `src/componets/**` |
+| 7+ | **Отступ в шторке локации**: `.dropdown .dest-wrapper--sheet { margin-top: 12px }` — список подсказок не прилипает к инпуту (попапу на десктопе не мешает: там `position:absolute`) | `qureytour/style.css` |
+| 7+ | **Сброс локации при смене таба главной**: `switchTab()` чистит `city` + `pleaseId` (иначе в Hotels уезжал город тура **без `pleaseId`** → ошибка API); десктопные `CityTour`/`PleaseSearch` получили `initialCity` + `key={...-${city}}` — тот же паттерн, что на `/hotels` и `/tours` | `search/Search.jsx` |
+| 7+ | **Guard поиска отелей**: пока не выбран город из подсказок LiteAPI (`pleaseId` пуст), Search — `disabled` (`--light_gray` фон + `--gray_text` текст, иконка `filter: brightness(.4)`) + подсказка «Select a city from the suggestions» (`.s-hint` / `.msearch-hint` с белой «пилюлей», чтобы читалась поверх фото); `Pleasenew` получил `onCityEdit` — правка текста инвалидирует прежний выбор | `Search.jsx`, `searchfields/MobileSearch.jsx`, `qureytour/Pleasenew.jsx`, `styles/field-common.css` |
+| 7+ | **Шторка локации закрывается сразу после выбора города** (и для тура, и для отеля) — как календарь через `onDone`; на результатах шторка остаётся открытой, чтобы заполнить все поля | `searchfields/MobileSearch.jsx` |
+
+## Мобильный поиск ≤968 — архитектура
+
+- Включение: `useMediaQuery("(max-width: 968px)")` (`src/utils/useMediaQuery.js`, `useSyncExternalStore`). Компоненты монтируются **условно** — десктопные панели на мобиле просто не рендерятся, `display:none`-хаки не нужны.
+- `src/componets/searchfields/MobileSearch.jsx` — единственный вход, два режима:
+  - `variant="home"` (главная): чипы `.mchip` (label + value) → по клику своя `BottomSheet` (город / даты / гости), под чипами красная `.msearch-btn`. Вкладка Flights на мобиле скрыта (статический демо-блок).
+  - `variant="results"` (`/hotels`, `/tours`): липкая `.msearch--results` (top:0, z-index 1000) с `.msummary-btn` — саммари «город · даты · гости», стоит **над** кнопкой Filters; одна шторка, поля стопкой, Search в `footer`.
+- Контент шторок — те же компоненты с `variant="sheet"`: `Pleasenew|CityTour` (`.dest-wrapper--sheet` — список в потоке, скролл), `CalendarGrid` (`.calendar-sheet`), `GuestsContent` (`.gcontent-sheet`).
+- Стейт поиска — у родителей (`Search`, `NewHotelSearch`, `Toursearch`), URL = источник истины; поля получают `value=` + `onXChange`; у локации `key={`city-${city}`}` (mount-init вместо эффекта, `initialCity` — единственный вход).
+- Календарь: туры `mode="single"`, отели `mode="range"`; в home-шторке передаём `onDone` → шторка закрывается после выбора.
+- z-index: шторка 2100/2150 (= filterdrawer), навбар 2000, сводка 1000.
+- Табы главной (финальные цифры): десктоп `.tabsoption` — `padding:10px 16px`, `min-height:72px`, `max-width:726px`, `rgba(255,255,255,.17)` + `blur(8px)`, radius 50; ≤968 — `flex-wrap:nowrap`, `gap:4px`, `padding:6px`, `margin-bottom:6px`, radius 18, `.tab-btn { flex:1 1 0; height:46px; font-size:14px; border-radius:14px; align-items:center }`, иконки 18px; ≤640 — `height:44px`, `font-size:13px`, radius 12, иконки 16px.
+- `BottomSheet`: `aria-hidden` на панели **не ставим** (конфликтует с фокусом → «Blocked aria-hidden…»), только `inert`; фокус возвращается на элемент-триггер при закрытии.
 
 ## ГЛАВНАЯ ЛОВУШКА — дубли классов
 
@@ -844,10 +875,24 @@ CSS в бандле склеивается в порядке импорта из
 - [ ] Найти/убрать оставшиеся дубли классов (профиль, checkout — проверить).
 - [ ] `src/img/fon/startfon1x.jpg` — **7.1 MB**. Есть альтернативы: `startfon1x_c.jpg` (65 KB), `startfon1x_x.jpeg` (108 KB). Подключить оптимизированную.
 
+### Линт-хвост (текущие 80 problems)
+
+- [ ] `HotelResult.jsx` — 23 (в т.ч. `console.log`, `setState-in-effect`); `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 5; `guestCounter.jsx` — 4.
+- [ ] **URL-init `setState-in-effect`** в `NewHotelSearch.jsx` и `Toursearch.jsx` — лечить: ленивый `useState(() => readFromUrl(searchParams))` + `key={searchParams.toString()}` на `<SearchOption />` в `HotelResult`/`Tournew` вместо effect (поведение идентичное: state всегда = URL).
+
+### Заметки по мобильному поиску
+
+- [ ] Вкладка Flights на главной в мобиле скрыта — решить, показывать ли её (сейчас там статичный демо-блок с нерабочей кнопкой).
+- [ ] Закомментированный демо-код в `Search.jsx` (ThemeTour, tourTypes) ссылается на **удалённые** импорты — при раскомментировании вернуть импорты.
+- [ ] Чипсы на главной на ≤640 идут столбиком (`flex: 1 1 100%` в `searchfields/style.css`) — если нужен один ряд, как у табов, подправить `.mchip`.
+- [ ] Локация — единственное поле **не** через `value=` (mount-init по `key`), поэтому чип/саммари показывает последний **выбранный** город, а не текст, который пользователь успел напечатать (поиск при этом заблокирован — guard по `pleaseId`). Полный фикс = перевести `Pleasenew`/`CityTour` на контролируемые `value` + `onChange` у родителя.
+- [ ] `/hotels` без `pleaseId` в URL (прямой заход) — guard’а нет, кнопка Search живая, уходит в пустой `placeId`. Добавить так же, как на главной, если будет запрос.
+- [ ] Минифайлер бандла оставляет только `-webkit-backdrop-filter` для `blur(8px)/16px/2px` (со всеми glass-элементами проекта) — в Firefox размытия не будет, только полупрозрачный фон. Если важен FF — проверить, почему `backdrop-filter` (без префикса) выпадает.
+
 ## Полезные находки
 
 - MUI установлен (`@mui/icons-material`, `@mui/material`) — используется проектом, брать иконки оттуда.
 - `rg` (ripgrep) **не установлен** — искать через PowerShell `Select-String` или grep-инструмент.
 - `Loader` = `src/componets/loaders/loading.jsx` (`OrbitProgress`), используется и на странице отеля, и на странице тура.
-- `mock/transfers.js`: поле `name` (полное) трогать нельзя — попадает в cart и используется в `touroption/Option.jsx`. Добавлять новые поля (`short`, `icon`).
+- `mock/transfers.js`: поле `name` (полное) трогать нельзя — попадает в cart и используется в `touroption/Optionew.jsx` (старый `Option.jsx` удалён как мёртвый). Добавлять новые поля (`short`, `icon`).
 

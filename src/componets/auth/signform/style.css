@@ -1,37 +1,31 @@
 /* From Uiverse.io by santhosh_2608 */ 
 .mains{
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: 100%;;
-  height: 100vh;
+  width: 100%;
+  min-height: 100dvh;   /* было: height 100vh — форма обрезалась, если карточка выше вьюпорта */
+  /* стекло поверх фото-фона с html: полупрозрачно + blur (без blur просто видно фото) */
+  background-color: rgba(244, 244, 244, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .authcontainer{
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
     align-content: center;
     justify-content: center;
-    
     gap: 16px;
-    
-    padding:32px 70px 20px 70px ;
-    background-color: var(--bg);
-    width: 100%;;
-    height: 100%;
-
+    padding: 32px var(--pad-page) 20px;   /* было: 32px 70px 20px 70px + content-box = +140px и горизонтальный скролл */
+    background-color: transparent;        /* фон-стекло живёт на .mains */
+    width: 100%;
+    min-height: 0;
 }
 
-.autpage{
-    display: flex;
-    justify-content: center;
-    padding: 32px;
-    border-radius: 30px;
-    background-color: var(--white);
-    max-width: 800px;
-    max-height: 100vh;
 
-}
 .login-wrapper,
 .login-wrapper * {
   box-sizing: border-box;
@@ -47,6 +41,9 @@
   --btn-hover-glow: rgba(112, 0, 255, 0.25);
   --input-focus-glow: rgba(112, 0, 255, 0.15);
   position: relative;
+  width: 100%;
+  max-width: 430px;
+  min-width: 0;
   animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
   transform: translateY(30px);
@@ -61,7 +58,8 @@
 
 .login-card {
   position: relative;
-  width: 430px;
+  width: 100%;
+  max-width: 430px;
   background-color: #0d0f14;
   border-radius: 24px;
   padding: 36px 28px;
@@ -233,7 +231,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 16px;          /* ≥16px — иначе iOS Safari автозумит поле */
   font-family: inherit;
   outline: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -253,13 +251,16 @@
 }
 
 .forgot-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 44px;        /* тап-цель ≥44px */
   text-align: right;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  font-size: 13px;
   text-decoration: none;
-  margin-top: -6px;
-  margin-bottom: 24px;
+  margin-top: -4px;
+  margin-bottom: 8px;
   transition: color 0.2s ease;
 }
 
@@ -269,6 +270,7 @@
 
 .btn-submit {
   width: 100%;
+  min-height: 48px;
   padding: 1em;
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -295,7 +297,12 @@
 }
 
 .signup-prompt {
-  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;        /* тап-цель ≥44px (обёртка — NavLink целиком) */
+  margin-top: 8px;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
@@ -305,7 +312,6 @@
   color: #ffffff;
   text-decoration: none;
   font-weight: 500;
-  margin-left: 4px;
   border-bottom: 1px solid transparent;
   transition: border-color 0.2s ease;
   cursor: pointer;
@@ -313,4 +319,105 @@
 
 .signup-prompt .toggle-link:hover {
   border-color: #ffffff;
+}
+
+/* ---------- Адаптив (desktop-first, один блок в конце файла) ---------- */
+
+@media (max-width: 968px) {
+  .authcontainer {
+    padding: 24px var(--pad-page) 20px;
+    gap: 12px;
+  }
+  .login-card {
+    padding: 30px 24px;
+    border-radius: 22px;
+  }
+  .header {
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* на телефоне blur дешевле — меньший радиус + плотнее подложка */
+  .mains {
+    background-color: rgba(244, 244, 244, 0.68);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .authcontainer {
+    padding: 20px var(--pad-page) 16px;
+    gap: 12px;
+  }
+  .login-card {
+    padding: 24px 18px;
+    border-radius: 20px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  }
+  /* карточка не должна «улетать» при наведении/тапе */
+  .login-wrapper:hover .login-card {
+    transform: none;
+  }
+
+  .decorative-dot {
+    width: 2em;
+    height: 2em;
+    margin-bottom: 0.75em;
+  }
+  .titlee {
+    font-size: 20px;
+  }
+  .subtitle {
+    font-size: 13px;
+  }
+  .header {
+    margin-bottom: 18px;
+  }
+
+  .input-group {
+    margin-bottom: 12px;
+  }
+  .input-field {
+    padding: 0.9em 1em;
+    font-size: 16px;             /* iOS Safari не будет автозумить */
+    min-height: 48px;
+  }
+  .input-field:focus {
+    transform: none;             /* сдвиг «упрощает» верстку на телефоне */
+  }
+
+  .forgot-link {
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .btn-submit {
+    min-height: 50px;
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+
+  .signup-prompt {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+
+  /* blob'ы меньше — карточка узкая, яркое пятно не должно «съедать» контент */
+  .blob-1 {
+    top: -20px;
+    right: -20px;
+    width: 120px;
+    height: 120px;
+  }
+  .blob-2 {
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+  }
+  .glow-blob {
+    filter: blur(35px);
+    opacity: 0.5;
+  }
 }

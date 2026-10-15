@@ -109,26 +109,8 @@ const MobileSearch = ({
 
   const dateGroup = (
     <div className="bs-group">
-      <p className="bs-label">{isRange ? "Dates" : "When"}</p>
-      <div className="bs-dates">
-        {isRange ? (
-          <>
-            <div className="bs-date">
-              <p>Check-in</p>
-              <span>{fmt(checkIn) || "Select dates"}</span>
-            </div>
-            <div className="bs-date">
-              <p>Check-out</p>
-              <span>{fmt(checkOut) || "Select dates"}</span>
-            </div>
-          </>
-        ) : (
-          <div className="bs-date">
-            <p>When</p>
-            <span>{fmt(checkIn) || "Select dates"}</span>
-          </div>
-        )}
-      </div>
+      {/* <p className="bs-label">{isRange ? "Dates" : "When"}</p> */}
+     
       <CalendarGrid
         variant="sheet"
         mode={dateMode}

@@ -149,6 +149,7 @@ export function processTourData(options, staticData, dbDiscounts = [], availabil
     return {
       ...opt,
       optionName: staticInfo?.optionName || "Unknown Option",
+      childAge: staticInfo?.childAge || "2-7 years" ,
       isAvailable: isAvailable, // Наш защищенный флаг
       availabilityMessage: availCheck && availCheck.status !== "success" ? availCheck.message : "",
       prices: {

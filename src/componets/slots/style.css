@@ -36,3 +36,31 @@
     height: 20px;
     object-fit: cover;
 }
+
+/* ============ Адаптив: слоты ============ */
+
+@media (max-width: 640px) {
+    /* Горизонтальный скролл-стрип вместо переноса строками */
+    .slot-box {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 8px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .slot-box::-webkit-scrollbar {
+        display: none;
+    }
+    .slot-checkbox {
+        flex: none;
+        white-space: nowrap;
+        min-height: 44px;
+        gap: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+}

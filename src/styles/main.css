@@ -458,7 +458,7 @@ align-items: center;
 /* ============ Адаптив: токены ============ */
 @media (max-width: 1440px) { :root { --pad-page: 32px; } }
 @media (max-width: 1200px) { :root { --pad-page: 24px; } }
-@media (max-width: 640px)  { :root { --pad-page: 16px; --gap-grid: 12px; } }
+@media (max-width: 640px)  { :root { --pad-page: 10px; --gap-grid: 12px; } }
 
 /* ============ Адаптив: Главная (герой) ============ */
 @media (max-width: 968px) {

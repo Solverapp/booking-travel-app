@@ -4,7 +4,8 @@ import { Rating } from "@mui/material";
 import formatPrice from "../../utils/priceFormater";
 import Acordion from "../tourpage/Acordion"
 import Rates from "../touroption/Optionew";
-import {Share, Place, FavoriteBorder, NavigateBefore, Search} from '@mui/icons-material';
+import {Share, Place, FavoriteBorder, NavigateBefore, Search, EventRepeatOutlined} from '@mui/icons-material';
+
 
 
  
@@ -51,8 +52,8 @@ const handleBack = () => {
               <span>Back</span>
             </button>
             <button>
-              <Search />
-              <span>New search</span>
+              <EventRepeatOutlined />
+              <span>Change</span>
             </button>
           </div>
           <div className="infoheder">

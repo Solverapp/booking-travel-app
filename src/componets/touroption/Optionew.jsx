@@ -297,8 +297,9 @@ const Rates = ({ id, tur }) => {
                     <div className="rate-box">
                       <div className="rate-item">
                         <div className="rate-guest">
-                          <People />
-                          <span>Adult price: {opt.prices.adult} AED</span>
+                          {/* <People /> */}
+                          <span>Adult</span>
+                          <span>{opt.prices.adult} AED</span>
                         </div>
                         <div className="inforate">
                           <div
@@ -321,15 +322,16 @@ const Rates = ({ id, tur }) => {
                               disabled={!opt.isAvailable}
                             />
                           </div>
-                          <div className="rprice">
+                          {/* <div className="rprice">
                             <h4>{opt.isAvailable ? adultTotal : 0}</h4>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div className="rate-item">
                         <div className="rate-guest">
-                          <FamilyRestroom/>
-                          <span>Child price: {opt.prices.child} AED</span>
+                          {/* <FamilyRestroom/> */}
+                          <span>Child({opt.childAge})</span>
+                          <span>{opt.prices.child} AED</span>
                         </div>
                         <div className="inforate">
                           <div
@@ -352,9 +354,9 @@ const Rates = ({ id, tur }) => {
                               disabled={!opt.isAvailable}
                             />
                           </div>
-                          <div className="rprice">
+                          {/* (<div className="rprice">
                             <h4>{opt.isAvailable ? childTotal : 0}</h4>
-                          </div>
+                          </div>) */}
                         </div>
                       </div>
 

@@ -244,7 +244,7 @@
 
 @media (max-width: 640px) {
     .infoheder {
-        padding: 16px;
+        padding: 12px;
         border-radius: 20px;
     }
     .backoption {
@@ -255,11 +255,75 @@
         height: 44px;
         font-size: 13px;
     }
+
+    .hederleft {
+        gap: 8px;
+    }
+    .hederleft h1 {
+        font-size: 20px;
+    }
+    .hederprice h1 {
+        font-size: 20px;
+    }
+    .left-location svg {
+        font-size: 18px;
+    }
+    .loc-name span {
+        font-size: 14px;
+    }
     /* Одно фото — компактнее на телефоне */
     .carusel-left {
         aspect-ratio: 4 / 3;
         border-radius: 20px;
     }
+
+}
+/* ============ Табы информации о туре ============ */
+.tour-tabs{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.tabsoption-pill{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 50px;
+    width: 100%;
+    height: auto;
+    min-height: 56px;
+    max-width: 682px;
+    background-color: var(--gray2);
+}
+.tabsoption-pill .tr-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    gap: 8px;
+    padding: 12px 8px;
+    cursor: pointer;
+    border-radius: 50px;
+    width: auto;
+    min-height: 44px;
+    color: var(--black);
+    font-size: 15px;
+    font-weight: 600;
+}
+.tabsoption-pill .tr-btn p{
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tabsoption-pill .activee{
+    background-color: var(--green);
+    color: var(--white);
+}
+.hiden{
+    display: none;
 }
 .acord-box{
     padding: 16px;
@@ -267,12 +331,58 @@
     border-radius: 15px;
     background-color: var(--white);
 }
-.css-rizt0-MuiTypography-root {
+.tab-panel{
     margin: 0;
-    
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.5;
     letter-spacing: 0.00938em;
     text-align: start;
+}
+
+/* ============ Адаптив: табы информации ============ */
+
+@media (max-width: 968px) {
+    .tabsoption-pill {
+        max-width: none;
+    }
+    .tabsoption-pill .tr-btn {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        padding: 12px 8px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 640px) {
+    .tour-tabs {
+        gap: 10px;
+    }
+    .tabsoption-pill {
+        border-radius: 20px;
+        gap: 4px;
+        padding: 4px;
+    }
+    .tabsoption-pill .tr-btn {
+        gap: 4px;
+        padding: 10px 4px;
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: normal;
+        text-align: center;
+    }
+    .tabsoption-pill .tr-btn p {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.2;
+    }
+    .acord-box {
+        padding: 12px;
+        border-radius: 15px;
+    }
+    .tab-panel {
+        font-size: 0.9375rem;
+    }
 }

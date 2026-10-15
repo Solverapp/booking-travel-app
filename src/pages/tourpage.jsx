@@ -2,7 +2,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import Nav from "../componets/navbardark/Nav";
 import Tour from "../componets/tourpage/Tour";
-import Loader from "../componets/loaders/loading";
+import PageLoader from "../componets/loaders/PageLoader";
 
 
 const Tourpage = () => {
@@ -45,25 +45,23 @@ const Tourpage = () => {
   };
 
   return (
-    <div className="page-loading-wrap">
+    <>
       <Nav />
       {tour ? (
         <Tour tour={tour} />
+      ) : loading ? (
+        <PageLoader />
       ) : (
-        <div className="page-loading">
-          {loading ? (
-            <Loader />
-          ) : (
-            <>
-              <p className="page-error-text">{error}</p>
-              <button className="page-error-btn" onClick={retry}>
-                Retry
-              </button>
-            </>
-          )}
+        <div className="page-loading-wrap">
+          <div className="page-loading">
+            <p className="page-error-text">{error}</p>
+            <button className="page-error-btn" onClick={retry}>
+              Retry
+            </button>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

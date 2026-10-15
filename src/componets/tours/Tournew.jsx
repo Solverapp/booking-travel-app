@@ -1,11 +1,11 @@
 import { useSearchParams, NavLink } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { Rating } from "@mui/material";
+import { NorthEast } from "@mui/icons-material";
 import SearchOption from "../hotelsearch/Toursearch";
 import TourFilters from "../hotelFilters/TourFilters";
 import FilterDrawer from "../filterdrawer/FilterDrawer";
-import Loader from "../loaders/loading";
-import loc from "../../img/icons/tabicons/location.svg";
+import PageLoader from "../loaders/PageLoader";
+import star from "../../img/icons/tabicons/star.svg";
 import hotel from "../../img/icons/tabicons/not.svg";
 import formatPrice from "../../utils/priceFormater";
 import "./style.css";
@@ -88,6 +88,8 @@ const Tour = () => {
     return result;
   }, [items, priceRange, selectedAmenities, sortType]);
 
+  if (isLoading) return <PageLoader />;
+
   return (
     <div className="maincontent">
       <SearchOption />
@@ -104,12 +106,7 @@ const Tour = () => {
         </FilterDrawer>
         <div className="hotel-box">
           <div className="hotel-grid">
-            {isLoading ? (
-              <div className="hotel-not">
-                <Loader />
-                <span>Please wait</span>
-              </div>
-            ) : filteredTours.length === 0 ? (
+            {filteredTours.length === 0 ? (
               <div className="hotel-not">
                 <img src={hotel} alt="hotel" />
                 <h3>Nothing found matching your request</h3>
@@ -123,35 +120,35 @@ const Tour = () => {
                   state={{ tour: item }}
                 >
                   <div className="tourgrid-item">
-                    <img src={item.image} alt={item.tourName} />
-                    <div className="item-heder">
-                      <div className="item-heder-info">
-                        <div className="info-left">
+                    <div className="tourgrid-media">
+                      <img src={item.image} alt={item.tourName} />
+                      <div className="tourgrid-scrim" />
+                      <div className="tourgrid-top">
+                        {item.cityTourType && (
+                          <span className="tourgrid-chip">{item.cityTourType}</span>
+                        )}
+                        <span className="tourgrid-chip tourgrid-chip--rating">
+                          <img src={star} alt="rating" />
+                          {item.rating}
+                        </span>
+                      </div>
+                      <div className="tourgrid-bottom">
+                        <div className="tourgrid-title-row">
                           <h3>{item.tourName}</h3>
-                          <div className="info-left-star">
-                            <Rating
-                              name="half-rating-read"
-                              defaultValue={item.rating}
-                              max={item.rating}
-                              precision={1}
-                              readOnly
-                              size="small"
-                            />
-                            <span>{item.reviewCount} reviews</span>
-                          </div>
+                          {item.rating >= 4.5 && (
+                            <span className="tourgrid-badge">Top rated</span>
+                          )}
                         </div>
-                        <div className="rating">{item.rating}</div>
-                      </div>
-                      <div className="item-heder-loc">
-                        <div className="loc-name">
-                          <img src={loc} alt="location" />
-                          <p>{`${item.cityName}, ${item.countryName}`}</p>
+                        <p className="tourgrid-loc">{`${item.cityName}, ${item.countryName}`}</p>
+                        <div className="tourgrid-actions">
+                          <span className="tourgrid-price">From {formatPrice(item.price)} AED</span>
+                          <span className="tourgrid-book">
+                            Book Now
+                            <span className="tourgrid-book-ico">
+                              <NorthEast />
+                            </span>
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                    <div className="item-footer">
-                      <div className="footer-price">
-                        <p>From {formatPrice(item.price)} AED</p>
                       </div>
                     </div>
                   </div>

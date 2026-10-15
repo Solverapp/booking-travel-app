@@ -1,6 +1,6 @@
 import { useSearchParams, NavLink } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import Loader from "../../loaders/loading";
+import PageLoader from "../../loaders/PageLoader";
 import Sorting from "../sorting/sortingHotel";
 import { Rating } from "@mui/material";
 import SingleBedIcon from "@mui/icons-material/SingleBed";
@@ -237,6 +237,8 @@ const HotelList = () => {
   console.log(hotels);
   console.log(ratesData);
 
+  if (loading) return <PageLoader />;
+
   return (
     <main className="maincontent">
       <SearchOption />
@@ -251,12 +253,7 @@ const HotelList = () => {
         <div className="hotel-box">
           <Sorting sort={sort} onChange={setSort} />
           <div className="hotelbox-grid">
-            {loading ? (
-              <div className="found-not">
-                <Loader />
-                <span>Please wait</span>
-              </div>
-            ) : hotels.length === 0 ? (
+            {hotels.length === 0 ? (
               <div className="found-not">
                 <img src={hotel} alt="no hotels found" />
                 <h3>Nothing found matching your request</h3>

@@ -2,7 +2,7 @@ import { useSearchParams, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { hotelPrebookService } from "../../../services/SupebasePrebookService";
 import { CalendarMonth, Hotel, People, Security, Restaurant, ChevronLeft, RestoreOutlined } from '@mui/icons-material';
-import Loader from "../../loaders/loading";
+import PageLoader from "../../loaders/PageLoader";
 import "./style.css";
 
 const CheckoutPage = ({ offerItem }) => {
@@ -108,14 +108,7 @@ const CheckoutPage = ({ offerItem }) => {
   }, [step, prebookData]);
 
   if (step === 'processing') {
-    return (
-      <div className="checkout-loading-screen">
-        <div className="text-center">
-          <Loader />
-          <p className="loading-text">Securing your room, please wait...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Securing your room, please wait..." />;
   }
 
   return (

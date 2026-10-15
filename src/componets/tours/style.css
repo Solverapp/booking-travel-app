@@ -35,132 +35,198 @@ color: var(--black);
   width: 100%;
 }
 
+/* ===== Карточка тура (референс, вариант B): фото на весь кадр,
+   контент (чипы, название, цена, Book Now) поверх затемнения ===== */
+
 .tourgrid-item {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    max-width: 656px;
-    padding: 9px 9px 20px 9px;
-    height: 450px;
-    background-color: var(--white);
+  display: block;
+  min-width: 0;
+  max-width: 656px;
+  padding: 8px;
+  height: 450px;
+  background-color: var(--white);
   border: 1px solid #ddd;
   border-radius: 30px;
   overflow: hidden;
   cursor: pointer;
 }
 
-.tourgrid-item img {
+.tourgrid-media {
+  position: relative;
   width: 100%;
-  height: 250px;
-  border-radius: 25px;
-  object-fit: cover;
+  height: 100%;
+  border-radius: 24px;
+  overflow: hidden;
 }
 
-.item-heder {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  padding: 15px;
+.tourgrid-media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.tourgrid-item:hover .tourgrid-media > img {
+  transform: scale(1.05);
+}
+
+/* Затемнение: прозрачно сверху, мягкий градиент к низу (контраст даёт стекло) */
+.tourgrid-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.1) 60%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+/* Верхний ряд: стеклянные чипы категории и рейтинга */
+.tourgrid-top {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tourgrid-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 70%;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tourgrid-chip--rating {
+  max-width: none;
+  flex-shrink: 0;
+}
+
+.tourgrid-chip--rating img {
+  width: 13px;
+  height: 13px;
+}
+
+/* Нижний блок: светлое стекло (frosted glass) поверх фото */
+.tourgrid-bottom {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+}
+
+.tourgrid-title-row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
 }
-.item-heder-info{
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+
+.tourgrid-title-row h3 {
+  margin: 0;
+  min-width: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.item-heder-loc{
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: 100%;
+
+.tourgrid-badge {
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(19, 19, 19, 0.35);
+  color: var(--black);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
 }
-.loc-name{
-  display: flex;
-  gap: 8px;
-  width: auto;
-  max-width: 100%;
+
+.tourgrid-loc {
+  margin: 0;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--green2);
-}
-.loc-name img{
-  width: 20px;
-  height: 20px;
-}
-.loc-dist{
-  display: flex;
-  gap: 8px;
-  width: auto;
-  max-width: 100%;
-  font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--gray_text);
 }
 
-.rating{
+.tourgrid-actions {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 2px;
-  background-color: var(--green2);
-  border-radius: 8px;
-  padding: 4px 12px 4px 12px;
-  width: 47px;
-  height: 30px;
-  font-size: 16px;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.tourgrid-price {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--white);
+  border: 1px solid rgba(19, 19, 19, 0.12);
+  color: var(--black);
+  font-size: 15px;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.tourgrid-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 18px;
+  border-radius: 999px;
+  background: var(--white);
+  border: 1px solid rgba(19, 19, 19, 0.12);
+  color: var(--black);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tourgrid-book-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--black);
   color: var(--white);
 }
-.info-left{
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 4px;
-  max-width: 408px;
 
-}
-.info-left h3{
-  font-size: 16px;
-  font-weight: 700;
-}
-.info-left-star{
-  display: flex;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--gray_text);
-}
-.item-heder-info p {
-  margin: 0;
-}
-.item-heder-info h2 {
-  margin: 0;
-
-}
-.item-footer {
-    display: flex;
-    flex-wrap: wrap;
-  padding: 15px;
-  justify-content: space-between;
-
-}
-.footer-price{
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-
-}
-.footer-price p{
-  font-size: 20px;
-  font-weight: 700 ;
-  color: var(--black);
-}
-.footer-price span{
-  font-size: 14px;
-  font-weight: 400 ;
-  color: var(--gray_text);
+.tourgrid-book-ico svg {
+  width: 15px;
+  height: 15px;
 }
 
 @media (max-width: 1200px) {
@@ -176,27 +242,28 @@ color: var(--black);
     padding: 0;
   }
   .tourgrid-item {
-    height: auto;
+    height: 340px;
     min-width: 0;
     max-width: none;
     border-radius: 20px;
-    padding: 8px 8px 16px;
+    padding: 6px;
   }
-  .tourgrid-item img {
-    height: 200px;
+  .tourgrid-media {
     border-radius: 16px;
   }
-  .item-heder-info {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
+  .tourgrid-title-row h3 {
+    font-size: 18px;
   }
-  .info-left {
-    max-width: 100%;
+  .tourgrid-bottom {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 13px;
+    gap: 4px;
+    border-radius: 16px;
   }
-  .item-footer {
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-start;
+  .tourgrid-price,
+  .tourgrid-book {
+    font-size: 14px;
   }
 }

@@ -339,22 +339,6 @@ line-height: 1.1;
 }
 .indicator-dot { width: 8px; height: 8px; background: #06d6a0; border-radius: 50%; display: inline-block; }
 
-/* Экраны загрузки */
-.checkout-loading-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #070e17;
-}
-.text-center{
-display: flex;
-align-items: center;
-  justify-content: center;
-}
-.loading-text { margin-top: 20px; color: #3a86ff; font-weight: 500; }
-
 /* Стили Ошибок / Баннеров */
 .error-banner {
   background: rgba(255, 77, 79, 0.1);

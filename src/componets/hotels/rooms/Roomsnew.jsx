@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { useSearchParams, NavLink, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import "./style.css";
 import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ShoppingCart } from '@mui/icons-material';
+import RoomDetailsPopup from "./RoomDetailsPopup";
 import meals from "../../../img/icons/Hotelicons/meals.svg";
 import bed from "../../../img/icons/Hotelicons/bed.svg";
 
@@ -12,15 +13,11 @@ const navigate = useNavigate();
   const children = searchParams.get("children");
   const checkin = searchParams.get("checkIn");
   const checkout = searchParams.get("checkOut");
-  const childrenAgesStr = searchParams.get("childrenAges") || "";
-  const childrenAges = useMemo(
-    () => (childrenAgesStr ? childrenAgesStr.split(",").map(Number) : []),
-    [childrenAgesStr],
-  );
   const pleaseId = searchParams.get('pleaseId');
   const cityname = searchParams.get('city');
   const hotelId = hotel.id;
   const [offerItem, setOfferItem] = useState([]);
+  const [detailRoom, setDetailRoom] = useState(null);
   const roomsdata = rooms || [];
   const roomRates = rates || [];
 
@@ -127,9 +124,21 @@ const navigate = useNavigate();
                   <div className="romm-item-info">
                     <span>Only 5 rooms left on our website</span>
                     <img src={room.offers[0]?.image} alt={roomName} />
+                    <button
+                      type="button"
+                      className="room-details-btn"
+                      onClick={() =>
+                        setDetailRoom({
+                          room: room.roomInfos[0] || {},
+                          roomName,
+                          hotelPhoto: hotel?.main_photo || "",
+                        })
+                      }
+                    >
+                      Room details
+                    </button>
                     <h4>{roomName}</h4>
                     <div className="romm-info-detalis">
-                      <p>Room details</p>
                       <div className="detalis-heder">
                         <div className="detalis-heder-item">
                           <RoundedCorner />
@@ -200,6 +209,15 @@ const navigate = useNavigate();
           </div>
         </div>
       </div>
+
+      {detailRoom && (
+        <RoomDetailsPopup
+          room={detailRoom.room}
+          roomName={detailRoom.roomName}
+          hotelPhoto={detailRoom.hotelPhoto}
+          onClose={() => setDetailRoom(null)}
+        />
+      )}
     </div>
   );
 };

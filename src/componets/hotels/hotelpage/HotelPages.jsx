@@ -2,15 +2,16 @@
 import { useEffect, useState, useMemo } from "react";
 import "./style.css";
 import { Rating } from "@mui/material";
-import { Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt } from '@mui/icons-material';
-import Loader from "../../loaders/loading";
-import Carousel from "../../slider/Carousel";
+import PageLoader from "../../loaders/PageLoader";
+import HotelGallery from "../../slider/HotelGallery";
+import SentimentBlock from "./SentimentBlock";
+import GuestReviews from "./GuestReviews";
+import PopularFacilities from "./PopularFacilities";
 import Rooms from "../rooms/Roomsnew";
 
 import left from "../../../img/icons/tabicons/arrow-left.svg";
 import search from "../../../img/icons/tabicons/search-normal.svg";
 import loc from "../../../img/icons/tabicons/location.svg";
-import faf from "../../../img/icons/Hotelicons/heart.svg";
 
 
 // Ð˜Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ñˆ ÑÐµÑ€Ð²Ð¸Ñ
@@ -111,31 +112,12 @@ console.log(data);
     return () => { isMounted = false; };
   }, [hid, checkInParam, checkOutParam, adults]);
 
-  const sliderImages = useMemo(() => (images || []).slice(0, 10), [images]);
-
   let nights = useMemo(() => {
     if (checkIn && checkOut && checkOut > checkIn) {
       return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     }
     return 0;
   }, [checkIn, checkOut]);
-
-  const facilityIcons = [
-    { keywords: ["wifi"], icon: Wifi },
-    { keywords: ["internet"], icon: Wifi },
-    { keywords: ["fitness"], icon: FitnessCenter },
-    { keywords: ["parking"], icon: LocalParking },
-    { keywords: ["pool"], icon: Pool },
-    { keywords: ["conditioning"], icon: AcUnit },
-    { keywords: ["smoking"], icon: SmokeFree },
-  ];
-
-  const getFacilityIcon = (name) => {
-    const word = name.toLowerCase();
-    const match = facilityIcons.find(({ keywords }) => keywords.some((key) => word.includes(key)));
-    const Icon = match?.icon || TaskAlt;
-    return <Icon />;
-  };
 
   const handleBack = () => {
     const params = new URLSearchParams();
@@ -156,10 +138,7 @@ console.log(hotel);
     <div className="maincontent">
       <div className="hcontainer">
         {loading ? (
-          <div className="loader-not">
-            <Loader />
-            <span>Please wait</span>
-          </div>
+          <PageLoader embedded />
         ) : !hotelData ? (
           <div className="option-not">
             <img src={search} alt="hotel" />
@@ -174,72 +153,63 @@ console.log(hotel);
                 <span>Back</span>
               </button>
               </div>
-            
-            <div className="infoheder">
-              <div className="hederleft">
-                <h1>{hotel.name}</h1>
-                <div className="info-left-star">
-                  <Rating
-                    name="hotel-stars"
-                    value={hotel.starRating ?? 0}
-                    max={5}
-                    precision={1}
-                    readOnly
-                    size="small"
-                  />
-                  <span>. {hotel.reviewCount} reviews</span>
-                </div>
-                <div className="left-location">
-                  <div className="loc-name">
-                    <button>
-                      <img src={loc} alt="location" />
-                      <span>{`${hotel.city || ""}, ${hotel.country || ""}`}</span>
-                    </button>
-                    <button><span>Show on map</span></button>
-                    
-                  </div>
-                  <div className="info-left-star">
-                    <span>6.3 km from the center</span>
-                  </div>
-                </div>
+
+            <div className="hotel-hero">
+              <div className="hotel-hero-media">
+                <HotelGallery images={images} />
               </div>
-              
-              <div className="hederrigth">
-                
-                <div className="hederpricehotel">
+              <div className="hotel-hero-info">
+                <div className="hotel-hero-head">
+                  <h1>{hotel.name}</h1>
+                  <div className="hotel-hero-rating">
+                    <Rating
+                      name="hotel-stars"
+                      value={hotel.starRating ?? 0}
+                      max={5}
+                      precision={1}
+                      readOnly
+                      size="small"
+                    />
+                    <span>. {hotel.reviewCount} reviews</span>
+                  </div>
+                  <div className="hotel-hero-loc">
+                    <img src={loc} alt="location" />
+                    <span>{`${hotel.city || ""}, ${hotel.country || ""}`}</span>
+                    <button><span>Show on map</span></button>
+                  </div>
+                </div>
+                <div className="hotel-hero-price">
                   {rates.length > 0 && rates[0]?.offerInitialPrice ? (
-                    <h1>from {rates[0].offerInitialPrice.amount} AED</h1>
+                    <h2>from {rates[0].offerInitialPrice.amount} AED</h2>
                   ) : (
-                    <h1>Price N/A</h1>
+                    <h2>Price N/A</h2>
                   )}
                   <span>for {nights} nights</span>
                 </div>
               </div>
             </div>
 
-            <div className="hcarusel">
-              <div className="hcarusell-left">
-                <Carousel data={sliderImages} />
+            <SentimentBlock
+              sentiment={hotel.sentiment_analysis || hotel.sentimentAnalysis}
+              reviewCount={hotel.reviewCount}
+            />
+
+            <GuestReviews
+              sentiment={hotel.sentiment_analysis || hotel.sentimentAnalysis}
+              reviewCount={hotel.reviewCount}
+              hotelId={hid}
+            />
+
+            <div className="hotel-about">
+              <h2>Hotel about</h2>
+              <div className="hinfo-box">
+                <span>{(hotel.hotelDescription || "").replace(/<[^>]*>?/gm, '')}</span>
               </div>
-              <div className="hcarusell-rigth">
-                <h2>Hotel about</h2>
-                <div className="hinfo-box">
-                  <span>{(hotel.hotelDescription || "").replace(/<[^>]*>?/gm, '')}</span>
-                </div>
-                <h2>Hotel important</h2>
-                <div className="hinfo-box">
-                  <span>{(hotel.hotelImportantInformation || "").replace(/<[^>]*>?/gm, '')}</span>
-                </div>
-                <h2>Popular facticlies</h2>
-                <div className="facti-box">
-                  {hotelFacilities.slice(0, 10).map((item) => (
-                    <div className="facti-btn" key={item.facilityId}>
-                      {getFacilityIcon(item.name)} 
-                      <span>{item.name}</span>
-                    </div>
-                  ))}
-                </div>
+              <h2>Hotel important</h2>
+              <div className="hinfo-box">
+                <span>{(hotel.hotelImportantInformation || "").replace(/<[^>]*>?/gm, '')}</span>
               </div>
+              <PopularFacilities facilities={hotelFacilities} />
             </div>
 
             <Rooms hotel={hotel} rooms={rooms} rates={rates} />

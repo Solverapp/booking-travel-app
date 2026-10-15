@@ -67,185 +67,153 @@
     width: 20px;
     height: 20px;
 }
-.infoheder{
+/* Split-hero страницы тура: фото слева, инфо справа (на мобиле — колонка) */
+.tour-hero{
     display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding: 32px;
+    flex-direction: row;
+    gap: 24px;
+    width: 100%;
+    padding: 12px;
     border-radius: 30px;
     background-color: var(--white);
-    width: 100%;
-    height: auto;
-
 }
-.hederleft{
+.tour-hero-media{
+    flex: 0 1 55%;
+    min-width: 0;
+    align-self: stretch;
+}
+.tour-hero-media img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+    max-height: 460px;
+    object-fit: cover;
+    border-radius: 24px;
+}
+.tour-hero-info{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+    padding: 16px 16px 16px 0;
+}
+.tour-hero-head{
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    height: auto;
-    min-width: 0;
-    width: auto;
 }
-.info-left-star{
-  display: flex;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--gray_text);
+.tour-hero-head h1{
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--black);
 }
-.left-location{
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: auto;
-
-}
-.loc-name{
-  display: flex;
-  gap: 16px;
-  width: auto;
-  
-}
-.loc-name img{
-  width: 20px;
-  height: 20px;
-}
-.loc-name button{
+.tour-hero-rating{
     display: flex;
     align-items: center;
-    font-size: 16px;
-  font-weight: 600;
-  color: var(--green);
-  text-decoration: underline;
-    height: 22px;
-    width: auto;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gray_text);
+}
+.tour-hero-loc{
+    display: flex;
+    align-items: center;
     gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--green);
 }
-.loc-dist{
-  display: flex;
-  gap: 8px;
-  width: auto;
-  max-width: 100%;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--gray_text);
+.tour-hero-loc svg{
+    font-size: 20px;
 }
-.hederrigth{
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 12px;
-    height: auto;
-    flex: 1;
-    min-width: 0;
-    width: auto;
-    max-width: 370px;
-}
-
-.hederrigth img{
-    width: 20px;
-    height: 20px;
-}
-.hederrigth button{
+.tour-hero-foot{
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
-    padding: 16px 24px 16px 24px;
+}
+.tour-hero-fav{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
     border: solid 1px var(--light_gray);
     border-radius: 15px;
     background-color: var(--white);
     color: var(--black);
     font-size: 14px;
     font-weight: 600;
-    height: 45px;
-    width: auto;
+    cursor: pointer;
 }
-.hederrigth-btn{
+.tour-hero-price{
     display: flex;
-    gap: 12px;
-    height: 45px;
-}
-.hederprice{
-    display: flex;
-    justify-content: right;
-    align-items: flex-end;
+    align-items: baseline;
     gap: 8px;
-    span{
-        font-size: 16px;
-        font-weight: 400;
-        color: var(--black);
-    }
 }
-.carusel{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-    min-width: 0;
-    height: auto;
+.tour-hero-price span{
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--gray_text);
 }
-/* Одно фото вместо дублей: img с flex:1 не сжимается (min-width:auto)
-   и рвал вёрстку по горизонтали */
-.carusel-left{
-    display: block;
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    border-radius: 30px;
-    overflow: hidden;
-}
-.carusel-rigth{
-    display: none;
-}
-.carusel-rigth-img{
-    flex: 1;
-    display: flex;
-    height: 291px;
-    object-fit: cover;
-}
-.carusel-rigth-border-t{
-    flex: 1;
-    display: flex;
-    border-top-right-radius: 30px;
-   object-fit: cover;
-    height: 291px;
-}
-.carusel-rigth-border-b{
-    flex: 1;
-    display: flex;
-    object-fit: cover;
-    border-bottom-right-radius: 30px;
-    height: 291px;
+.tour-hero-price h2{
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--black);
 }
 
 /* ============ Адаптив: страница тура ============ */
 
 @media (max-width: 968px) {
-    .infoheder {
-        padding: 24px;
+    .tour-hero {
+        flex-direction: column;
+        gap: 0;
+        padding: 10px;
     }
-    .hederrigth {
+    .tour-hero-media {
         flex: none;
-        width: 100%;
-        max-width: none;
+        align-self: auto;
     }
-    .carusel {
-        gap: 8px;
-    }
-    .carusel-left {
+    .tour-hero-media img {
+        min-height: 0;
+        max-height: none;
         aspect-ratio: 16 / 10;
-        border-radius: 24px;
+    }
+    .tour-hero-info {
+        padding: 16px 14px 14px;
     }
 }
 
 @media (max-width: 640px) {
-    .infoheder {
-        padding: 12px;
+    .tour-hero {
         border-radius: 20px;
+        padding: 8px;
+    }
+    .tour-hero-media img {
+        border-radius: 16px;
+        aspect-ratio: 4 / 3;
+    }
+    .tour-hero-info {
+        padding: 14px 10px 10px;
+        gap: 12px;
+    }
+    .tour-hero-head {
+        gap: 8px;
+    }
+    .tour-hero-head h1 {
+        font-size: 20px;
+    }
+    .tour-hero-price h2 {
+        font-size: 20px;
+    }
+    .tour-hero-loc svg {
+        font-size: 18px;
     }
     .backoption {
         height: auto;
@@ -255,28 +223,6 @@
         height: 44px;
         font-size: 13px;
     }
-
-    .hederleft {
-        gap: 8px;
-    }
-    .hederleft h1 {
-        font-size: 20px;
-    }
-    .hederprice h1 {
-        font-size: 20px;
-    }
-    .left-location svg {
-        font-size: 18px;
-    }
-    .loc-name span {
-        font-size: 14px;
-    }
-    /* Одно фото — компактнее на телефоне */
-    .carusel-left {
-        aspect-ratio: 4 / 3;
-        border-radius: 20px;
-    }
-
 }
 /* ============ Табы информации о туре ============ */
 .tour-tabs{

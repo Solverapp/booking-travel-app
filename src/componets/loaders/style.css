@@ -18,3 +18,28 @@ color: var(--black);
 }
 
 }
+
+/* Полноэкранный лоадер страницы (эталон — страница отеля) */
+.loader-not{
+display: flex;
+flex-direction: column;
+flex-wrap: wrap;
+gap: 8px;
+justify-content: center;
+align-items: center;
+width: 100%;
+max-width: 300px;
+margin: auto;
+text-align: center;
+}
+.loader-not span{
+font-size: 16px;
+font-weight: 400;
+color: var(--black);
+}
+
+@media (max-width: 640px) {
+    .loader-not {
+        margin: 20px auto;
+    }
+}

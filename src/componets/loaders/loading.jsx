@@ -1,11 +1,12 @@
-import { OrbitProgress } from "react-loading-indicators";
+import { Commet } from "react-loading-indicators";
+import "./style.css";
 
 
 const Loader = () => {
     
     return ( 
         <div className="loader-box">
-            <OrbitProgress  color="#152044" size="medium"  />
+            <Commet  color="#152044" size="medium"  />
         </div>
         
      );

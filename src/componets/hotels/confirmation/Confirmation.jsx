@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { hotelBookService } from "../../../services/SupebaseBookService";
 import { useAuth } from "../../../context/AuthContext";
 import { CheckCircleOutlined, ReceiptLong, Person, ContactMail, ConfirmationNumber, ArrowForward } from '@mui/icons-material';
-import Loader from "../../loaders/loading";
+import PageLoader from "../../loaders/PageLoader";
 import Errorsfully from "../../inform/errors";
 import "./style.css";
 
@@ -125,14 +125,7 @@ const ConfirmationPage = () => {
 
 
   if (loading) {
-    return (
-      <div className="checkout-loading-screen">
-        <div className="text-center">
-          <Loader />
-          <p className="loading-text">Confirming your booking and printing ticket...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Confirming your booking and printing ticket..." />;
   }
 
   if (error) {

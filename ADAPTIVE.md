@@ -797,8 +797,9 @@ document.documentElement.scrollWidth > window.innerWidth
 Проверка перед любым шагом:
 ```bash
 npm run build   # обязан пройти
-npm run lint    # базовая линия: 80 problems (69 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
-                # (до чистки мёртвого кода было 192)
+npm run lint    # базовая линия: 81 problems (70 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
+                # (до чистки мёртвого кода было 192; +1 к прошлой базе 80 — не из файлов
+                #  сессии 15.10, git-бинарника нет для точной атрибуции)
 ```
 
 ## Выполнено
@@ -830,6 +831,22 @@ npm run lint    # базовая линия: 80 problems (69 errors, 11 warnings
 | 7+ | **Сброс локации при смене таба главной**: `switchTab()` чистит `city` + `pleaseId` (иначе в Hotels уезжал город тура **без `pleaseId`** → ошибка API); десктопные `CityTour`/`PleaseSearch` получили `initialCity` + `key={...-${city}}` — тот же паттерн, что на `/hotels` и `/tours` | `search/Search.jsx` |
 | 7+ | **Guard поиска отелей**: пока не выбран город из подсказок LiteAPI (`pleaseId` пуст), Search — `disabled` (`--light_gray` фон + `--gray_text` текст, иконка `filter: brightness(.4)`) + подсказка «Select a city from the suggestions» (`.s-hint` / `.msearch-hint` с белой «пилюлей», чтобы читалась поверх фото); `Pleasenew` получил `onCityEdit` — правка текста инвалидирует прежний выбор | `Search.jsx`, `searchfields/MobileSearch.jsx`, `qureytour/Pleasenew.jsx`, `styles/field-common.css` |
 | 7+ | **Шторка локации закрывается сразу после выбора города** (и для тура, и для отеля) — как календарь через `onDone`; на результатах шторка остаётся открытой, чтобы заполнить все поля | `searchfields/MobileSearch.jsx` |
+
+### Сессия 15.10 — PageLoader, туры, страница отеля (всё подтверждено пользователем)
+
+| Шаг | Что | Где |
+|---|---|---|
+| 8 | Единый **`PageLoader`** (`embedded`-режим для встраивания в контент), все страницы переведены с `OrbitProgress`; `.loader-not`-хелпер | `loaders/PageLoader.jsx`, `loaders/style.css`, правки `HotelResult`, `Checkout`, `Confirmation`, `tourpage.jsx` и др. |
+| 8 | **Карточки туров (variant B)**: full-bleed фото, светлая glass-панель снизу, плашка «Top rated» | `tours/Tournew.jsx`, `tours/style.css` |
+| 8 | **Страница тура — split-hero**: фото слева / инфо справа (fav + цена), откат хардкодов | `tourpage/Tour.jsx`, `tourpage/style.css` |
+| 8 | **Галерея отеля**: десктоп-сетка 5 фото + ячейка «+N more» → **lightbox** (fixed, стрелки, Esc/←/→, счётчик), мобиле — карусель | `slider/HotelGallery.jsx`, `slider/hotelgallery.css` |
+| 8 | **Hero отеля во всю ширину**: галерея внутри `.hotel-hero { padding:0; border-radius:30px; overflow:hidden }` — углы сетки скруглены карточкой, инфо-строка **под** сеткой (имя/рейтинг/локация слева, цена справа), `.hotel-about` отдельной карточкой; мёртвые классы (`infoheder*`, `hcarusel*`, `loc-name`…) вычищены | `hotelpage/HotelPages.jsx`, `hotelpage/style.css` |
+| 8 | **SentimentBlock** («Review highlights»): score из категорий sentiment (tone green/amber/red), label mapping, «Based on N reviews», чипы «What guests liked / didn't like», категории-бары, «Show details» раскрывает `description`; guard — пустой → `null` | `hotelpage/SentimentBlock.jsx` |
+| 8 | **PopularFacilities**: топ-10 чипов с иконками + заголовок «See all»; **попап Facilities** — Popular + keyword-группировка в General/Services/Food/Internet/Parking/Wellness/Outdoors/Other | `hotelpage/PopularFacilities.jsx` |
+| 8 | **GuestReviews**: сервис `/data/reviews` через liteapi-proxy; score из sentiment (консистентность), чипы топ-комментариев, «Who stays here» % по `type`, сортировка (Newest/Oldest/Highest), список + Load more (+5), «Showing N of M» | `hotelpage/GuestReviews.jsx`, `services/SupebaseReviewsService.jsx` |
+| 8 | **RoomDetailsPopup**: кнопка «Room details» под фото номера → попап: галерея (hd_url→url→main_photo отеля, стрелки/счётчик/клавиши), м²/Sleeps/bedTypes, описание, «Popular amenities» топ-6, категории `roomAmenities` (CSS `columns:2`, мэсонри); ≤640 — на весь экран `100dvh` | `rooms/RoomDetailsPopup.jsx`, `rooms/Roomsnew.jsx`, `rooms/style.css` |
+
+> Все новые файлы этих сессий чистые по линту; `Roomsnew` — только старый warning `getRoomImage` (exhaustive-deps).
 
 ## Мобильный поиск ≤968 — архитектура
 
@@ -875,9 +892,9 @@ CSS в бандле склеивается в порядке импорта из
 - [ ] Найти/убрать оставшиеся дубли классов (профиль, checkout — проверить).
 - [ ] `src/img/fon/startfon1x.jpg` — **7.1 MB**. Есть альтернативы: `startfon1x_c.jpg` (65 KB), `startfon1x_x.jpeg` (108 KB). Подключить оптимизированную.
 
-### Линт-хвост (текущие 80 problems)
+### Линт-хвост (текущие 81 problems)
 
-- [ ] `HotelResult.jsx` — 23 (в т.ч. `console.log`, `setState-in-effect`); `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 5; `guestCounter.jsx` — 4.
+- [ ] `HotelResult.jsx` — 21; `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 2 (`error` L60, `err` L104); `guestCounter.jsx` — 3; `Filterss.jsx` — 3 (в т.ч. `no-undef facilitService`); `Nav.jsx` (оба) — по 3.
 - [ ] **URL-init `setState-in-effect`** в `NewHotelSearch.jsx` и `Toursearch.jsx` — лечить: ленивый `useState(() => readFromUrl(searchParams))` + `key={searchParams.toString()}` на `<SearchOption />` в `HotelResult`/`Tournew` вместо effect (поведение идентичное: state всегда = URL).
 
 ### Заметки по мобильному поиску
@@ -891,8 +908,18 @@ CSS в бандле склеивается в порядке импорта из
 
 ## Полезные находки
 
-- MUI установлен (`@mui/icons-material`, `@mui/material`) — используется проектом, брать иконки оттуда.
-- `rg` (ripgrep) **не установлен** — искать через PowerShell `Select-String` или grep-инструмент.
-- `Loader` = `src/componets/loaders/loading.jsx` (`OrbitProgress`), используется и на странице отеля, и на странице тура.
+- MUI установлен (`@mui/icons-material`, `@mui/material`) — используется проектом, брать иконки оттуда. **Но не все существуют**: `PersonOutline`, `ExtensionGuide`, `Wind` → использовать `Person`, `Extension`, `Air`. Остальные иконки из сессий 15.10 проверены.
+- `rg` (ripgrep) **не установлен** — искать через PowerShell `Select-String` или grep-инструмент. **Git-бинарника тоже нет в PATH** — diff/atribution изменений только по mtime файлов.
+- `Loader` = `src/componets/loaders/loading.jsx` (`OrbitProgress`) — **заменён на `PageLoader`** (`loaders/PageLoader.jsx`, проп `embedded` для встраивания). Старый `loading.jsx` оставлен, сверяться, не мёртв ли.
+- **LiteAPI-данные отеля** (через Supabase edge fn `liteapi-proxy`, заголовки `x-target-url` + `x-service-type: 'hotels'`, паттерн в `SupebaseHotelIdService.jsx`):
+  - `hotel.sentiment_analysis` = `{categories:[{name,rating(1-10),description}], pros[], cons[]}` (fallback-ключ `sentimentAnalysis`);
+  - `hotel.facilities` = `[{facilityId,name}]` — **без категорий** → keyword-группировка локальная (`PopularFacilities.jsx`);
+  - отзывы — **отдельный** endpoint `/data/reviews?hotelId=&limit=200` = `{data:[{averageScore,name,type,date,pros,cons,headline,source,reviewId}], total}` (`SupebaseReviewsService.jsx`);
+  - `hotel.rooms[].roomAmenities` = `[{amenitiesId,name,sort}]` — тоже без категорий → `ROOM_AMENITY_CATEGORIES` в `RoomDetailsPopup.jsx`; `photos:[{url,hd_url,mainPhoto}]`, `bedTypes:[{quantity,bedType}]`.
+- **Тон/лейблы оценок** (единый паттерн во всех блоках): tone(r) — green ≥8 / amber ≥6 / red <6; scoreLabel(avg) — ≥9 Exceptional, ≥8 Very Good, ≥7 Good, ≥6 Pleasant, ≥5 Average, иначе Poor.
+- **Fixed-попап внутри `.hotel-hero { overflow:hidden }` не обрезается** — покуда у предков нет `transform`/`filter`/`will-change` (проверять при любых правках hero!). z-index попапов: лайтбокс/фасилити/ревью — 5000, нижние шторки — 2100/2150, навбар — 2000.
+- **`setState` синхронно в `useEffect` = error** (react-compiler-правило): сброс стейта попапа (`setIdx(0)`) делать при **открытии** (в обработчике клика), не в effect.
+- **Dev-сервер пользователя крутится на 5173** — `npm run dev` поднимается на **5174** (проверять контент через `Invoke-WebRequest`, в JSX идут `hotelId: hid` после компиляции).
+- Referens-изображения макетов лежат в `public/`: `referens_tour ui.jpg`, `Rewiew_blok.png`, `facilities_popup.png`, `guest_reviews.png`, `room_detalis 1.png`, `room_detalis 2.png`.
 - `mock/transfers.js`: поле `name` (полное) трогать нельзя — попадает в cart и используется в `touroption/Optionew.jsx` (старый `Option.jsx` удалён как мёртвый). Добавлять новые поля (`short`, `icon`).
 

@@ -1,6 +1,7 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient'; // Импортируем созданный клиент Supabase
+import PageLoader from '../componets/loaders/PageLoader';
 
 const AuthContext = createContext(null);
 
@@ -158,7 +159,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, loading, register, login, logout, orders, addBooking }}>
-      {!loading && children}
+      {loading ? <PageLoader /> : children}
     </AuthContext.Provider>
   );
 };

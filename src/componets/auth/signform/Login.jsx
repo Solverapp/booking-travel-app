@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "../../../context/AuthContext"; // Шаг назад в папку context
-import { useNavigate, NavLink } from "react-router-dom";
+import { useLocation, useNavigate, NavLink } from "react-router-dom";
 import Loader from "../../loaders/loading"; // Подключаем твой лоадер
 import "./style.css";
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // ProtectedRoute передаёт from — возвращаем пользователя на исходную страницу
+  const redirectTo = location.state?.from || '/profile';
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +26,7 @@ const Login = () => {
       // Небольшая искусственная задержка на 800мс, чтобы пользователь 
       // успел увидеть красивый лоадер, а не резкий скачок экрана
       setTimeout(() => {
-        navigate('/profile');
+        navigate(redirectTo);
       }, 800);
     } catch (err) {
       setLoading(false); // Выключаем лоадер, если ошибка

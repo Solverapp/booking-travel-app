@@ -1,9 +1,8 @@
 import "./style.css";
 import starIcon from "../../img/icons/tabicons/star.svg";
-import checkboxEmpty from "../../img/icons/tabicons/checkbox.svg";
-import checkboxChecked from "../../img/icons/tabicons/checkboxActive.svg";
 import checked from "../../img/icons/tabicons/tick-circle.svg";
 import { useState, useEffect } from "react";
+import FilterCheckbox from "./FilterCheckbox";
 // import { facilitService } from "../../services/facilitService";
 import facilitiesData from "../../mock/facilities";
 
@@ -167,6 +166,7 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
         {relevantFacilities.length > 8 && (
           <button
             type="button"
+            className="fb-showall"
             onClick={() => setShowAllFacilities((value) => !value)}
           >
             {showAllFacilities
@@ -223,24 +223,6 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
     </div>
   );
 };
-function FilterCheckbox({ label, isChecked, onChange }) {
-  return (
-    // Динамически добавляем класс 'active', если чекбокс выбран
-    <div
-      className={`filter-checkbox ${isChecked ? "active" : ""}`}
-      onClick={onChange}
-    >
-      {/* Тернарный оператор: если true — показываем checked-иконку, если false — empty */}
-      <img
-        src={isChecked ? checkboxChecked : checkboxEmpty}
-        alt={isChecked ? "checked" : "unchecked"}
-      />
-
-      <span className="semi">{label}</span>
-    </div>
-  );
-}
-
 export default HotelFilters;
 
 export function useFacilities() {

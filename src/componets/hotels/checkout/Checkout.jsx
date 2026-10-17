@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { hotelPrebookService } from "../../../services/SupebasePrebookService";
 import { CalendarMonth, Hotel, People, Security, Restaurant, ChevronLeft, RestoreOutlined } from '@mui/icons-material';
 import PageLoader from "../../loaders/PageLoader";
+import { getStoredCurrency } from "../../../utils/currency";
 import "./style.css";
 
 const CheckoutPage = ({ offerItem }) => {
@@ -30,6 +31,7 @@ const CheckoutPage = ({ offerItem }) => {
   const children = offer?.childrens || 0;
   const roomName = offer?.roomName || "Standard Room";
   const retaliPrice = offer?.totalAmount || 0;
+  const priceCurrency = offer?.priceInfo?.currency || getStoredCurrency();
   const mainPhoto = offer?.imgurl || offer?.main_photo;
 
   const [step, setStep] = useState("guest-details");
@@ -42,6 +44,28 @@ const CheckoutPage = ({ offerItem }) => {
     setError("");
     setStep("processing");
     localStorage.setItem("guestDetails", JSON.stringify(guestDetails));
+
+    // Сохраняем детали номера/питания/возврата, чтобы показать их в бронировании профиля
+    localStorage.setItem("hotelBookingMeta", JSON.stringify({
+      hotelName,
+      roomName,
+      boardName: offer?.boardName || "",
+      refundableTag: offer?.refundableTag || "",
+      checkin: checkin || "",
+      checkout: checkout || "",
+      adults,
+      children,
+      totalAmount: retaliPrice,
+      photo: mainPhoto || "",
+      rateId: offer?.rateId || "",
+      bedType: offer?.bedType || "",
+      roomSize: offer?.roomSize || "",
+      maxGuests: offer?.maxGuests ?? null,
+      cancelPolicy: offer?.cancelPolicy ?? null,
+      priceInfo: offer?.priceInfo ?? null,
+      taxes: Array.isArray(offer?.taxes) ? offer.taxes : [],
+      hotelInfo: offer?.hotelInfo ?? null,
+    }));
 
     try {
       const body = { usePaymentSdk: true, offerId };
@@ -210,7 +234,7 @@ const CheckoutPage = ({ offerItem }) => {
             {mainPhoto && (
               <div className="summary-hero-image">
                 <img src={mainPhoto} alt={hotelName} loading="lazy" />
-                <div className="summary-price-badge">{Number(retaliPrice).toFixed(0)} AED</div>
+                <div className="summary-price-badge">{Number(retaliPrice).toFixed(0)} {priceCurrency}</div>
               </div>
             )}
             
@@ -269,7 +293,7 @@ const CheckoutPage = ({ offerItem }) => {
               <div className="price-summary-table">
                 <div className="price-row">
                   <span>Subtotal</span>
-                  <span>{Number(retaliPrice).toFixed(2)} AED</span>
+                  <span>{Number(retaliPrice).toFixed(2)} {priceCurrency}</span>
                 </div>
                 <div className="price-row">
                   <span>Taxes & Fees</span>
@@ -277,7 +301,7 @@ const CheckoutPage = ({ offerItem }) => {
                 </div>
                 <div className="price-row total-row-highlight">
                   <span>Total amount</span>
-                  <span>{Number(retaliPrice).toFixed(2)} AED</span>
+                  <span>{Number(retaliPrice).toFixed(2)} {priceCurrency}</span>
                 </div>
               </div>
 

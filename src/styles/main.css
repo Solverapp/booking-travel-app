@@ -35,9 +35,6 @@
 --green10: rgba(21, 53, 52, 0.7);
 
 
---sidebar-collapsed-width: 70px; /* Ширина только с иконками */
---sidebar-expanded-width: 240px;  /* Ширина в раскрытом виде */
-
 /* Брейкпоинты (справочно, в @media не подставляются) */
 --bp-lg: 1440px;
 --bp-md: 1200px;
@@ -55,7 +52,7 @@ html {
     /* Фон-фото на html: растягивается на ВЕСЬ документ (а не только вьюпорт),
        поэтому при открытой полосе прокрутки белой подложки не видно */
     background-color: var(--green);
-    background-image: url(../img/fon/startfon1x.jpg);
+    background-image: url(../img/fon/startfon1x.webp);
     background-repeat: no-repeat;
     background-position: center top;
     background-size: cover;
@@ -153,6 +150,7 @@ line-height: 1.1;
 
 /* Глобальная верстка страниц бронирования */
 .checkout-main-content, .confirmation-main-content {
+  width: 100%;
   min-height: 100vh;
   background: linear-gradient(135deg, #091818 0%, #184040 100%);
   color: #f8f9fa;

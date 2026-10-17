@@ -15,6 +15,21 @@ import "./style.css";
 
 // Импортируем наш сервис
 import { hotelService } from "../../../services/SupebaseService";
+import { DEFAULT_CURRENCY, getStoredCurrency, isCurrencyError } from "../../../utils/currency";
+
+const fetchRatesWithCurrencyFallback = async (payload) => {
+  try {
+    return await hotelService.fetchHotelsList(payload);
+  } catch (err) {
+    if (getStoredCurrency() !== DEFAULT_CURRENCY && isCurrencyError(err)) {
+      console.warn(
+        `Currency ${getStoredCurrency()} is not supported by the provider, falling back to ${DEFAULT_CURRENCY}`,
+      );
+      return hotelService.fetchHotelsList({ ...payload, currency: DEFAULT_CURRENCY });
+    }
+    throw err;
+  }
+};
 
 const DEFAULT_FILTERS = {
   starRating: [],
@@ -123,7 +138,7 @@ const HotelList = () => {
 
         const body = {
           occupancies,
-          currency: "AED",
+          currency: getStoredCurrency(),
           guestNationality: "US",
           checkin,
           checkout,
@@ -152,7 +167,7 @@ const HotelList = () => {
         console.log("Финальный body перед отправкой в Supabase:", body);
 
         // Сам вызов сервиса
-        const data = await hotelService.fetchHotelsList(body);
+        const data = await fetchRatesWithCurrencyFallback(body);
         console.log("Данные, которые вернулись в компонент из сервиса:", data);
 
         const hotelList = Array.isArray(data?.hotels) ? data.hotels : [];
@@ -319,7 +334,8 @@ const HotelList = () => {
                               {rate?.retailRate?.total?.[0]?.amount?.toFixed(
                                 0,
                               ) || "N/A"}{" "}
-                              AED
+                              {rate?.retailRate?.total?.[0]?.currency ||
+                                getStoredCurrency()}
                             </p>
                             <span>{`${nights} nights, ${quests} guests`}</span>
                           </div>

@@ -124,6 +124,54 @@
     font-size: 15px;
 }
 
+/* Инлайн-подсказки (flights): «Children  Ages 2-11» в одну строку.
+   Модификатор ставится, когда родитель передаёт hints. */
+.gcontent-inline-hints .item-left {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    width: auto;
+    min-width: 70px;
+}
+
+/* Выбор класса обслуживания (flights) */
+.gcontent .cabin-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gcontent .cabin-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--black);
+}
+
+.gcontent .cabin-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gcontent .cabin-pill {
+    min-height: 44px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--gray_stoke);
+    background-color: var(--white);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--black);
+    cursor: pointer;
+}
+
+.gcontent .cabin-pill.is-active {
+    border-color: var(--green2);
+    background-color: var(--greenbg);
+    color: var(--green2);
+}
+
 @media (max-width: 640px) {
     .gcontent-popup {
         left: 0;

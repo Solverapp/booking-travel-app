@@ -114,6 +114,18 @@ color: var(--red);
     align-items: flex-start;
     gap: 16px;
 }
+.fb-showall{
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--green);
+    text-decoration: underline;
+    cursor: pointer;
+    text-align: left;
+}
 .filter-checkbox{
     display: flex;
     gap: 12px;

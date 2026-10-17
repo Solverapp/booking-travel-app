@@ -7,15 +7,17 @@ import DatePickerOne from "../datepicker/DatePickerOne";
 import DatePickerH from "../datepickerhotel/DatePickerH";
 import Questselector from "../quest/QuestSelector";
 import MobileSearch from "../searchfields/MobileSearch";
+import FlightSearchForm from "../flights/FlightSearchForm";
+import MobileFlightSearch from "../flights/MobileFlightSearch";
 import useMediaQuery from "../../utils/useMediaQuery";
 import defaultdates from "../../utils/defaultdates";
+import { buildFlightsParams } from "../../utils/flightSearch";
 
 import tur from "../../img/icons/tabicons/sun.svg";
 import hotel from "../../img/icons/tabicons/building-4.svg";
 import hotelactiv from "../../img/icons/tabicons/building-4active.svg";
 import air from "../../img/icons/tabicons/airplane.svg";
 import airdark from "../../img/icons/tabicons/airplane-dark.svg";
-import revers from "../../img/icons/tabicons/arrow-2.svg";
 import sbtn from "../../img/icons/tabicons/search.svg";
 
 
@@ -114,6 +116,11 @@ const Search = () => {
     navigate(`/tours?${params.toString()}`);
   };
 
+  const handleAirSearch = (values) => {
+    if (!values?.origin?.iata || !values?.destination?.iata) return;
+    navigate(`/flights?${buildFlightsParams(values).toString()}`);
+  };
+
   return (
     <div className="searchcontainer">
       <div className="tabsoption">
@@ -159,6 +166,9 @@ const Search = () => {
           searchHint={HOTEL_LOCATION_HINT}
           onCityEdit={handleCityEdit}
         />
+      )}
+      {isMobile && activeTab === "air" && (
+        <MobileFlightSearch onSearch={handleAirSearch} />
       )}
       {!isMobile && (
         <>
@@ -230,45 +240,7 @@ const Search = () => {
         {!pleaseId && <p className="s-hint">{HOTEL_LOCATION_HINT}</p>}
       </div>
       <div className={`searchbox ${activeTab === "air" ? "" : "hiden"}`}>
-        <div className="s-optiontour">
-          <div className="sop-box-search-air">
-            <div className="air-item">
-              <div className="air-item-box">
-                <p>From</p>
-                <span>Moscow</span>
-              </div>
-              <span className="gray">MOW</span>
-            </div>
-            <div className="air-item-revers">
-              <img src={revers} alt="arrow" />
-            </div>
-            <div className="air-item">
-              <div className="air-item-box">
-                <p>To</p>
-                <span>Hanoi</span>
-              </div>
-              <span className="gray">HAN</span>
-            </div>
-          </div>
-          <div className="sop-box-dpicker">
-            <div className="dpicker-checkin">
-              <p>When</p>
-              <span>16.12.2025</span>
-            </div>
-            <div className="dpicker-checout">
-              <p>Return</p>
-              <span>16.12.2025</span>
-            </div>
-          </div>
-          <div className="sop-box-theme">
-            <p>Guests</p>
-            <span>2 addivts, no children</span>
-          </div>
-          <div className="sop-btn">
-            <img src={sbtn} alt="sbtn" />
-            <span>Search</span>
-          </div>
-        </div>
+        <FlightSearchForm onSearch={handleAirSearch} />
       </div>
         </>
       )}

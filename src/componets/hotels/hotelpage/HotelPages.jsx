@@ -17,6 +17,21 @@ import loc from "../../../img/icons/tabicons/location.svg";
 // Ð˜Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ñˆ ÑÐµÑ€Ð²Ð¸Ñ
 import { hotelService } from "../../../services/SupebaseService";
 import { hotelIdService } from "../../../services/SupebaseHotelIdService";
+import { DEFAULT_CURRENCY, getStoredCurrency, isCurrencyError } from "../../../utils/currency";
+
+const fetchRatesWithCurrencyFallback = async (payload) => {
+  try {
+    return await hotelService.fetchHotelsList(payload);
+  } catch (err) {
+    if (getStoredCurrency() !== DEFAULT_CURRENCY && isCurrencyError(err)) {
+      console.warn(
+        `Currency ${getStoredCurrency()} is not supported by the provider, falling back to ${DEFAULT_CURRENCY}`,
+      );
+      return hotelService.fetchHotelsList({ ...payload, currency: DEFAULT_CURRENCY });
+    }
+    throw err;
+  }
+};
 
 const parseChildrenAges = (value) => {
   if (Array.isArray(value)) {
@@ -68,7 +83,7 @@ const HotelDetails = ({ id }) => {
         const body = {
           occupancies,
           hotelIds: [hid],
-          currency: "AED",
+          currency: getStoredCurrency(),
           guestNationality: "US",
           checkin,
           checkout,
@@ -86,7 +101,7 @@ const HotelDetails = ({ id }) => {
         const [hotelRes, ratesRes] = await Promise.all ([
           
           hotelIdService.fetchHotelDetalis(id),
-          hotelService.fetchHotelsList(body),
+          fetchRatesWithCurrencyFallback(body),
 
         ])
         const data = await hotelRes.data;
@@ -180,7 +195,7 @@ console.log(hotel);
                 </div>
                 <div className="hotel-hero-price">
                   {rates.length > 0 && rates[0]?.offerInitialPrice ? (
-                    <h2>from {rates[0].offerInitialPrice.amount} AED</h2>
+                    <h2>from {rates[0].offerInitialPrice.amount} {rates[0].offerInitialPrice.currency || getStoredCurrency()}</h2>
                   ) : (
                     <h2>Price N/A</h2>
                   )}

@@ -5,6 +5,7 @@ import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool,
 import RoomDetailsPopup from "./RoomDetailsPopup";
 import meals from "../../../img/icons/Hotelicons/meals.svg";
 import bed from "../../../img/icons/Hotelicons/bed.svg";
+import { getStoredCurrency } from "../../../utils/currency";
 
 const Rooms = ({ hotel, rooms, rates }) => {
 const [searchParams] = useSearchParams();
@@ -79,16 +80,18 @@ const navigate = useNavigate();
     return <Icon />;
   };
 
-  const addCheckout = (offerId, roomname, totalamount, boardName, refundableTag) => {
-    const guests = adults + children;
+  const addCheckout = (offerId, roomname, totalamount, rate, roomInfo) => {
+    const guests = (Number(adults) || 0) + (Number(children) || 0);
+    const cancelInfo = rate?.cancellationPolicies?.cancelPolicyInfos?.[0] ?? null;
+    const totalInfo = rate?.retailRate?.total?.[0] ?? null;
     const newItem = {
       offerId : offerId,
       hid: hotelId,
       imgurl: hotel.main_photo,
       roomName : roomname,
-      boardName: boardName,
+      boardName : rate?.boardName || "",
       hotelName : hotel.name,
-      refundableTag : refundableTag,
+      refundableTag : rate?.cancellationPolicies?.refundableTag || "",
       checkinDate : checkin,
       checkoutDate : checkout,
       adults : adults,
@@ -96,7 +99,39 @@ const navigate = useNavigate();
       guests : guests,
       totalAmount : totalamount,
       please : pleaseId,
-      city : cityname
+      city : cityname,
+      rateId : rate?.rateId || "",
+      bedType : roomInfo?.bedTypes?.[0]?.bedType || "",
+      roomSize : [roomInfo?.roomSizeSquare, roomInfo?.roomSizeUnit].filter(Boolean).join(" "),
+      maxGuests : (Number(roomInfo?.maxAdults) || 0) + (Number(roomInfo?.maxChildren) || 0) || null,
+      cancelPolicy : cancelInfo ? {
+        deadline : cancelInfo.cancelTime || "",
+        amount : Number(cancelInfo.amount) || 0,
+        currency : cancelInfo.currency || "",
+        timezone : cancelInfo.timezone || "",
+      } : null,
+      priceInfo : totalInfo ? {
+        amount : Number(totalInfo.amount) || 0,
+        currency : totalInfo.currency || "AED",
+      } : null,
+      taxes : Array.isArray(rate?.retailRate?.taxesAndFees)
+        ? rate.retailRate.taxesAndFees.map((tax) => ({
+            description : tax.description || "",
+            amount : Number(tax.amount) || 0,
+            currency : tax.currency || "",
+            included : Boolean(tax.included),
+          }))
+        : [],
+      hotelInfo : {
+        id : hotelId,
+        name : hotel.name || "",
+        photo : hotel.main_photo || "",
+        address : hotel.address || "",
+        city : hotel.city || "",
+        country : hotel.country || "",
+        stars : Number(hotel.starRating) || null,
+        rating : Number(hotel.rating) || null,
+      },
     };
    const next = [...offerItem, newItem];
    setOfferItem(next);
@@ -166,6 +201,7 @@ const navigate = useNavigate();
                       const key = `${idx}`;
                       const bedroom = room.roomInfos[0] || {};
                       const ratePrice = item.rate.retailRate?.total?.[0]?.amount?.toFixed(2) || 'N/A';
+                      const rateCurrency = item.rate.retailRate?.total?.[0]?.currency || getStoredCurrency();
                       const isRefundable = item.rate.cancellationPolicies?.refundableTag === "RFN";
                       const cancelTime = item.rate.cancellationPolicies?.cancelPolicyInfos?.[0]?.cancelTime || "";
 
@@ -173,7 +209,7 @@ const navigate = useNavigate();
                         <div className="rates-item" key={key}>
                           <div className="infoitem">
                             <div className="infoprice">
-                              <h2>{ratePrice} AED</h2>
+                              <h2>{ratePrice} {rateCurrency}</h2>
                               <span>Including taxes and fees</span>
                               <div className="canseletion">
                                 <span className={`rfn ${isRefundable ? "rf" : ""}`}>
@@ -193,7 +229,7 @@ const navigate = useNavigate();
                             </div>
                           </div>
                           <div className="addCard">
-                            <button onClick={() => addCheckout(item.offerId, roomName, ratePrice, item.rate.boardName, item.rate.cancellationPolicies?.refundableTag)}>
+                            <button onClick={() => addCheckout(item.offerId, roomName, ratePrice, item.rate, bedroom)}>
                               <ShoppingCart />
                               Buy Now
                               

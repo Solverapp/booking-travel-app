@@ -8,13 +8,25 @@ import "./guests.css";
    mode="tour"   — туры: взрослые / дети / младенцы.
    variant="popup" — внутри поля (absolute-попап с кнопкой Done),
    variant="sheet" — контент нижней шторки (во всю ширину).
+   hints — переопределение подсказок (пустая строка убирает подсказку).
+   cabin/onCabinChange — блок выбора класса обслуживания (flights).
    Компонент контролируемый: значение приходит снаружи (value/onChange). */
+const CABIN_OPTIONS = [
+  { id: "all", label: "All cabins" },
+  { id: "economy", label: "Economy" },
+  { id: "business", label: "Business" },
+  { id: "first", label: "First class" },
+];
+
 const GuestsContent = ({
   mode = "hotel",
   variant = "popup",
   value,
   onChange,
   onDone,
+  hints,
+  cabin = "all",
+  onCabinChange,
 }) => {
   const isTour = mode === "tour";
 
@@ -83,11 +95,13 @@ const GuestsContent = ({
     emit({ childrenAges: nextAges });
   };
 
+  const hintOf = (key, fallback) => hints?.[key] ?? fallback;
+
   const renderCounter = ({ label, hint, count, onMinus, onPlus, minusDisabled, plusDisabled }) => (
     <div className="selector-item">
       <div className="item-left">
         <p>{label}</p>
-        <span>{hint}</span>
+        {hint ? <span>{hint}</span> : null}
       </div>
       <div className="item-counter">
         <button
@@ -115,14 +129,14 @@ const GuestsContent = ({
 
   return (
     <div
-      className={
+      className={`${
         variant === "sheet" ? "gcontent gcontent-sheet" : "gcontent gcontent-popup"
-      }
+      }${hints ? " gcontent-inline-hints" : ""}`}
     >
       <div className="selector-box">
         {renderCounter({
           label: "Adults",
-          hint: "18+ years",
+          hint: hintOf("adults", "18+ years"),
           count: adults,
           onMinus: () => handleAdults(-1),
           onPlus: () => handleAdults(1),
@@ -132,7 +146,7 @@ const GuestsContent = ({
 
         {renderCounter({
           label: "Children",
-          hint: "2–12 years",
+          hint: hintOf("children", "2–12 years"),
           count: children,
           onMinus: () => handleChildren(-1),
           onPlus: () => handleChildren(1),
@@ -143,7 +157,7 @@ const GuestsContent = ({
         {isTour &&
           renderCounter({
             label: "Infants",
-            hint: "0–2 years",
+            hint: hintOf("infants", "0–2 years"),
             count: infants,
             onMinus: () => handleInfants(-1),
             onPlus: () => handleInfants(1),
@@ -173,6 +187,24 @@ const GuestsContent = ({
                 </select>
               </div>
             ))}
+          </div>
+        )}
+
+        {onCabinChange && (
+          <div className="cabin-box">
+            <p className="cabin-label">Cabin class</p>
+            <div className="cabin-pills">
+              {CABIN_OPTIONS.map((option) => (
+                <button
+                  type="button"
+                  key={option.id}
+                  className={`cabin-pill${cabin === option.id ? " is-active" : ""}`}
+                  onClick={() => onCabinChange(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

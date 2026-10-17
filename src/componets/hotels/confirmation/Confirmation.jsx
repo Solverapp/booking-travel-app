@@ -2,6 +2,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { hotelBookService } from "../../../services/SupebaseBookService";
 import { useAuth } from "../../../context/AuthContext";
+import { getStoredCurrency } from "../../../utils/currency";
 import { CheckCircleOutlined, ReceiptLong, Person, ContactMail, ConfirmationNumber, ArrowForward } from '@mui/icons-material';
 import PageLoader from "../../loaders/PageLoader";
 import Errorsfully from "../../inform/errors";
@@ -16,6 +17,7 @@ const ConfirmationPage = () => {
   const transactionId = searchParams.get('transactionId') || '';
 
   const [bookingData, setBookingData] = useState(null);
+  const [displayCurrency, setDisplayCurrency] = useState(getStoredCurrency());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -76,9 +78,65 @@ const ConfirmationPage = () => {
           // Вытаскиваем точную цену, которую LiteAPI списал с пользователя
           const realPrice = confirmedData?.sellingPriceToUser || confirmedData?.price || 0;
 
+          // Детали номера/питания/возврата, сохранённые на этапе Checkout
+          const hotelMeta = JSON.parse(localStorage.getItem('hotelBookingMeta') || '{}');
+
+          const nights = (() => {
+            const from = Date.parse(hotelMeta.checkin);
+            const to = Date.parse(hotelMeta.checkout);
+            if (Number.isNaN(from) || Number.isNaN(to) || to <= from) return null;
+            return Math.round((to - from) / 86400000);
+          })();
+
+          const priceTotal = Number(hotelMeta.priceInfo?.amount) || Number(realPrice) || null;
+          const priceCurrency = hotelMeta.priceInfo?.currency || getStoredCurrency();
+          setDisplayCurrency(priceCurrency);
+          const perNight = priceTotal && nights
+            ? Math.round((priceTotal / nights) * 100) / 100
+            : null;
+
+          const toCount = (value) => {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+          };
+
+          const bookingMeta = {
+            hotel: hotelMeta.hotelInfo
+              ? { ...hotelMeta.hotelInfo, name: hotelMeta.hotelInfo.name || realHotelName }
+              : { name: realHotelName, photo: hotelMeta.photo || "" },
+            rooms: hotelMeta.roomName
+              ? [{
+                  name: hotelMeta.roomName,
+                  board: hotelMeta.boardName || "",
+                  refundable: hotelMeta.refundableTag === "RFN",
+                  rateId: hotelMeta.rateId || "",
+                  bedType: hotelMeta.bedType || "",
+                  size: hotelMeta.roomSize || "",
+                  maxGuests: hotelMeta.maxGuests ?? null,
+                  cancelPolicy: hotelMeta.cancelPolicy || null,
+                }]
+              : [],
+            checkin: hotelMeta.checkin || "",
+            checkout: hotelMeta.checkout || "",
+            nights,
+            adults: toCount(hotelMeta.adults),
+            children: toCount(hotelMeta.children),
+            holder: [guestDetails.firstName, guestDetails.lastName].filter(Boolean).join(" "),
+            email: guestDetails.email || "",
+            price: priceTotal
+              ? { total: priceTotal, perNight, currency: priceCurrency }
+              : null,
+            taxes: Array.isArray(hotelMeta.taxes) ? hotelMeta.taxes : [],
+          };
+
           // Сохраняем чистые и корректные данные в вашу таблицу 'bookings' на Supabase
-          await addBooking(realHotelName, realPrice, "Hotel");
-          console.log(`Заказ успешно сохранен в Supabase! Отель: ${realHotelName}, Цена: ${realPrice} AED`);
+          await addBooking(realHotelName, realPrice, "Hotel", {
+            reference: confirmedData?.bookingId || "",
+            currency: priceCurrency,
+            meta: bookingMeta,
+          });
+          localStorage.removeItem('hotelBookingMeta');
+          console.log(`Заказ успешно сохранен в Supabase! Отель: ${realHotelName}, Цена: ${realPrice} ${priceCurrency}`);
         } catch (dbErr) {
           console.error("Ошибка записи копии бронирования в базу Supabase:", dbErr);
         }
@@ -199,7 +257,7 @@ const ConfirmationPage = () => {
                   {bookingData?.sellingPriceToUser 
                     ? Number(bookingData.sellingPriceToUser).toFixed(2) 
                     : "N/A"}{" "}
-                  AED
+                  {displayCurrency}
                 </span>
               </div>
             </div>
@@ -209,7 +267,7 @@ const ConfirmationPage = () => {
 
         {/* Кнопки навигации */}
         <div className="confirmation-action-buttons">
-          <button className="primary-action-nav-btn" onClick={() => navigate("/profile")}>
+          <button className="primary-action-nav-btn" onClick={() => navigate("/profile?tab=bookings")}>
             Go to My Bookings
           </button>
           <button className="secondary-action-nav-btn" onClick={handleBookMore}>

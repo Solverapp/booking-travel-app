@@ -1,74 +1,86 @@
-import { useAuth } from "../../context/AuthContext";
 import { useState, useEffect } from "react";
-import NavBar from "./NavBar";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import ProfileNav from "./ProfileNav";
+import OverviewPanel from "./OverviewPanel";
+import BookingsPanel from "./BookingsPanel";
+import SettingsPanel from "./SettingsPanel";
 import "./style.css";
 
+const TABS = ["overview", "bookings", "settings"];
+
 export const ProfileCard = () => {
-  const { user, logout, orders } = useAuth();
-  const [userOrders, setUserOrders] = useState([]);
-  const [activeTab, setActiveTab] = useState("profile");
+  const { user, orders } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const tabParam = searchParams.get("tab");
+  const activeTab = TABS.includes(tabParam) ? tabParam : "overview";
+
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
   const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    console.log(tab);
-    
-    
+    setSearchParams(tab === "overview" ? {} : { tab });
   };
-useEffect(() => {
+
+  const handleRetry = () => {
+    setBookingsLoading(true);
+    setReloadKey((key) => key + 1);
+  };
+
+  useEffect(() => {
     if (!user?.uid) return;
 
-    orders(user.uid)
-  .then((result) => setUserOrders(Array.isArray(result) ? result : []))
-  .catch((error) => console.error('Не удалось загрузить ордера:', error));
-  }, [user?.uid, orders]);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const result = await orders(user.uid);
+        if (cancelled) return;
+        setBookings(Array.isArray(result) ? result : []);
+        setBookingsError("");
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Не удалось загрузить ордера:", error);
+        setBookingsError("Could not load your bookings");
+      } finally {
+        if (!cancelled) setBookingsLoading(false);
+      }
+    };
 
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, orders, reloadKey]);
 
-  // Если пользователя почему-то нет, не ломаем приложение
   if (!user) return <p>Пользователь не найден</p>;
 
   return (
     <div className="pcontainer">
-      <NavBar onTabChange = {handleTabChange}/>
+      <ProfileNav activeTab={activeTab} onTabChange={handleTabChange} />
+
       <div className="profile-box">
-        <div className={`tab-content ${activeTab === "profile" ? "" : "hiden"}`}>
-          <div className="tab-content-box">
-            <h1>Profile detalis</h1>
-            <div className="tab-info-box">
-              <div className="tab-item">
-                <p> <strong>Name:</strong> {user.firstname || "Не указано"} </p>
-              </div>
-              <div className="tab-item">
-                <p> <strong>Surname:</strong> {user.lastname || "Не указано"} </p>
-              </div>
-              <div className="tab-item">
-                <p> <strong>Email:</strong> {user.email} </p>
-              </div>
-              <div className="tab-item">
-                <p> <strong>ID-Bubble:</strong> {user.uid} </p>
-              </div>
-            </div>
-          </div>
+        {activeTab === "overview" && (
+          <OverviewPanel
+            bookings={bookings}
+            loading={bookingsLoading}
+            onTabChange={handleTabChange}
+          />
+        )}
 
-        </div>
-        <div className={`tab-content ${activeTab === "book" ? "" : "hiden"}`}>
-          <div className="tab-content-box">
-            <h1>My Bookings</h1>
-            <div className="tab-info-box">
-              {userOrders.map((item) => (
-  <div className="tab-item" key={item.id}>
-    <p><strong>Service name</strong>: {item.name}</p>
-    <p><strong>Total</strong>: {item.sum}</p>
-    <p><strong>Service type</strong>: {item.Service}</p>
-    <p><strong>Status</strong>: {item.status}</p>
-  </div>
-))}
-              
-            </div>
-          </div>
+        {activeTab === "bookings" && (
+          <BookingsPanel
+            bookings={bookings}
+            loading={bookingsLoading}
+            error={bookingsError}
+            onRetry={handleRetry}
+          />
+        )}
 
-        </div>
-        
+        {activeTab === "settings" && <SettingsPanel />}
       </div>
     </div>
-    
   );
 };

@@ -797,9 +797,9 @@ document.documentElement.scrollWidth > window.innerWidth
 Проверка перед любым шагом:
 ```bash
 npm run build   # обязан пройти
-npm run lint    # базовая линия: 81 problems (70 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
+npm run lint    # базовая линия: 79 problems (68 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
                 # (до чистки мёртвого кода было 192; +1 к прошлой базе 80 — не из файлов
-                #  сессии 15.10, git-бинарника нет для точной атрибуции)
+                #  сессии 15.10, git-бинарника нет для точной атрибуции; после сессии профиля 68)
 ```
 
 ## Выполнено
@@ -831,6 +831,17 @@ npm run lint    # базовая линия: 81 problems (70 errors, 11 warnings
 | 7+ | **Сброс локации при смене таба главной**: `switchTab()` чистит `city` + `pleaseId` (иначе в Hotels уезжал город тура **без `pleaseId`** → ошибка API); десктопные `CityTour`/`PleaseSearch` получили `initialCity` + `key={...-${city}}` — тот же паттерн, что на `/hotels` и `/tours` | `search/Search.jsx` |
 | 7+ | **Guard поиска отелей**: пока не выбран город из подсказок LiteAPI (`pleaseId` пуст), Search — `disabled` (`--light_gray` фон + `--gray_text` текст, иконка `filter: brightness(.4)`) + подсказка «Select a city from the suggestions» (`.s-hint` / `.msearch-hint` с белой «пилюлей», чтобы читалась поверх фото); `Pleasenew` получил `onCityEdit` — правка текста инвалидирует прежний выбор | `Search.jsx`, `searchfields/MobileSearch.jsx`, `qureytour/Pleasenew.jsx`, `styles/field-common.css` |
 | 7+ | **Шторка локации закрывается сразу после выбора города** (и для тура, и для отеля) — как календарь через `onDone`; на результатах шторка остаётся открытой, чтобы заполнить все поля | `searchfields/MobileSearch.jsx` |
+| 7 | **Профиль — редизайн + адаптив** (закрыт последний пункт шага 7): постоянный сайдбар 260px вместо `fixed`+`:hover` (на тач не работал); ≤968 — горизонтальный таб-бар со скроллом; табы в URL `?tab=overview|bookings|settings`; старые `NavBar.jsx`/`flexbox-*`/`--sidebar-*-width` удалены | `profile/*`, `main.css` |
+| 7 | **Профиль · Bookings**: карточки (иконка типа, reference/PNR, дата, сумма+валюта, статус-бейдж), фильтры-чипы по статусу (All/Confirmed/Pending/Cancelled/Completed) и типу сервиса, счётчики; детали — правый drawer на desktop (`2100/2150`, Esc, body-lock, возврат фокуса), `BottomSheet` на ≤968; для рейсов — сегменты из `meta.segments` (маршрут/время/рейс), PNR, пассажиры | `profile/BookingsPanel.jsx`, `BookingCard.jsx`, `BookingDetailsPopup.jsx` |
+| 7 | **Профиль · Settings**: личные данные (first/last name в `user_metadata`, email read-only), смена пароля (re-auth текущим + `updateUser({password})`), выбор валюты (AED/USD/EUR/GBP/RUB) в `user_metadata` + `localStorage` | `profile/SettingsPanel.jsx`, `AuthContext.jsx`, `utils/currency.js` |
+| 7 | **Валюта в поиске**: `buildRatesRequest` (flights) и отельные rates больше не хардкодят AED — берут валюту профиля; при ошибке «currency» провайдера — автоповтор с AED (`*WithCurrencyFallback`) | `utils/flightSearch.js`, `FlightsResult.jsx`, `HotelResult.jsx`, `HotelPages.jsx` |
+| 7+ | **Валюта отеля — отображение**: все цены отеля (карточки результатов, шапка отеля, тарифы, чекаут, ваучер, `currency` брони) показываются в фактической валюте провайдера (`rate.retailRate.total[0].currency` / `priceInfo.currency`) с fallback `getStoredCurrency()`; sandbox LiteAPI поддерживает USD/EUR/GBP/AED | `HotelResult.jsx`, `HotelPages.jsx`, `Roomsnew.jsx`, `hotels/checkout/Checkout.jsx`, `hotels/confirmation/Confirmation.jsx` |
+| 7 | **Deep-link `?tab=bookings`**: после брони рейса/отеля кнопка «Go to My Bookings» ведёт сразу в список броней | `FlightConfirmation.jsx`, `hotels/confirmation/Confirmation.jsx` |
+| 7+ | **Профиль · выравнивание сайдбара**: `.pcontainer` `overflow-x: hidden → clip` — контейнер перестал быть scrollport, sticky-сайдбар встал вровень с контентом (был сдвинут вниз на ~60px); CDP: `delta=0` | `profile/style.css` |
+| 7+ | **Профиль · детали отеля**: Checkout пишет номер/питание/возврат в `localStorage.hotelBookingMeta` → Confirmation сохраняет в `bookings.meta` (`rooms[{name,board,refundable}]`, checkin/checkout, adults/children, holder) + `reference` = bookingId, `currency` AED; `addBooking(name, sum, Service, { reference, orderRef, meta, currency })` | `hotels/checkout/Checkout.jsx`, `hotels/confirmation/Confirmation.jsx`, `AuthContext.jsx` |
+| 7+ | **Профиль · Stay details + Vouchers**: в деталях брони — Stay details (Room/Meal plan/Guests/Check-in/Check-out + бейдж Free cancellation/Non-refundable из `meta.rooms[].refundable`) и Vouchers для всех типов: ссылки из `meta.vouchers` (`[{title,url}]`) либо заглушка «will appear here» (наполнение — из админ-панели, будущее) | `profile/BookingDetailsPopup.jsx`, `profile/style.css` |
+| 7+ | **Flights · Мультипассажиры (Sprint 4)**: `passengerType` (0/1/2) в prebook-payload; серверная валидация counts/types/DOB/паспорта (`BAD_REQUEST`); возрастные хинты в картах (`.fpax-card-hint` — 12+ / 2–11 / Under 2) и DOB `min/max` от даты вылета; smoke multi-pax flow (негативные count/type/DOB → исправный цикл) | `flights/FlightDetails.jsx`, `flights/style.css`, `flights-booking/index.ts`, `scripts/flights-smoke.mjs` |
+| 7+ | **Отель · Полная meta брони**: цепочка `Roomsnew → Checkout → Confirmation` сохраняет в `bookings.meta` всё — отель (id/address/city/country/stars/rating/photo), номер (`rateId`/`bedType`/`size`/`maxGuests`), возврат с дедлайном (`cancellationPolicies.cancelPolicyInfos[0]`), `nights`, `holder`/`email`, цену (`total`/`perNight`) и разбивку налогов (`retailRate.taxesAndFees`); в деталях профиля — Stay details (Bed type/Room size/Nights/Address + дедлайн «Free cancellation until … GMT») и блок **Price details** (налог «(payable at hotel)» для `included:false`) | `hotels/rooms/Roomsnew.jsx`, `hotels/checkout/Checkout.jsx`, `hotels/confirmation/Confirmation.jsx`, `profile/BookingDetailsPopup.jsx`, `profile/bookingUtils.jsx` |
 
 ### Сессия 15.10 — PageLoader, туры, страница отеля (всё подтверждено пользователем)
 
@@ -885,16 +896,17 @@ CSS в бандле склеивается в порядке импорта из
 7. **Наследуемые на мобиле `max-width`** — после перевода в колонку обязательно снимать `flex: none; width: 100%; max-width: none`.
 8. **Позиционированные попапы** — `width: 100%` считается от **позиционированного родителя**, а не от видимого блока (календарь внутри `.dpicker-checkin` = половина поля → 171px). Использовать фикс. ширину + `max-width: calc(100vw - 32px)`.
 9. **Фото-фон на `html`** — всё, что без своего фона, показывает картинку. У `.maincontent` обязательно `min-height: 100dvh` + `background-color: var(--bg)`.
+10. **`overflow-x: hidden` у предка ломает `position: sticky`** — контейнер становится scroll-контейнером, и `top` залипшего элемента отсчитывается от его padding-края, а не от окна (сайдбар профиля «висел» на 60px ниже контента при scroll 0). Лечение: `overflow-x: clip` — клипает, но scroll-контейнером не делает (если клип без скролла, `clip` предпочтительнее `hidden`).
 
 ## Осталось
 
-- [ ] **Шаг 7: профиль** — `profile/style.css`: `#navbar` `position: fixed; width: 300px` + `:hover`-раскрытие. На ≤968 → горизонтальный таб-бар, `margin-left: 0`. (Единственная большая страница, не сделанная.)
-- [ ] Найти/убрать оставшиеся дубли классов (профиль, checkout — проверить).
+- [x] ~~**Шаг 7: профиль**~~ — сделан: постоянный сайдбар + таб-бар ≤968, Bookings (фильтры/детали), Settings (пароль, личные данные, валюта). CDP-проверка 1440/1280/768/440 — без overflow, 0 ошибок консоли. Пост-фикс 17.10: выравнивание сайдбара (`delta=0`), Stay details + Vouchers в деталях (проверено CDP-моком реального рендера).
+- [ ] Найти/убрать оставшиеся дубли классов (checkout — проверить; профиль чист — классы с префиксами `.profile-*`/`.booking-*`/`.pdrawer-*`/`.ps-*`).
 - [ ] `src/img/fon/startfon1x.jpg` — **7.1 MB**. Есть альтернативы: `startfon1x_c.jpg` (65 KB), `startfon1x_x.jpeg` (108 KB). Подключить оптимизированную.
 
-### Линт-хвост (текущие 81 problems)
+### Линт-хвост (текущие 79 problems: 68 errors / 11 warnings)
 
-- [ ] `HotelResult.jsx` — 21; `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 2 (`error` L60, `err` L104); `guestCounter.jsx` — 3; `Filterss.jsx` — 3 (в т.ч. `no-undef facilitService`); `Nav.jsx` (оба) — по 3.
+- [ ] `HotelResult.jsx` — 21; `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 2 (`error` L75, `err` L119); `guestCounter.jsx` — 3; `Filterss.jsx` — 3 (в т.ч. `no-undef facilitService`); `Nav.jsx` (оба) — по 3.
 - [ ] **URL-init `setState-in-effect`** в `NewHotelSearch.jsx` и `Toursearch.jsx` — лечить: ленивый `useState(() => readFromUrl(searchParams))` + `key={searchParams.toString()}` на `<SearchOption />` в `HotelResult`/`Tournew` вместо effect (поведение идентичное: state всегда = URL).
 
 ### Заметки по мобильному поиску
@@ -911,14 +923,18 @@ CSS в бандле склеивается в порядке импорта из
 - MUI установлен (`@mui/icons-material`, `@mui/material`) — используется проектом, брать иконки оттуда. **Но не все существуют**: `PersonOutline`, `ExtensionGuide`, `Wind` → использовать `Person`, `Extension`, `Air`. Остальные иконки из сессий 15.10 проверены.
 - `rg` (ripgrep) **не установлен** — искать через PowerShell `Select-String` или grep-инструмент. **Git-бинарника тоже нет в PATH** — diff/atribution изменений только по mtime файлов.
 - `Loader` = `src/componets/loaders/loading.jsx` (`OrbitProgress`) — **заменён на `PageLoader`** (`loaders/PageLoader.jsx`, проп `embedded` для встраивания). Старый `loading.jsx` оставлен, сверяться, не мёртв ли.
+- **LiteAPI Flights · prebook**: `passengers[].passengerType` (0=adult, 1=child, 2=infant) — request-поле; `type` (ADT/CHD/INF) только в ответах; длина `passengers` = adults+children+infants из поиска; возрастных ограничений в API нет — IATA-правила (12+ / 2–11 / <2 на дату вылета) валидируем сами; sandbox-офферы часто sold out (код 52010) — при e2e перебирать офферы, в UI маппить в `OFFER_SOLD_OUT` (инвентарь real-time, может «продаться» в любой момент между verify и book).
+- **LiteAPI Flights · автокомплит аэропортов** (`/data/flights/airports`): возвращает дубли IATA («San Diego - All Airports» + «San Diego International Airport» = `SAN`, также `SJO`) — React-ключи списка уникализировать (`iata-index`), иначе duplicate key warning.
 - **LiteAPI-данные отеля** (через Supabase edge fn `liteapi-proxy`, заголовки `x-target-url` + `x-service-type: 'hotels'`, паттерн в `SupebaseHotelIdService.jsx`):
   - `hotel.sentiment_analysis` = `{categories:[{name,rating(1-10),description}], pros[], cons[]}` (fallback-ключ `sentimentAnalysis`);
   - `hotel.facilities` = `[{facilityId,name}]` — **без категорий** → keyword-группировка локальная (`PopularFacilities.jsx`);
   - отзывы — **отдельный** endpoint `/data/reviews?hotelId=&limit=200` = `{data:[{averageScore,name,type,date,pros,cons,headline,source,reviewId}], total}` (`SupebaseReviewsService.jsx`);
-  - `hotel.rooms[].roomAmenities` = `[{amenitiesId,name,sort}]` — тоже без категорий → `ROOM_AMENITY_CATEGORIES` в `RoomDetailsPopup.jsx`; `photos:[{url,hd_url,mainPhoto}]`, `bedTypes:[{quantity,bedType}]`.
+  - `hotel.rooms[].roomAmenities` = `[{amenitiesId,name,sort}]` — тоже без категорий → `ROOM_AMENITY_CATEGORIES` в `RoomDetailsPopup.jsx`; `photos:[{url,hd_url,mainPhoto}]`, `bedTypes:[{quantity,bedType}]`;
+  - `rate` (ответ `hotels/rates`, элементы `roomTypes[].rates[]`): `rateId`, `name`, `boardName`, `mappedRoomId`, `cancellationPolicies: {refundableTag: "RFN", cancelPolicyInfos: [{cancelTime:"YYYY-MM-DD HH:mm:ss", amount, currency, type, timezone}]}`, `retailRate: {total:[{amount,currency}], taxesAndFees:[{included, description, amount, currency}]}` (`included:false` — платится в отеле); `roomTypes[].offerId` и `offerInitialPrice` — на уровне roomType.
 - **Тон/лейблы оценок** (единый паттерн во всех блоках): tone(r) — green ≥8 / amber ≥6 / red <6; scoreLabel(avg) — ≥9 Exceptional, ≥8 Very Good, ≥7 Good, ≥6 Pleasant, ≥5 Average, иначе Poor.
 - **Fixed-попап внутри `.hotel-hero { overflow:hidden }` не обрезается** — покуда у предков нет `transform`/`filter`/`will-change` (проверять при любых правках hero!). z-index попапов: лайтбокс/фасилити/ревью — 5000, нижние шторки — 2100/2150, навбар — 2000.
 - **`setState` синхронно в `useEffect` = error** (react-compiler-правило): сброс стейта попапа (`setIdx(0)`) делать при **открытии** (в обработчике клика), не в effect.
+- **CDP-моки supabase-прокси**: на стадии Response `Fetch.getRequestPostData` **не отдаёт тело запроса** — гейтить мок по URL+методу (не по body); реальный `rates/book` с фейковым prebookId отвечает 400, body переписывается на fake success (CORS-заголовки upstream уже на месте, preflight трогать не нужно).
 - **Dev-сервер пользователя крутится на 5173** — `npm run dev` поднимается на **5174** (проверять контент через `Invoke-WebRequest`, в JSX идут `hotelId: hid` после компиляции).
 - Referens-изображения макетов лежат в `public/`: `referens_tour ui.jpg`, `Rewiew_blok.png`, `facilities_popup.png`, `guest_reviews.png`, `room_detalis 1.png`, `room_detalis 2.png`.
 - `mock/transfers.js`: поле `name` (полное) трогать нельзя — попадает в cart и используется в `touroption/Optionew.jsx` (старый `Option.jsx` удалён как мёртвый). Добавлять новые поля (`short`, `icon`).

@@ -1,3 +1,7 @@
+declare const EdgeRuntime:
+  | { waitUntil(p: Promise<unknown>): void }
+  | undefined;
+
 Deno.serve(async (req) => {
   // 1. Извлекаем секретные ключи из защищенной среды Supabase
   const LITE_API_KEY = Deno.env.get("LITE_API_KEY");
@@ -16,7 +20,7 @@ Deno.serve(async (req) => {
   try {
     // 2. Получаем метаданные назначения из заголовков React
     const targetUrl = req.headers.get('x-target-url');
-    const serviceType = req.headers.get('x-service-type'); // 'hotels' или 'tours'
+    const serviceType = req.headers.get('x-service-type'); // 'hotels', 'flights' или 'tours'
 
     if (!targetUrl) throw new Error("Missing 'x-target-url' header");
 
@@ -36,7 +40,7 @@ Deno.serve(async (req) => {
       // Для Rayna Tour передаем ключ в заголовок Authorization в чистом виде
       headers['Authorization'] = RAYNA_API_KEY || '';
     } else {
-      // По умолчанию для LiteAPI отелей
+      // LiteAPI (hotels + flights/v3.0) — ключ в X-API-Key
       headers['X-API-Key'] = LITE_API_KEY || '';
     }
 
@@ -53,6 +57,18 @@ Deno.serve(async (req) => {
     const res = await fetch(targetUrl, requestOptions);
     const data = await res.json();
 
+    // 5. Кэш аэропортов: тихо сохраняем в flight_airports (service-role),
+    //    ответ клиенту не задерживаем и не ломаем при ошибке кэша
+    if (
+      serviceType === "flights" &&
+      req.method === "GET" &&
+      res.status === 200 &&
+      targetUrl.includes("/data/flights/airports") &&
+      !targetUrl.includes("/iatas")
+    ) {
+      cacheAirportsInBackground(data);
+    }
+
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: res.status
@@ -65,3 +81,48 @@ Deno.serve(async (req) => {
     });
   }
 })
+
+function cacheAirportsInBackground(data: any) {
+  try {
+    const airports = data?.data?.[0]?.airports ?? data?.data?.airports;
+    if (!Array.isArray(airports) || airports.length === 0) return;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return;
+
+    const rows = airports
+      .map((a: any) => ({
+        iata: a?.iata,
+        icao: a?.icao ?? null,
+        name: a?.name ?? null,
+        city: a?.city ?? null,
+        country: a?.country ?? null,
+        state: a?.state ?? null,
+        tz: a?.tz ?? null,
+        lat: a?.lat ?? null,
+        lon: a?.lon ?? null,
+        refreshed_at: new Date().toISOString(),
+      }))
+      .filter((r: any) => r.iata && r.name);
+
+    if (rows.length === 0) return;
+
+    const upsert = fetch(`${supabaseUrl}/rest/v1/flight_airports`, {
+      method: "POST",
+      headers: {
+        "apikey": serviceKey,
+        "Authorization": `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(rows),
+    }).catch(() => {});
+
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      EdgeRuntime.waitUntil(upsert);
+    }
+  } catch {
+    // Кэш не должен влиять на основной ответ
+  }
+}

@@ -210,7 +210,14 @@ async function multiPaxFlow() {
   if (!rows?.length) die("multi-pax bookings row not found");
   if (rows[0]?.meta?.passengers !== 3)
     die(`meta.passengers expected 3, got ${rows[0]?.meta?.passengers}`);
-  step("pax bookings", `OK — meta.passengers=3, sum=${rows[0].sum}`);
+  const paxList = asArray(rows[0]?.meta?.passengerList);
+  if (paxList.length !== 3)
+    die(`meta.passengerList expected 3, got ${paxList.length}`);
+  if (!paxList[0]?.firstName || !paxList[0]?.documentNumber)
+    die(`meta.passengerList[0] missing name/document: ${JSON.stringify(paxList[0])}`);
+  if (rows[0]?.meta?.contact?.email !== contact.email)
+    die(`meta.contact.email expected ${contact.email}, got ${rows[0]?.meta?.contact?.email}`);
+  step("pax bookings", `OK — meta.passengers=3, passengerList=3, contact.email=${rows[0].meta.contact.email}, sum=${rows[0].sum}`);
 }
 
 async function main() {

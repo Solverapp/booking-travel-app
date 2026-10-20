@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import CloseIcon from "@mui/icons-material/Close";
+import facilitiesData from "../../../mock/facilities";
 import {
   Wifi,
   LocalParking,
@@ -126,6 +127,27 @@ const groupFacilities = (facilities) => {
 
 const POPULAR_COUNT = 10;
 
+/* Популярные удобства (sort 1..26 в справочнике) — вперёд, остальные по порядку API */
+const POPULAR_RANK = new Map(
+  facilitiesData
+    .filter((item) => Number(item.sort) > 0 && Number(item.sort) <= 26)
+    .map((item) => [Number(item.facility_id), Number(item.sort)]),
+);
+
+const sortByPopularity = (facilities) => {
+  const ranked = [];
+  const rest = [];
+
+  facilities.forEach((item) => {
+    const rank = POPULAR_RANK.get(Number(item.facilityId));
+    if (rank != null) ranked.push({ item, rank });
+    else rest.push(item);
+  });
+
+  ranked.sort((a, b) => a.rank - b.rank);
+  return [...ranked.map((entry) => entry.item), ...rest];
+};
+
 const PopularFacilities = ({ facilities = [] }) => {
   const [open, setOpen] = useState(false);
 
@@ -144,9 +166,13 @@ const PopularFacilities = ({ facilities = [] }) => {
     };
   }, [open, close]);
 
+  const popular = useMemo(
+    () => sortByPopularity(facilities).slice(0, POPULAR_COUNT),
+    [facilities],
+  );
+
   if (!facilities.length) return null;
 
-  const popular = facilities.slice(0, POPULAR_COUNT);
   const groups = open ? groupFacilities(facilities) : [];
 
   return (

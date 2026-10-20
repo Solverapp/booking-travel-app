@@ -345,17 +345,31 @@
             justify-content: center;
             
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
             width: fit-content;
-            button{
-                display: flex;
-                gap: 12px;
-                cursor: none;
-            }
-            img {
-                width: 27px;
-                height: 20px;
-            }
+        }
+        .rate-fact{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--black);
+        }
+        .rate-fact-icon{
+            width: 20px;
+            height: 20px;
+            color: var(--gray_text);
+            flex-shrink: 0;
+        }
+        .rate-fact.is-meals .rate-fact-icon{
+            color: var(--green);
+        }
+        .rate-fact.is-meals span{
+            color: var(--green);
+        }
+        .rate-fact.is-off span{
+            color: var(--gray_text);
         }
     }
 
@@ -620,6 +634,14 @@
     }
     .rates-item h2 {
         font-size: 20px;
+    }
+    /* Buy Now — на всю ширину карточки тарифа */
+    .rates-item .addCard {
+        width: 100%;
+    }
+    .rates-item .addCard button {
+        width: 100%;
+        justify-content: center;
     }
     .rd-popup {
         padding: 0;

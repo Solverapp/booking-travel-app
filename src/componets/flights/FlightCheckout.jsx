@@ -208,7 +208,7 @@ const FlightCheckout = () => {
                 <div className="meta-icon-row">
                   <FlightTakeoffIcon />
                   <div>
-                    <span className="meta-label">Route</span>
+                    <span className="meta-label">Trip type</span>
                     <span className="meta-value">
                       {legs.length > 1 ? "Round trip" : "One way"}
                     </span>

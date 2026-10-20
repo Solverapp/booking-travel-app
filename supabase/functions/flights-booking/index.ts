@@ -110,7 +110,36 @@ function slimSegments(segments: any[]) {
     arrivalTime: s?.arrivalTime ?? null,
     flightNumber: s?.flight?.marketingNumber ?? null,
     carrier: s?.carrier?.marketingCode ?? null,
+    carrierName: s?.carrier?.marketingName ?? null,
   }));
+}
+
+// Пассажиры из сессии (нормализованные в prebook) — для деталей брони в профиле
+function slimPassengers(passengers: any[]) {
+  return asArray(passengers).map((p: any) => ({
+    type: Number.isFinite(Number(p?.passengerType)) ? Number(p.passengerType) : null,
+    title: p?.title ?? null,
+    firstName: p?.firstName ?? null,
+    lastName: p?.lastName ?? null,
+    birthday: p?.birthday ?? null,
+    gender: p?.gender ?? null,
+    nationality: p?.nationality ?? null,
+    documentType: p?.documentType ?? null,
+    documentNumber: p?.documentNumber ?? null,
+    documentIssueCountry: p?.documentIssueCountry ?? null,
+    documentExpiry: p?.documentExpiry ?? null,
+  }));
+}
+
+function slimContact(contact: any) {
+  if (!contact) return null;
+  return {
+    firstName: contact?.firstName ?? null,
+    lastName: contact?.lastName ?? null,
+    email: contact?.email ?? null,
+    phoneCountryCode: contact?.phoneCountryCode ?? null,
+    phoneNumber: contact?.phoneNumber ?? null,
+  };
 }
 
 // Ответ /flights/bookings → сводка для БД и клиента (устойчиво к вариациям схемы)
@@ -131,6 +160,7 @@ function buildBookingSummary(payload: any, session: any) {
   const carrier = first?.carrier?.marketingName ?? first?.carrier?.marketingCode ?? "Flight";
   const origin = first?.originCode ?? session?.search_params?.legs?.[0]?.origin ?? "?";
   const destination = last?.destinationCode ?? session?.search_params?.legs?.[0]?.destination ?? "?";
+  const isRoundTrip = segments.some((s: any) => s?.direction === "INBOUND");
 
   const total =
     Number(
@@ -153,7 +183,7 @@ function buildBookingSummary(payload: any, session: any) {
     bookingRef: booking?.bookingRef ?? root?.bookingRef ?? null,
     pnr,
     status: booking?.status ?? root?.status ?? null,
-    tourName: `${origin} → ${destination} · ${carrier}`,
+    tourName: `${origin} ${isRoundTrip ? "⇄" : "→"} ${destination} · ${carrier}`,
     total,
     currency,
     meta: {
@@ -165,6 +195,13 @@ function buildBookingSummary(payload: any, session: any) {
       destination,
       passengers: asArray(booking?.passengers).length || asArray(session?.passengers).length || 1,
       segments: slimSegments(segments),
+      passengerList: slimPassengers(session?.passengers),
+      contact: slimContact(session?.contact),
+      adults: Number(session?.search_params?.adults) || null,
+      children: Number(session?.search_params?.children) || 0,
+      infants: Number(session?.search_params?.infants) || 0,
+      cabin: session?.search_params?.cabin ?? null,
+      trip: session?.search_params?.trip ?? null,
     },
   };
 }
@@ -381,7 +418,7 @@ async function handleBook(admin: any, user: any, body: any) {
   if (loaded.error) return loaded.error;
   const session = loaded.session as any;
 
-  // Идемпотентность: уже забронировано — возвращаем существующее
+  // Идемпотентность: уже забронировано — возвращаем существующее (в том же формате, что первый вызов)
   const { data: existing } = await admin
     .from("flight_bookings")
     .select("*")
@@ -389,11 +426,24 @@ async function handleBook(admin: any, user: any, body: any) {
     .maybeSingle();
 
   if (existing) {
+    const { data: bookingRows } = await admin
+      .from("bookings")
+      .select("name, sum, currency, meta, status")
+      .eq("order_ref", session.order_ref)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const row = bookingRows?.[0] ?? null;
+
     return json({
       bookingId: existing.booking_id,
       bookingRef: existing.booking_ref,
       pnr: existing.provider_payload?.pnr ?? null,
       status: existing.status,
+      tourName: row?.name ?? null,
+      total: Number(row?.sum) || 0,
+      currency: row?.currency ?? null,
+      meta: row?.meta ?? null,
       reused: true,
     });
   }

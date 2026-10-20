@@ -78,3 +78,43 @@ export const formatMoney = (amount, currency) => {
   if (!Number.isFinite(value)) return "";
   return `${value.toFixed(2)} ${currency || "AED"}`;
 };
+
+export const PASSENGER_TYPE_LABELS = ["Adult", "Child", "Infant"];
+
+// Тип пассажира из meta.passengerList[].type (0/1/2); фолбэк — по позиции и counts
+export const passengerTypeLabel = (passengerType, index, counts) => {
+  const type = Number(passengerType);
+  if (Number.isFinite(type) && PASSENGER_TYPE_LABELS[type]) {
+    return PASSENGER_TYPE_LABELS[type];
+  }
+  const adults = Number(counts?.adults) || 0;
+  const children = Number(counts?.children) || 0;
+  if (adults || children || Number(counts?.infants)) {
+    if (index < adults) return "Adult";
+    if (index < adults + children) return "Child";
+    return "Infant";
+  }
+  return "";
+};
+
+export const formatGender = (gender) => {
+  const value = String(gender ?? "").trim().toUpperCase();
+  if (value === "M") return "Male";
+  if (value === "F") return "Female";
+  return "";
+};
+
+const CABIN_LABELS = {
+  economy: "Economy",
+  premium_economy: "Premium economy",
+  business: "Business",
+  first: "First",
+};
+
+// "" для отсутствующего значения — строку не показываем
+export const cabinLabel = (cabin) => {
+  const value = String(cabin ?? "").trim().toLowerCase();
+  if (!value) return "";
+  if (value === "all") return "Any cabin";
+  return CABIN_LABELS[value] ?? value.charAt(0).toUpperCase() + value.slice(1);
+};

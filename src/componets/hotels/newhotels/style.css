@@ -29,10 +29,32 @@ color: var(--black);
 }
 .hotelbox-grid {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  /* minmax(0,1fr) вместо 1fr — иначе min-content карточки раздувает колонку и появляется горизонтальный скролл на мобиле */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding: 6px;
   width: 100%;
+}
+
+/* Ряд мобильных кнопок [Filters][Sort] — на десктопе растворяется */
+.mcontrols {
+  display: contents;
+}
+.sort-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 16px;
+  background: var(--white);
+  border: 1px solid var(--light_gray);
+  color: var(--black);
+  cursor: pointer;
+}
+.sort-toggle-btn svg {
+  font-size: 22px;
 }
 
 .grid-card {
@@ -41,7 +63,8 @@ color: var(--black);
     min-width: 0;
     max-width: 950px;
     padding: 0px 9px 0px 0px;
-    height: 250px;
+    min-height: 250px;
+    height: auto;
     background-color: var(--white);
   border: 1px solid #ddd;
   border-radius: 25px;
@@ -56,7 +79,6 @@ color: var(--black);
 .grid-card-img-box {
   display: flex;
   width: 30%;
-  height: 100%;
   border-top-left-radius: 25px;
   border-bottom-left-radius: 25px;
   position: relative;
@@ -64,6 +86,7 @@ color: var(--black);
 .grid-card-rigth-box {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   width: 70%;
   height: 100%;
   border-top-right-radius: 25px;
@@ -104,77 +127,69 @@ color: var(--black);
 }
 .locname{
   display: flex;
+  align-items: center;
   gap: 8px;
+  min-width: 0;
   font-size: 12px;
   font-weight: 400;
   color: var(--green2);
 }
+.locname p{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .locname svg{
+  flex-shrink: 0;
   width: 18px;
   height: 18px;
   color: var(--black);
 }
-.romname{
+/* Рейтинг-плашка на фото — референс rating.png (оценка, слово-ярлык, лента) */
+.hc-rating {
   display: flex;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--black);
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 8px 10px 8px 12px;
+  background-color: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
-.romname svg{
-  width: 18px;
-  height: 18px;
-  color: var(--black);
-}
-.locdist{
+.hc-rating-text {
   display: flex;
-  gap: 8px;
-
+  flex-direction: column;
+  gap: 1px;
+}
+.hc-rating-text p {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.hc-rating-text span {
   font-size: 12px;
   font-weight: 400;
   color: var(--gray_text);
 }
-
-.rating-card{
+.hc-rating-ribbon {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 2px;
-  background-color: var(--green2);
-  border-radius: 8px;
-  padding: 4px 12px 4px 12px;
-  width: 47px;
-  height: 30px;
-  font-size: 16px;
+  justify-content: center;
+  width: 36px;
+  height: 44px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--white);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%);
 }
-.rating-card-ab{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  gap: 0px;
-  background-color: var(--white);
-  border-radius: 8px;
-  padding: 8px 8px 8px 8px;
-  width: 120px;
-  height: 50px;
-
-  p{
-    font-size: 16px;
-  font-weight: 700;
-  color: var(--black);
-  }
-  span{
-    font-size: 12px;
-  font-weight: 400;
-  color: var(--black);
-  }
-}
+.hc-rating--green .hc-rating-text p { color: #2e8b2f; }
+.hc-rating--green .hc-rating-ribbon { background-color: #3aa238; }
+.hc-rating--amber .hc-rating-text p { color: #b57a0a; }
+.hc-rating--amber .hc-rating-ribbon { background-color: #e0a11c; }
+.hc-rating--red .hc-rating-text p { color: #b23434; }
+.hc-rating--red .hc-rating-ribbon { background-color: #d64545; }
 .infoleft{
   display: flex;
   flex-direction: column;
@@ -204,28 +219,136 @@ color: var(--black);
 
 }
 .card-footer {
-    display: flex;
-    flex-wrap: wrap;
-  padding: 15px;
-  justify-content: space-between;
-
-}
-.cardfooter-price{
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  max-width: 200px;
+  gap: 10px;
+  padding: 15px;
 }
-.cardfooter-price p{
-  font-size: 18px;
-  font-weight: 700 ;
+
+/* Блок цены/номера — референс price_login.png */
+.hc-deal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hc-deal-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--black);
 }
-.cardfooter-price span{
-  font-size: 12px;
-  font-weight: 400 ;
+.hc-deal-link {
+  color: #1c6fd6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hc-deal-chip {
+  padding: 3px 10px;
+  border-radius: 8px;
+  background-color: #123a4d;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+}
+.hc-member-badge {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background-color: #123a4d;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+}
+.hc-divider {
+  height: 1px;
+  margin: 0 -15px;
+  background-color: #e8e8e8;
+}
+.hc-rate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(170px, auto);
+  gap: 8px 16px;
+  align-items: start;
+}
+.hc-room-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--black);
+}
+.hc-rate-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 2px;
+}
+.hc-cond-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--gray_text);
+}
+.hc-cond-row svg {
+  width: 16px;
+  height: 16px;
+}
+.hc-cond-row.is-positive {
+  color: #2e8b2f;
+}
+.hc-rate-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+.hc-old-price {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--gray_text);
+  text-decoration: line-through;
+}
+.hc-total-price {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--black);
+}
+.hc-price-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+.hc-tax-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gray_text);
+}
+
+@media (max-width: 1200px) {
+  .mcontrols {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+  .mcontrols .filter-toggle-btn {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .sort-toggle-btn {
+    display: flex;
+    flex-shrink: 0;
+  }
+  /* Блок Sort by скрыт — даём отступ до карточек */
+  .hotelbox-grid {
+    margin-top: 12px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -267,17 +390,42 @@ color: var(--black);
   }
   .card-footer {
     gap: 12px;
-    flex-direction: column;
+  }
+  .hc-deal-row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .hc-deal-text {
+    font-size: 13px;
+  }
+  .hc-member-badge {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  .hc-rate-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .hc-rate-price {
     align-items: flex-start;
+    text-align: left;
   }
-  .cardfooter-price {
-    max-width: 100%;
+  .hc-rating {
+    top: 10px;
+    left: 10px;
+    gap: 8px;
+    padding: 6px 8px 6px 10px;
+    border-radius: 10px;
   }
-  .rating-card-ab {
-    left: auto;
-    right: 12px;
-    top: 12px;
-    width: 96px;
-    height: 44px;
+  .hc-rating-ribbon {
+    width: 32px;
+    height: 40px;
+    font-size: 14px;
+  }
+  .hc-rating-text p {
+    font-size: 13px;
+  }
+  .hc-rating-text span {
+    font-size: 11px;
   }
 }

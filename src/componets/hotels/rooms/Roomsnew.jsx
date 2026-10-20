@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import "./style.css";
-import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ShoppingCart } from '@mui/icons-material';
+import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ShoppingCart, Restaurant, KingBed, MeetingRoom } from '@mui/icons-material';
 import RoomDetailsPopup from "./RoomDetailsPopup";
-import meals from "../../../img/icons/Hotelicons/meals.svg";
-import bed from "../../../img/icons/Hotelicons/bed.svg";
 import { getStoredCurrency } from "../../../utils/currency";
+import { mealsIncluded } from "../../../utils/hotelRate";
 
 const Rooms = ({ hotel, rooms, rates }) => {
 const [searchParams] = useSearchParams();
@@ -204,6 +203,10 @@ const navigate = useNavigate();
                       const rateCurrency = item.rate.retailRate?.total?.[0]?.currency || getStoredCurrency();
                       const isRefundable = item.rate.cancellationPolicies?.refundableTag === "RFN";
                       const cancelTime = item.rate.cancellationPolicies?.cancelPolicyInfos?.[0]?.cancelTime || "";
+                      const hasMeals = mealsIncluded(item.rate.boardType, item.rate.boardName);
+                      const isSmokeFree = (bedroom.roomAmenities || []).some((amenity) =>
+                        /non-?smok/i.test(amenity?.name || ""),
+                      );
 
                       return (
                         <div className="rates-item" key={key}>
@@ -218,14 +221,28 @@ const navigate = useNavigate();
                               </div>
                             </div>
                             <div className="rate-amenit">
-                              <button>
-                                <img src={meals} alt="meals" />
-                                <span>{item.rate.boardName || "Room Only"}</span>
-                              </button>
-                              <button>
-                                <img src={bed} alt="bed" />
-                                <span>{bedroom.bedTypes?.[0]?.bedType || "Standard Bed"}</span>
-                              </button>
+                              <div className={`rate-fact${hasMeals ? " is-meals" : " is-off"}`}>
+                                {hasMeals ? (
+                                  <Restaurant className="rate-fact-icon" />
+                                ) : (
+                                  <MeetingRoom className="rate-fact-icon" />
+                                )}
+                                <span>
+                                  {hasMeals ? (item.rate.boardName || "Meals included") : "Room Only"}
+                                </span>
+                              </div>
+                              <div className="rate-fact">
+                                <KingBed className="rate-fact-icon" />
+                                <span>
+                                  {bedroom.bedTypes?.[0]?.bedType || "Standard bed"}
+                                </span>
+                              </div>
+                              {isSmokeFree && (
+                                <div className="rate-fact">
+                                  <SmokeFree className="rate-fact-icon" />
+                                  <span>Non-smoking room</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="addCard">

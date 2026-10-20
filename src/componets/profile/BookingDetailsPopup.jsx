@@ -1,17 +1,25 @@
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import CloseOutlined from "@mui/icons-material/CloseOutlined";
 import ConfirmationNumberOutlined from "@mui/icons-material/ConfirmationNumberOutlined";
 import DownloadOutlined from "@mui/icons-material/DownloadOutlined";
 import RestoreOutlined from "@mui/icons-material/RestoreOutlined";
 import BottomSheet from "../bottomsheet/BottomSheet";
 import useMediaQuery from "../../utils/useMediaQuery";
-import { formatTimeHM } from "../../utils/flightFormatters";
 import {
+  dayChangeLabel,
+  formatDuration,
+  formatTimeHM,
+} from "../../utils/flightFormatters";
+import { dayOffset, minutesBetween } from "../../utils/flightJourneys";
+import {
+  cabinLabel,
   formatBookingDate,
+  formatGender,
   formatMoney,
   formatPolicyDeadline,
   formatSegmentStamp,
   normalizeStatus,
+  passengerTypeLabel,
   serviceMeta,
   statusLabel,
 } from "./bookingUtils";
@@ -26,6 +34,82 @@ const groupSegments = (segments) => {
   return groups;
 };
 
+const FlightLeg = ({ group }) => {
+  const first = group.list[0] ?? {};
+  const last = group.list[group.list.length - 1] ?? {};
+  const stops = group.list.length - 1;
+  const duration = minutesBetween(first?.departureTime, last?.arrivalTime);
+  const dayChange = dayChangeLabel(dayOffset(first?.departureTime, last?.arrivalTime));
+
+  return (
+    <div className="bd-leg">
+      <div className="bd-leg-head">
+        <span className="bd-leg-label">{group.label}</span>
+        <span className="bd-leg-date">{formatBookingDate(first?.departureTime)}</span>
+      </div>
+
+      <div className="bd-leg-route">
+        <div className="bd-leg-point">
+          <strong>{formatTimeHM(first?.departureTime) || "--:--"}</strong>
+          <span>{first?.originCode ?? "—"}</span>
+        </div>
+        <div className="bd-leg-mid">
+          <span className="bd-leg-duration">{formatDuration(duration) || "—"}</span>
+          <span className="bd-leg-line" />
+          <span className="bd-leg-stops">
+            {stops === 0 ? "Direct" : stops === 1 ? "1 stop" : `${stops} stops`}
+          </span>
+        </div>
+        <div className="bd-leg-point is-arrival">
+          <strong>
+            {formatTimeHM(last?.arrivalTime) || "--:--"}
+            {dayChange ? ` ${dayChange}` : ""}
+          </strong>
+          <span>{last?.destinationCode ?? "—"}</span>
+        </div>
+      </div>
+
+      <div className="bd-segs">
+        {group.list.map((segment, index) => {
+          const layover =
+            index > 0
+              ? minutesBetween(group.list[index - 1]?.arrivalTime, segment?.departureTime)
+              : null;
+          const flightLabel = [
+            segment?.carrierName || segment?.carrier,
+            segment?.flightNumber,
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          return (
+            <Fragment key={`${group.id}-${index}`}>
+              {Number.isFinite(layover) && layover > 0 && (
+                <div className="bd-layover">
+                  <span>
+                    Layover {formatDuration(layover)} in {segment?.originCode ?? ""}
+                  </span>
+                </div>
+              )}
+              <div className="bd-segment">
+                <span className="bd-segment-route">
+                  {segment?.originCode ?? "—"} → {segment?.destinationCode ?? "—"}
+                </span>
+                <span className="bd-segment-time">
+                  {[formatSegmentStamp(segment?.departureTime), formatTimeHM(segment?.arrivalTime)]
+                    .filter(Boolean)
+                    .join(" – ")}
+                </span>
+                {flightLabel ? <span className="bd-segment-flight">{flightLabel}</span> : null}
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const BookingDetails = ({ booking }) => {
   const meta = booking.meta ?? {};
   const segments = Array.isArray(meta.segments) ? meta.segments : [];
@@ -34,21 +118,46 @@ const BookingDetails = ({ booking }) => {
   const Icon = service.icon;
   const status = normalizeStatus(booking.status);
 
+  const adults = Number(meta.adults) || 0;
+  const childrenCount = Number(meta.children) || 0;
+  const infantsCount = Number(meta.infants) || 0;
+  const cabin = cabinLabel(meta.cabin);
+  const tripType =
+    meta.trip === "round" || groups.length > 1
+      ? "Round trip"
+      : groups.length === 1
+        ? "One way"
+        : "";
+
   const rows = [
     ["Reference", booking.reference || meta.bookingRef || null],
     ["PNR", meta.pnr && meta.pnr !== booking.reference ? meta.pnr : null],
     ["Order ID", meta.orderRef || booking.order_ref || null],
     ["Booked on", formatBookingDate(booking.created_at)],
+    ["Trip type", tripType],
+    ["Cabin", cabin],
     ["Passengers", meta.passengers ? String(meta.passengers) : null],
     ["Total", formatMoney(booking.sum, booking.currency)],
+  ].filter(([, value]) => Boolean(value));
+
+  const passengerList = Array.isArray(meta.passengerList)
+    ? meta.passengerList.filter((pax) => pax && (pax.firstName || pax.lastName))
+    : [];
+
+  const contact = meta.contact && typeof meta.contact === "object" ? meta.contact : null;
+  const contactPhone = contact?.phoneNumber
+    ? `${contact.phoneCountryCode ? `+${contact.phoneCountryCode} ` : ""}${contact.phoneNumber}`
+    : "";
+  const contactRows = [
+    ["Name", [contact?.firstName, contact?.lastName].filter(Boolean).join(" ")],
+    ["Email", contact?.email],
+    ["Phone", contactPhone],
   ].filter(([, value]) => Boolean(value));
 
   const rooms = Array.isArray(meta.rooms)
     ? meta.rooms.filter((room) => room && (room.name || room.board))
     : [];
 
-  const adults = Number(meta.adults) || 0;
-  const childrenCount = Number(meta.children) || 0;
   const guestsLabel = [
     adults ? `${adults} adult${adults > 1 ? "s" : ""}` : "",
     childrenCount ? `${childrenCount} ${childrenCount > 1 ? "children" : "child"}` : "",
@@ -73,6 +182,10 @@ const BookingDetails = ({ booking }) => {
     ["Check-out", meta.checkout],
     ["Address", hotelAddress],
   ].filter(([, value]) => Boolean(value));
+
+  // Stay details — только отельные брони (у рейсов тоже есть meta.adults/children)
+  const isHotelStay =
+    rooms.length > 0 || Boolean(meta.checkin || meta.checkout || meta.nights);
 
   const refundableKnown = rooms.some((room) => typeof room.refundable === "boolean");
   const isRefundable = rooms.some((room) => room.refundable === true);
@@ -108,29 +221,60 @@ const BookingDetails = ({ booking }) => {
 
       {groups.length > 0 && (
         <section className="bd-block">
-          <h5 className="bd-block-title">Itinerary</h5>
+          <h5 className="bd-block-title">Flight details</h5>
           {groups.map((group) => (
-            <div className="bd-leg" key={group.id}>
-              <p className="bd-leg-label">{group.label}</p>
-              {group.list.map((segment, index) => (
-                <div className="bd-segment" key={`${group.id}-${index}`}>
-                  <span className="bd-segment-route">
-                    {segment.originCode ?? "—"} → {segment.destinationCode ?? "—"}
-                  </span>
-                  <span className="bd-segment-time">
-                    {[formatSegmentStamp(segment.departureTime), formatTimeHM(segment.arrivalTime)]
-                      .filter(Boolean)
-                      .join(" – ")}
-                  </span>
-                  {segment.carrier || segment.flightNumber ? (
-                    <span className="bd-segment-flight">
-                      {[segment.carrier, segment.flightNumber].filter(Boolean).join(" ")}
-                    </span>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+            <FlightLeg key={group.id} group={group} />
           ))}
+        </section>
+      )}
+
+      {passengerList.length > 0 && (
+        <section className="bd-block">
+          <h5 className="bd-block-title">Travelers</h5>
+          <div className="bd-pax-list">
+            {passengerList.map((pax, index) => {
+              const typeLabel = passengerTypeLabel(pax.type, index, {
+                adults,
+                children: childrenCount,
+                infants: infantsCount,
+              });
+              const fullName = [pax.title, pax.firstName, pax.lastName]
+                .filter(Boolean)
+                .join(" ");
+              const passport = [
+                pax.documentNumber,
+                pax.documentIssueCountry ? `issued in ${pax.documentIssueCountry}` : "",
+              ]
+                .filter(Boolean)
+                .join(", ");
+              const paxRows = [
+                ["Date of birth", formatBookingDate(pax.birthday)],
+                ["Gender", formatGender(pax.gender)],
+                ["Nationality", pax.nationality],
+                ["Passport", passport],
+                ["Passport expires", formatBookingDate(pax.documentExpiry)],
+              ].filter(([, value]) => Boolean(value));
+
+              return (
+                <div className="bd-pax" key={`${fullName}-${index}`}>
+                  <div className="bd-pax-head">
+                    <span className="bd-pax-name">{fullName || `Passenger ${index + 1}`}</span>
+                    {typeLabel ? <span className="bd-pax-type">{typeLabel}</span> : null}
+                  </div>
+                  {paxRows.length > 0 && (
+                    <dl className="bd-rows">
+                      {paxRows.map(([label, value]) => (
+                        <div className="bd-row" key={label}>
+                          <dt>{label}</dt>
+                          <dd>{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
 
@@ -146,7 +290,21 @@ const BookingDetails = ({ booking }) => {
         </dl>
       </section>
 
-      {stayRows.length > 0 && (
+      {contactRows.length > 0 && (
+        <section className="bd-block">
+          <h5 className="bd-block-title">Contact details</h5>
+          <dl className="bd-rows">
+            {contactRows.map(([label, value]) => (
+              <div className="bd-row" key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {isHotelStay && stayRows.length > 0 && (
         <section className="bd-block">
           <h5 className="bd-block-title">Stay details</h5>
           <dl className="bd-rows">

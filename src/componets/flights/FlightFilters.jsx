@@ -18,7 +18,7 @@ const toggleInArray = (list, value) =>
     ? list.filter((item) => item !== value)
     : [...list, value];
 
-const FlightFilters = ({ filters, onChange, onClear, airlines }) => {
+const FlightFilters = ({ filters, onChange, onClear, airlines, currency }) => {
   const [showAllAirlines, setShowAllAirlines] = useState(false);
   const visibleAirlines = showAllAirlines
     ? airlines
@@ -57,7 +57,7 @@ const FlightFilters = ({ filters, onChange, onClear, airlines }) => {
       </div>
 
       <div className="fb-price">
-        <h4>Price, AED</h4>
+        <h4>Price{currency ? `, ${currency}` : ""}</h4>
         <div className="price-box">
           <div className="min">
             <span className="regular">Min</span>

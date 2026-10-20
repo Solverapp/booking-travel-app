@@ -56,6 +56,10 @@
 /* ============ Адаптив ============ */
 
 @media (max-width: 1200px) {
+    /* Сортировка переезжает в кнопку + шторку (см. HotelResult) */
+    .sorting {
+        display: none;
+    }
     .sorting-box {
         gap: 8px;
     }
@@ -68,45 +72,36 @@
     }
 }
 
-@media (max-width: 968px) {
-    .sorting {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-}
+/* ============ Шторка сортировки (мобильная) ============ */
 
-/* На телефоне — сетка 2×2, иначе длинные подписи обрезаются */
-@media (max-width: 640px) {
-    .sorting-box {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        width: 100%;
-    }
-    .sorting-btn,
-    .sorting-btn-active {
-        width: 100%;
-        min-width: 0;
-        height: 44px;
-        padding: 8px 10px;
-        font-size: 13px;
-        gap: 4px;
-        justify-content: center;
-    }
-    .sorting-btn span,
-    .sorting-btn-active span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .sorting-btn img,
-    .sorting-btn-active img {
-        flex-shrink: 0;
-    }
-    .sorting-btn svg,
-    .sorting-btn-active svg {
-        font-size: 18px;
-        flex-shrink: 0;
-    }
+.sort-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+.sort-sheet-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 14px 16px;
+    border: 1px solid var(--light_gray);
+    border-radius: 14px;
+    background: var(--white);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--black);
+    text-align: left;
+    cursor: pointer;
+}
+.sort-sheet-btn.is-active {
+    border-color: var(--green);
+}
+.sort-sheet-btn img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }

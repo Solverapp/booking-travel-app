@@ -323,12 +323,15 @@ const FlightDetails = () => {
 
   const journey = session?.verified?.journey ?? null;
   const legs = useMemo(() => (journey ? legsOf(journey) : []), [journey]);
-  const journeyDuration = useMemo(() => {
-    const first = legs[0]?.[0];
-    const lastLeg = legs[legs.length - 1];
-    const last = lastLeg?.[lastLeg.length - 1];
-    return minutesBetween(first?.departureTime, last?.arrivalTime);
-  }, [legs]);
+  const legDurations = useMemo(
+    () =>
+      legs.map((leg) => {
+        const first = leg[0];
+        const last = leg[leg.length - 1];
+        return minutesBetween(first?.departureTime, last?.arrivalTime);
+      }),
+    [legs],
+  );
   const notices = useMemo(
     () => changeNotices(session?.verified?.changes),
     [session],
@@ -825,11 +828,18 @@ const FlightDetails = () => {
                 <div className="meta-icon-row">
                   <AccessTimeIcon />
                   <div>
-                    <span className="meta-label">Total duration</span>
+                    <span className="meta-label">
+                      {legs.length > 1 ? "Duration" : "Total duration"}
+                    </span>
                     <span className="meta-value">
-                      {formatDuration(journey?.totalDuration) ||
-                        formatDuration(journeyDuration) ||
-                        "—"}
+                      {legs.length > 1
+                        ? legDurations
+                            .map((minutes) => formatDuration(minutes))
+                            .filter(Boolean)
+                            .join(" · ") || "—"
+                        : formatDuration(journey?.totalDuration) ||
+                          formatDuration(legDurations[0]) ||
+                          "—"}
                     </span>
                   </div>
                 </div>

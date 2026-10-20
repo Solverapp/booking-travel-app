@@ -812,7 +812,19 @@
 .fvoucher-legs {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
+}
+.fvoucher-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.fvoucher-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #06d6a0;
 }
 .fvoucher-leg {
     display: flex;

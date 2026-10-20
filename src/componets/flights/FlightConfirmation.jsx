@@ -102,6 +102,12 @@ const FlightConfirmation = () => {
   const segments = Array.isArray(booking?.meta?.segments) ? booking.meta.segments : [];
   const reference = booking?.pnr || booking?.bookingRef || booking?.bookingId || "—";
 
+  // Round-trip: сегменты по направлениям (Outbound/Return); one-way — одна группа без лейбла
+  const legGroups = [
+    { id: "outbound", label: "Outbound", list: segments.filter((s) => s?.direction !== "INBOUND") },
+    { id: "inbound", label: "Return", list: segments.filter((s) => s?.direction === "INBOUND") },
+  ].filter((group) => group.list.length > 0);
+
   return (
     <main className="confirmation-main-content">
       <div className="confirmation-layout-box animate-scale-up">
@@ -157,23 +163,30 @@ const FlightConfirmation = () => {
               <>
                 <div className="voucher-divider-dashed" />
                 <div className="fvoucher-legs">
-                  {segments.map((segment, index) => (
-                    <div className="fvoucher-leg" key={segment?.segmentKey ?? index}>
-                      <span className="fvoucher-leg-date">
-                        {formatDateShort(segment?.departureTime)}
-                      </span>
-                      <span className="fvoucher-leg-route">
-                        {segment?.originCode} → {segment?.destinationCode}
-                      </span>
-                      <span className="fvoucher-leg-time">
-                        {formatTimeHM(segment?.departureTime)} –{" "}
-                        {formatTimeHM(segment?.arrivalTime)}
-                      </span>
-                      <span className="fvoucher-leg-flight">
-                        {[segment?.carrier, segment?.flightNumber]
-                          .filter(Boolean)
-                          .join(" ")}
-                      </span>
+                  {legGroups.map((group) => (
+                    <div className="fvoucher-group" key={group.id}>
+                      {legGroups.length > 1 && (
+                        <p className="fvoucher-group-label">{group.label}</p>
+                      )}
+                      {group.list.map((segment, index) => (
+                        <div className="fvoucher-leg" key={segment?.segmentKey ?? `${group.id}-${index}`}>
+                          <span className="fvoucher-leg-date">
+                            {formatDateShort(segment?.departureTime)}
+                          </span>
+                          <span className="fvoucher-leg-route">
+                            {segment?.originCode} → {segment?.destinationCode}
+                          </span>
+                          <span className="fvoucher-leg-time">
+                            {formatTimeHM(segment?.departureTime)} –{" "}
+                            {formatTimeHM(segment?.arrivalTime)}
+                          </span>
+                          <span className="fvoucher-leg-flight">
+                            {[segment?.carrierName || segment?.carrier, segment?.flightNumber]
+                              .filter(Boolean)
+                              .join(" ")}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

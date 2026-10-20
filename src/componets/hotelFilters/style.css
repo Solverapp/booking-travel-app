@@ -363,12 +363,22 @@ color: var(--red);
     }
     .rating-item,
     .rating-item-actived {
-        padding: 8px 4px;
+        padding: 4px;
         gap: 4px;
+        height: 40px;
+        border-radius: 12px;
     }
-    .rating-item img {
-        width: 16px;
-        height: 16px;
+    .rating-item img,
+    .rating-item-actived img {
+        width: 14px;
+        height: 14px;
+    }
+    .rating-item p.bold,
+    .rating-item-actived p.bold {
+        font-size: 14px;
+    }
+    .rating-box {
+        height: auto;
     }
     .filter-checkbox {
         font-size: 15px;

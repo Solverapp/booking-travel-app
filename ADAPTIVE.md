@@ -897,6 +897,8 @@ CSS в бандле склеивается в порядке импорта из
 8. **Позиционированные попапы** — `width: 100%` считается от **позиционированного родителя**, а не от видимого блока (календарь внутри `.dpicker-checkin` = половина поля → 171px). Использовать фикс. ширину + `max-width: calc(100vw - 32px)`.
 9. **Фото-фон на `html`** — всё, что без своего фона, показывает картинку. У `.maincontent` обязательно `min-height: 100dvh` + `background-color: var(--bg)`.
 10. **`overflow-x: hidden` у предка ломает `position: sticky`** — контейнер становится scroll-контейнером, и `top` залипшего элемента отсчитывается от его padding-края, а не от окна (сайдбар профиля «висел» на 60px ниже контента при scroll 0). Лечение: `overflow-x: clip` — клипает, но scroll-контейнером не делает (если клип без скролла, `clip` предпочтительнее `hidden`).
+11. **Grid-колонка `1fr` раздувается min-content детей** — `1fr` = `minmax(auto, 1fr)`, и если у item'а min-content больше трека, контейнер вылезает за экран (карточки `/hotels`: 457px при вьюпорте 440 → горизонтальный скролл). Лечение: `grid-template-columns: minmax(0, 1fr)`. Искать диагностикой: элементы с `getBoundingClientRect().right > document.documentElement.clientWidth`.
+12. **`height: 100%` у flex-item с абсолютным контентом схлопывается в 0** — если у родителя `height: auto`, процент не разрешается и `align-items: stretch` не помогает (явный процент перебивает stretch). Так «пропали» фото карточек `/hotels` на десктопе: `.grid-card-img-box { height: 100% }` + внутри `<img position:absolute; height:100%>` при `.grid-card { height: auto }`. Лечение: убрать процент у бокса (`height: auto`), stretch сам выровняет по строке; картинку внутри оставить `absolute; height: 100%`.
 
 ## Осталось
 
@@ -904,7 +906,7 @@ CSS в бандле склеивается в порядке импорта из
 - [ ] Найти/убрать оставшиеся дубли классов (checkout — проверить; профиль чист — классы с префиксами `.profile-*`/`.booking-*`/`.pdrawer-*`/`.ps-*`).
 - [ ] `src/img/fon/startfon1x.jpg` — **7.1 MB**. Есть альтернативы: `startfon1x_c.jpg` (65 KB), `startfon1x_x.jpeg` (108 KB). Подключить оптимизированную.
 
-### Линт-хвост (текущие 79 problems: 68 errors / 11 warnings)
+### Линт-хвост (текущие 78 problems: 67 errors / 11 warnings)
 
 - [ ] `HotelResult.jsx` — 21; `Optionew.jsx` — 8; `tourpage/Tour.jsx` — 5; `HotelPages.jsx` — 2 (`error` L75, `err` L119); `guestCounter.jsx` — 3; `Filterss.jsx` — 3 (в т.ч. `no-undef facilitService`); `Nav.jsx` (оба) — по 3.
 - [ ] **URL-init `setState-in-effect`** в `NewHotelSearch.jsx` и `Toursearch.jsx` — лечить: ленивый `useState(() => readFromUrl(searchParams))` + `key={searchParams.toString()}` на `<SearchOption />` в `HotelResult`/`Tournew` вместо effect (поведение идентичное: state всегда = URL).
@@ -935,6 +937,11 @@ CSS в бандле склеивается в порядке импорта из
 - **Fixed-попап внутри `.hotel-hero { overflow:hidden }` не обрезается** — покуда у предков нет `transform`/`filter`/`will-change` (проверять при любых правках hero!). z-index попапов: лайтбокс/фасилити/ревью — 5000, нижние шторки — 2100/2150, навбар — 2000.
 - **`setState` синхронно в `useEffect` = error** (react-compiler-правило): сброс стейта попапа (`setIdx(0)`) делать при **открытии** (в обработчике клика), не в effect.
 - **CDP-моки supabase-прокси**: на стадии Response `Fetch.getRequestPostData` **не отдаёт тело запроса** — гейтить мок по URL+методу (не по body); реальный `rates/book` с фейковым prebookId отвечает 400, body переписывается на fake success (CORS-заголовки upstream уже на месте, preflight трогать не нужно).
+- **Минимальная ширина поддержки — 380px** (и ниже, до 320, держится): CDP-свип 320–440 (`mobile: false`, dsf 1) на `/`, `/hotels`, `/hotelpage` — 0 overflow. Проверка: `document.documentElement.scrollWidth` vs `clientWidth` + элементы с `right > clientWidth` (исключая off-canvas `.mobile-menu` и закрытый `.filter-wrapper` — они «вылезают» штатно). Прогонять после правок в карточках/шапке результатов.
+- **Мобильный ряд кнопок над списком**: `.mcontrols` вокруг `FilterDrawer` — на десктопе `display: contents` (дети растворяются в `.mcontainer`, сайдбар на месте), ≤1200 — `flex` (ряд `[Filters][кнопка сортировки]`). Обёртка не требует правок самого дровера; ползунку кнопки фильтра задать `width: auto; flex: 1`.
+- **`SORT_OPTIONS` вынесены в `sorting/sortOptions.js`**: файл компонента не должен экспортировать константы — правило `react-refresh/only-export-components` (lint).
+- **На `/hotels` в DOM два `.bottomsheet`** (шторка поиска + шторка сортировки) — селекторы скоупить (`.sort-sheet` → `closest(".bottomsheet")`), иначе клик по `.bottomsheet-close` попадает в чужую шторку. В CDP-скриншотах `Page.captureScreenshot` с `clip` капризен к координатам (документ vs вьюпорт) — надёжнее `scrollIntoView` + снимок всего вьюпорта.
+- **Позади шапки шторки сортировки**: `BottomSheet` переиспользован как есть (handle, крестик, inert, фокус-менеджмент) — обвязка уже готова, свои только `.sort-sheet*`.
 - **Dev-сервер пользователя крутится на 5173** — `npm run dev` поднимается на **5174** (проверять контент через `Invoke-WebRequest`, в JSX идут `hotelId: hid` после компиляции).
 - Referens-изображения макетов лежат в `public/`: `referens_tour ui.jpg`, `Rewiew_blok.png`, `facilities_popup.png`, `guest_reviews.png`, `room_detalis 1.png`, `room_detalis 2.png`.
 - `mock/transfers.js`: поле `name` (полное) трогать нельзя — попадает в cart и используется в `touroption/Optionew.jsx` (старый `Option.jsx` удалён как мёртвый). Добавлять новые поля (`short`, `icon`).

@@ -402,6 +402,14 @@ const FlightsResult = () => {
   const routeTitle = `${params.originLabel || params.origin || "—"} → ${
     params.destinationLabel || params.destination || "—"
   }`;
+  // Валюта фактической выдачи (провайдер мог откатиться на AED), fallback — валюта профиля
+  const resultCurrency = useMemo(() => {
+    for (const journey of journeys) {
+      const currency = journeyOffer(journey)?.pricing?.display?.currency;
+      if (currency) return currency;
+    }
+    return getStoredCurrency();
+  }, [journeys]);
   const metaText = [
     params.depart ? `${params.depart}${params.trip === "round" && params.returnDate ? ` – ${params.returnDate}` : ""}` : null,
     `${params.adults + params.children + params.infants} pax`,
@@ -572,6 +580,7 @@ const FlightsResult = () => {
             onChange={setFilters}
             onClear={() => setFilters(DEFAULT_FLIGHT_FILTERS)}
             airlines={airlineOptions}
+            currency={resultCurrency}
           />
         </FilterDrawer>
         <div className="flights-results">{renderBody()}</div>

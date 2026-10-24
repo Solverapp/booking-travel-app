@@ -49,21 +49,18 @@
 	text-align: left;
 }
 
-.sop-btn.is-disabled,
-.msearch-btn.is-disabled {
-	background-color: var(--light_gray);
-	color: var(--gray_text);
-	cursor: not-allowed;
+.sop-btn.is-disabled {
+    background-color: var(--light_gray);
+    color: var(--gray_text);
+    cursor: not-allowed;
 }
 
-.sop-btn.is-disabled span,
-.msearch-btn.is-disabled span {
-	color: var(--gray_text);
+.sop-btn.is-disabled span {
+    color: var(--gray_text);
 }
 
-.sop-btn.is-disabled img,
-.msearch-btn.is-disabled img {
-	filter: brightness(0.4);
+.sop-btn.is-disabled img {
+    filter: brightness(0.4);
 }
 
 @media (max-width: 640px) {

@@ -1,43 +1,54 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import CalendarGrid from "./CalendarGrid";
+import AnchoredPopover from "../searchfields/AnchoredPopover";
 import "./style.css";
 
-/* Поле даты для туров: одна конкретная дата (mode="single") */
 const DatePickerOne = ({ checkIn, onCheckInChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
-    <div className="dp-box">
+    <div className="dp-box" ref={containerRef}>
       <p>When</p>
-      <div className="dp-wrapper" ref={containerRef}>
-        <button type="button" onClick={() => setIsOpen(!isOpen)} className="dp">
-          <span>
-            {checkIn ? `${checkIn.toLocaleDateString()}` : "Select dates"}
-          </span>
-        </button>
-        {isOpen && (
-          <CalendarGrid
-            mode="single"
-            checkIn={checkIn}
-            onCheckInChange={onCheckInChange}
-            onDone={() => setIsOpen(false)}
-          />
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="dp"
+      >
+        <span>{checkIn ? checkIn.toLocaleDateString() : "Select date"}</span>
+      </button>
+
+      <AnchoredPopover
+        open={isOpen}
+        anchorRef={containerRef}
+        onClose={() => setIsOpen(false)}
+        preferredWidth={348}
+        allowOverlap
+        ariaLabel="Choose tour date"
+      >
+        <CalendarGrid
+          variant="plain"
+          mode="single"
+          checkIn={checkIn}
+          onCheckInChange={onCheckInChange}
+        />
+        <div className="date-popover__footer">
+          <button
+            type="button"
+            className="date-popover__btn date-popover__btn--clear"
+            onClick={() => onCheckInChange?.(null)}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className="date-popover__btn date-popover__btn--apply"
+            onClick={() => setIsOpen(false)}
+          >
+            Apply
+          </button>
+        </div>
+      </AnchoredPopover>
     </div>
   );
 };

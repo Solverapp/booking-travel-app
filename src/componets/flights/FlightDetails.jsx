@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import PeopleIcon from "@mui/icons-material/People";
@@ -8,8 +8,11 @@ import AirlineStopsIcon from "@mui/icons-material/AirlineStops";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import SecurityIcon from "@mui/icons-material/Security";
 import PageLoader from "../loaders/PageLoader";
+import FlightAmenities from "./FlightAmenities";
+import FlightPriceBreakdown from "./FlightPriceBreakdown";
 import { useAuth } from "../../context/AuthContext";
-import { flightsBookingService } from "../../services/flights/flightBookingService";
+import { useFlightSession } from "../../hooks/queries/useFlightSession";
+import { usePrebookFlight } from "../../hooks/mutations/useFlightBookingMutations";
 import {
   formatDateShort,
   formatDuration,
@@ -23,6 +26,8 @@ import {
   dayOffset,
   segmentFlightLabel,
 } from "../../utils/flightJourneys";
+import { offerBaggage } from "../../utils/flightOffers";
+import { buildPriceBreakdown } from "../../utils/flightPricing";
 import "./style.css";
 
 const TITLES = ["MR", "MS", "MRS", "MISS"];
@@ -147,6 +152,36 @@ const buildPassengers = (counts, user) => {
   return list;
 };
 
+const contactFromSession = (saved, user) => ({
+  firstName: saved?.firstName || user?.firstname || "",
+  lastName: saved?.lastName || user?.lastname || "",
+  email: saved?.email || user?.email || "",
+  phoneCountryCode: saved?.phoneCountryCode || "971",
+  phoneNumber: saved?.phoneNumber || "",
+});
+
+const passengersFromSession = (nextCounts, savedPassengers, user) =>
+  buildPassengers(nextCounts, user).map((fallback, index) => {
+    const saved = Array.isArray(savedPassengers) ? savedPassengers[index] : null;
+    if (!saved) return fallback;
+    return {
+      ...fallback,
+      title: TITLES.includes(saved.title) ? saved.title : fallback.title,
+      firstName: saved.firstName || fallback.firstName,
+      lastName: saved.lastName || fallback.lastName,
+      birthday: String(saved.birthday ?? "").slice(0, 10),
+      gender: GENDERS.some((item) => item.value === saved.gender)
+        ? saved.gender
+        : fallback.gender,
+      nationality: saved.nationality || fallback.nationality,
+      documentType: saved.documentType || fallback.documentType,
+      documentNumber: saved.documentNumber || "",
+      documentIssueCountry:
+        saved.documentIssueCountry || fallback.documentIssueCountry,
+      documentExpiry: String(saved.documentExpiry ?? "").slice(0, 10),
+    };
+  });
+
 // changes из verify: строка, массив или объект LiteAPI
 // { messages, priceChanged, cabinChanged, fareChanged, pricing:{ old, new } }
 const changeNotices = (changes) => {
@@ -257,69 +292,60 @@ const FlightDetails = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const editMode = searchParams.get("edit") === "1";
 
-  const [session, setSession] = useState(null);
-  const [counts, setCounts] = useState({ adults: 1, children: 0, infants: 0 });
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const sessionQuery = useFlightSession(sessionId);
+  const prebookFlight = usePrebookFlight();
+
+  const session = sessionQuery.data?.session ?? null;
   const [expired, setExpired] = useState(false);
-  const [contact, setContact] = useState(null);
-  const [passengers, setPassengers] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [soldOut, setSoldOut] = useState(false);
-  // Защита от повторной инициализации формы при обновлении объекта user
-  const loadedSessionRef = useRef("");
+  const [contactOverride, setContactOverride] = useState(null);
+  const [passengersOverride, setPassengersOverride] = useState(null);
+
+  const validStatus =
+    session?.status === "VERIFIED" || session?.status === "PREBOOKED";
+  const redirecting =
+    session?.status === "CONFIRMED" ||
+    (session?.status === "PREBOOKED" && !editMode);
+  const invalidStatus = Boolean(session && !validStatus);
+  const loading = sessionQuery.isLoading;
+  const loadError =
+    sessionQuery.error?.message ||
+    (invalidStatus ? "This booking session can no longer be used" : "");
+  const submitting = prebookFlight.isPending;
+
+  const counts = useMemo(
+    () => (session ? countsOf(session.searchParams) : { adults: 1, children: 0, infants: 0 }),
+    [session],
+  );
+  const baseContact = useMemo(
+    () => contactFromSession(session?.contact, user),
+    [session, user],
+  );
+  const basePassengers = useMemo(
+    () =>
+      session
+        ? passengersFromSession(counts, session.passengers, user)
+        : [],
+    [session, counts, user],
+  );
+  const contact = contactOverride ?? baseContact;
+  const passengers = passengersOverride ?? basePassengers;
 
   useEffect(() => {
-    if (loadedSessionRef.current === sessionId) return undefined;
-    let cancelled = false;
+    if (!session) return;
 
-    const load = async () => {
-      setLoading(true);
-      setLoadError("");
-      try {
-        const data = await flightsBookingService.getFlightSession(sessionId);
-        if (cancelled) return;
-        const next = data?.session ?? null;
-        if (!next) throw new Error("Booking session not found");
-
-        if (next.status === "CONFIRMED") {
-          navigate(`/flightconfirmation?sessionId=${sessionId}`, { replace: true });
-          return;
-        }
-        if (next.status === "PREBOOKED") {
-          navigate(`/flightcheckout/${sessionId}`, { replace: true });
-          return;
-        }
-        if (next.status !== "VERIFIED") {
-          throw new Error("This booking session can no longer be used");
-        }
-
-        const nextCounts = countsOf(next.searchParams);
-        setSession(next);
-        setCounts(nextCounts);
-        setContact({
-          firstName: user?.firstname || "",
-          lastName: user?.lastname || "",
-          email: user?.email || "",
-          phoneCountryCode: "971",
-          phoneNumber: "",
-        });
-        setPassengers(buildPassengers(nextCounts, user));
-        loadedSessionRef.current = sessionId;
-      } catch (err) {
-        if (!cancelled) setLoadError(err?.message || "Failed to load booking session");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, navigate, user]);
+    if (session.status === "CONFIRMED") {
+      navigate(`/flightconfirmation?sessionId=${sessionId}`, { replace: true });
+      return;
+    }
+    if (session.status === "PREBOOKED" && !editMode) {
+      navigate(`/flightseats/${sessionId}`, { replace: true });
+    }
+  }, [session, editMode, navigate, sessionId]);
 
   const journey = session?.verified?.journey ?? null;
   const legs = useMemo(() => (journey ? legsOf(journey) : []), [journey]);
@@ -347,15 +373,28 @@ const FlightDetails = () => {
   }, [legs, session]);
   const price = Number(session?.verifiedPrice) || 0;
   const currency = session?.currency || "AED";
+  const fareFamily = journey?.fare?.family ?? "";
+  const baggage = offerBaggage({ baggage: journey?.baggage });
+  const priceBreakdown = buildPriceBreakdown({
+    journey,
+    counts,
+    currency,
+  });
+  const isPrebookedEdit = session?.status === "PREBOOKED";
 
   const updatePassenger = (index, patch) => {
-    setPassengers((prev) =>
-      prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    setPassengersOverride((previous) =>
+      (previous ?? basePassengers).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
     );
   };
 
   const updateContact = (patch) => {
-    setContact((prev) => ({ ...prev, ...patch }));
+    setContactOverride((previous) => ({
+      ...(previous ?? baseContact),
+      ...patch,
+    }));
   };
 
   const validatePassengers = () => {
@@ -382,7 +421,6 @@ const FlightDetails = () => {
       setSubmitError(validationError);
       return;
     }
-    setSubmitting(true);
     setSubmitError("");
     setExpired(false);
     setSoldOut(false);
@@ -409,12 +447,22 @@ const FlightDetails = () => {
     }));
 
     try {
-      await flightsBookingService.prebookFlight({
+      if (
+        isPrebookedEdit &&
+        JSON.stringify({ contact, passengers }) ===
+          JSON.stringify({ contact: baseContact, passengers: basePassengers })
+      ) {
+        navigate(`/flightseats/${sessionId}`);
+        return;
+      }
+
+      await prebookFlight.mutateAsync({
         sessionId,
         contact: cleanContact,
         passengers: cleanPassengers,
+        ...(isPrebookedEdit ? { refresh: true } : {}),
       });
-      navigate(`/flightcheckout/${sessionId}`);
+      navigate(`/flightseats/${sessionId}`);
     } catch (err) {
       if (err?.code === "UNAUTHORIZED") {
         navigate("/login", { state: { from: `/flightpage/${sessionId}` } });
@@ -427,11 +475,10 @@ const FlightDetails = () => {
       } else {
         setSubmitError(err?.message || "Could not start the booking, please try again.");
       }
-      setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (loading || redirecting) {
     return <PageLoader text="Loading your flight..." />;
   }
 
@@ -476,7 +523,16 @@ const FlightDetails = () => {
             <span>Back to search results</span>
           </button>
 
-          <h1 className="page-main-title">Complete Your Booking</h1>
+          <h1 className="page-main-title">
+            {isPrebookedEdit ? "Edit passenger details" : "Complete Your Booking"}
+          </h1>
+
+          {isPrebookedEdit && (
+            <p className="fpage-note">
+              Saving changes refreshes your held booking. Any selected seats or
+              extra baggage will need to be selected again.
+            </p>
+          )}
 
           {expired && (
             <div className="error-banner">
@@ -501,7 +557,7 @@ const FlightDetails = () => {
 
           <div className="form-card-ui animate-fade-in">
             <div className="form-card-header">
-              <div className="step-badge">Step 1 of 2</div>
+              <div className="step-badge">Step 1 of 3</div>
               <h2>Flight details</h2>
               <p>
                 {legs.length > 1 ? "Round trip" : "One way"} · {totalPax}{" "}
@@ -533,7 +589,7 @@ const FlightDetails = () => {
 
           <div className="form-card-ui animate-fade-in">
             <div className="form-card-header">
-              <div className="step-badge">Step 2 of 2</div>
+              <div className="step-badge">Step 1 of 3</div>
               <h2>Passengers</h2>
               <p>Travel document details must match the passenger&apos;s passport.</p>
             </div>
@@ -764,7 +820,7 @@ const FlightDetails = () => {
           <button type="submit" className="action-submit-btn" disabled={submitting}>
             {submitting
               ? "Checking availability..."
-              : `Continue to payment · ${price.toFixed(2)} ${currency}`}
+              : `Continue to seats · ${price.toFixed(2)} ${currency}`}
           </button>
         </div>
 
@@ -847,24 +903,19 @@ const FlightDetails = () => {
 
               <div className="summary-price-breakdown-divider" />
 
-              <div className="price-summary-table">
-                <div className="price-row">
-                  <span>Subtotal</span>
-                  <span>
-                    {price.toFixed(2)} {currency}
-                  </span>
-                </div>
-                <div className="price-row">
-                  <span>Taxes & Fees</span>
-                  <span className="green-text">Included</span>
-                </div>
-                <div className="price-row total-row-highlight">
-                  <span>Total amount</span>
-                  <span>
-                    {price.toFixed(2)} {currency}
-                  </span>
-                </div>
-              </div>
+              <FlightPriceBreakdown
+                breakdown={priceBreakdown}
+                fareFamily={fareFamily}
+                counts={counts}
+              />
+
+              <div className="summary-price-breakdown-divider" />
+
+              <FlightAmenities
+                amenities={[]}
+                baggage={baggage}
+                title="Baggage"
+              />
 
               {session?.expiresAt && (
                 <p className="fpage-note">

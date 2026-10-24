@@ -24,7 +24,6 @@ const json = (body: unknown, status = 200) =>
 const err = (code: string, message: string, status = 400) =>
   json({ error: { code, message } }, status);
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const now = () => Date.now();
 const iso = (d: Date) => d.toISOString();
 const minutesFromNow = (m: number) => iso(new Date(now() + m * 60_000));
@@ -54,35 +53,71 @@ function ageOn(birthday: any, on: Date): number | null {
 }
 
 // --- LiteAPI ---
-async function liteapi(path: string, method = "GET", body?: unknown) {
+const LITEAPI_TIMEOUT_MS = 30_000;
+const PREBOOK_TIMEOUT_MS = 90_000;
+const ATTACH_TIMEOUT_MS = 120_000;
+const BOOK_TIMEOUT_MS = 120_000;
+const STALE_BOOKING_MS = 120_000;
+
+async function liteapi(
+  path: string,
+  method = "GET",
+  body?: unknown,
+  timeoutMs = LITEAPI_TIMEOUT_MS,
+) {
   const apiKey = Deno.env.get("LITE_API_KEY");
   if (!apiKey) throw new Error("LITE_API_KEY is not configured");
 
-  const res = await fetch(`${LITEAPI_BASE}${path}`, {
-    method,
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json",
-      "X-API-Key": apiKey,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-
-  let data: any = null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    data = await res.json();
-  } catch {
-    data = null;
+    const res = await fetch(`${LITEAPI_BASE}${path}`, {
+      method,
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "X-API-Key": apiKey,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    return { status: res.status, data };
+  } catch (error: any) {
+    const timedOut =
+      error?.name === "AbortError" || error?.name === "TimeoutError";
+    return {
+      status: 0,
+      data: {
+        error: {
+          code: timedOut ? "TIMEOUT" : "NETWORK_ERROR",
+          description: timedOut
+            ? `LiteAPI request timed out after ${Math.round(timeoutMs / 1000)}s`
+            : String(error?.message ?? error),
+        },
+      },
+    };
+  } finally {
+    clearTimeout(timer);
   }
-  return { status: res.status, data };
 }
 
 // Проброс ошибки LiteAPI в едином конверте { error: { code, message } }
 function passthrough(status: number, data: any) {
   const upstream = data?.error;
+  const responseStatus = status >= 400 && status <= 599 ? status : 502;
   const message =
     upstream?.description || upstream?.message || `LiteAPI request failed (${status})`;
-  return json({ error: { code: upstream?.code ?? "LITEAPI_ERROR", message } }, status);
+  return json(
+    { error: { code: upstream?.code ?? "LITEAPI_ERROR", message } },
+    responseStatus,
+  );
 }
 
 // Оффер распродан (LiteAPI 52010) — стабильный код для клиента
@@ -103,6 +138,7 @@ function pickExpiry(journey: any): string {
 
 function slimSegments(segments: any[]) {
   return asArray(segments).map((s) => ({
+    segmentKey: s?.segmentKey ?? null,
     direction: s?.direction ?? null,
     originCode: s?.originCode ?? null,
     destinationCode: s?.destinationCode ?? null,
@@ -142,11 +178,142 @@ function slimContact(contact: any) {
   };
 }
 
+const asObject = (value: any) =>
+  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+const numberOr = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+function weightOf(item: any): number | null {
+  const value = item?.weightKg ?? item?.weight?.value ?? item?.weight;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeBaggageItem(item: any) {
+  return {
+    type: item?.bagType ?? null,
+    description: item?.description ?? null,
+    pieces: numberOr(item?.pieces, 1),
+    weightKg: weightOf(item),
+    size: item?.size ?? null,
+    passengerType: item?.passengerType ?? null,
+    price: numberOr(item?.pricing?.display?.amount, 0),
+    currency: item?.pricing?.display?.currency ?? null,
+  };
+}
+
+function normalizeService(service: any) {
+  if (!service?.serviceId) return null;
+  const seat = service?.metadata?.seat ?? null;
+  const bag = service?.metadata?.baggage ?? null;
+  return {
+    serviceId: service.serviceId,
+    name: service?.name ?? null,
+    category: service?.category ?? null,
+    passengerType: service?.passengerType ?? null,
+    passengerIndex: Number.isFinite(Number(service?.passengerIndex))
+      ? Number(service.passengerIndex)
+      : null,
+    segmentKey: service?.segmentKey ?? null,
+    quantity: numberOr(service?.quantity, 1),
+    price: numberOr(service?.pricing?.display?.amount, 0),
+    currency: service?.pricing?.display?.currency ?? null,
+    seat: seat
+      ? {
+          available: seat?.available !== false,
+          position: seat?.position ?? null,
+          seatColumn: seat?.seatColumn ?? null,
+          seatNumber: seat?.seatNumber ?? null,
+          seatRow: numberOr(seat?.seatRow, 0),
+          seatType: seat?.seatType ?? null,
+        }
+      : null,
+    baggage: bag
+      ? {
+          bagType: bag?.bagType ?? null,
+          pieces: numberOr(bag?.pieces, 1),
+          weightKg: numberOr(bag?.weightKg, 0) || null,
+        }
+      : null,
+  };
+}
+
+function normalizeServicesAttachable(value: any) {
+  const groups = asArray(value?.groups)
+    .map((group: any) => ({
+      category: group?.category ?? null,
+      label: group?.label ?? null,
+      services: asArray(group?.services).map(normalizeService).filter(Boolean),
+    }))
+    .filter((group: any) => group.services.length > 0);
+  return {
+    expiresAt: value?.expiresAt ?? null,
+    groups,
+  };
+}
+
+function servicesFromSession(session: any) {
+  return asArray(session?.journey?.servicesAttachable?.groups).flatMap((group: any) =>
+    asArray(group?.services),
+  );
+}
+
+function selectedServicesFromSession(session: any) {
+  return asArray(session?.journey?.selectedServices).map((item: any) => ({
+    passengerIndex: numberOr(item?.passengerIndex, 0),
+    serviceId: item?.serviceId ?? null,
+    quantity: numberOr(item?.quantity, 1),
+  }));
+}
+
+function buildPriceBreakdown(journey: any, pricing: any, fallbackTotal: any, session: any) {
+  const counts = {
+    adults: Math.max(1, numberOr(session?.search_params?.adults, 1)),
+    children: Math.max(0, numberOr(session?.search_params?.children, 0)),
+    infants: Math.max(0, numberOr(session?.search_params?.infants, 0)),
+  };
+  const display = journey?.pricing?.display ?? {};
+  const perPassenger = display?.perPassenger ?? {};
+  const base =
+    numberOr(perPassenger?.adult?.base) * counts.adults +
+    numberOr(perPassenger?.child?.base) * counts.children +
+    numberOr(perPassenger?.infant?.base) * counts.infants;
+  const taxes =
+    numberOr(perPassenger?.adult?.taxes) * counts.adults +
+    numberOr(perPassenger?.child?.taxes) * counts.children +
+    numberOr(perPassenger?.infant?.taxes) * counts.infants;
+  const subtotal = numberOr(
+    pricing?.subtotal,
+    numberOr(pricing?.totalAmount, numberOr(display?.total, numberOr(fallbackTotal, 0))),
+  );
+  const seats = numberOr(pricing?.seatsAmount, 0);
+  const baggage = numberOr(pricing?.baggageAmount, 0);
+  const total = numberOr(pricing?.totalAmount, subtotal + seats + baggage);
+  const hasSplit = base > 0 && base + taxes <= subtotal + 0.01;
+
+  return {
+    currency:
+      pricing?.currency ?? display?.currency ?? session?.currency ?? "AED",
+    base: hasSplit ? base : null,
+    taxes: hasSplit ? taxes : null,
+    serviceFee: hasSplit ? Math.max(0, subtotal - base - taxes) : 0,
+    subtotal,
+    seats,
+    baggage,
+    total,
+    hasSplit,
+  };
+}
+
 // Ответ /flights/bookings → сводка для БД и клиента (устойчиво к вариациям схемы)
 function buildBookingSummary(payload: any, session: any) {
   const root = payload?.data?.[0] ?? payload?.data ?? {};
   const booking = root?.booking ?? root;
-  const segments = asArray(booking?.journey?.segments);
+  const journey = booking?.journey ?? session?.journey?.journey ?? {};
+  const segments = asArray(journey?.segments);
   const outbound = segments.filter((s: any) => s?.direction !== "INBOUND");
   const firstLeg = outbound.length ? outbound : segments;
   const first = firstLeg[0] ?? {};
@@ -178,6 +345,15 @@ function buildBookingSummary(payload: any, session: any) {
     session?.currency ??
     "AED";
 
+  const bookedServices = asArray(
+    booking?.bookedServices ?? booking?.selectedServices ?? session?.journey?.bookedServices,
+  )
+    .map(normalizeService)
+    .filter(Boolean);
+  const priceBreakdown =
+    session?.journey?.priceBreakdown ??
+    buildPriceBreakdown(journey, booking?.pricing, total, session);
+
   return {
     bookingId: booking?.bookingId ?? root?.bookingId ?? null,
     bookingRef: booking?.bookingRef ?? root?.bookingRef ?? null,
@@ -202,6 +378,15 @@ function buildBookingSummary(payload: any, session: any) {
       infants: Number(session?.search_params?.infants) || 0,
       cabin: session?.search_params?.cabin ?? null,
       trip: session?.search_params?.trip ?? null,
+      fareFamily: journey?.fare?.family ?? null,
+      cabinClass: journey?.cabinClass ?? null,
+      priceBreakdown,
+      services: bookedServices,
+      seats: bookedServices.filter((service: any) => service?.category === "seat"),
+      baggage: {
+        included: asArray(journey?.baggage?.included).map(normalizeBaggageItem),
+        purchased: bookedServices.filter((service: any) => service?.category === "baggage"),
+      },
     },
   };
 }
@@ -275,11 +460,23 @@ async function handlePrebook(admin: any, user: any, body: any) {
   if (loaded.error) return loaded.error;
   const session = loaded.session as any;
 
+  const refresh = body?.refresh === true;
+
   // Повторный вызов — не создаём второй prebook
-  if (session.status === "PREBOOKED" && session.secret_key) {
-    return json({ prebookId: session.prebook_id, secretKey: session.secret_key, reused: true });
+  if (session.status === "PREBOOKED" && session.secret_key && !refresh) {
+    return json({
+      prebookId: session.prebook_id,
+      secretKey: session.secret_key,
+      price: session.verified_price,
+      currency: session.currency,
+      priceBreakdown: session.journey?.priceBreakdown ?? null,
+      servicesAttachable: session.journey?.servicesAttachable ?? null,
+      selectedServices: selectedServicesFromSession(session),
+      bookedServices: session.journey?.bookedServices ?? [],
+      reused: true,
+    });
   }
-  if (session.status !== "VERIFIED")
+  if (session.status !== "VERIFIED" && !(session.status === "PREBOOKED" && refresh))
     return err("INVALID_STATE", `Cannot prebook session in status ${session.status}`, 409);
 
   const contact = body?.contact;
@@ -356,10 +553,19 @@ async function handlePrebook(admin: any, user: any, body: any) {
 
     const reverified = v.data.data[0];
     verifiedPrice = reverified?.journey?.pricing?.display?.total ?? verifiedPrice;
+    const nextJourney = {
+      ...asObject(session.journey),
+      ...reverified,
+      servicesAttachable: null,
+      selectedServices: [],
+      bookedServices: [],
+      priceBreakdown: null,
+    };
+    session.journey = nextJourney;
     await admin
       .from("flight_booking_sessions")
       .update({
-        journey: reverified,
+        journey: nextJourney,
         verified_price: verifiedPrice,
         expires_at: pickExpiry(reverified?.journey),
         updated_at: iso(new Date()),
@@ -367,12 +573,17 @@ async function handlePrebook(admin: any, user: any, body: any) {
       .eq("id", session.id);
   }
 
-  const { status, data } = await liteapi("/flights/prebooks", "POST", {
-    offerId: session.offer_id,
-    usePaymentSdk: true,
-    contact,
-    passengers: normalizedPassengers,
-  });
+  const { status, data } = await liteapi(
+    "/flights/prebooks",
+    "POST",
+    {
+      offerId: session.offer_id,
+      usePaymentSdk: true,
+      contact,
+      passengers: normalizedPassengers,
+    },
+    PREBOOK_TIMEOUT_MS,
+  );
 
   if (status !== 200) {
     if (isSoldOut(data)) return err("OFFER_SOLD_OUT", SOLD_OUT_MESSAGE, 409);
@@ -394,6 +605,26 @@ async function handlePrebook(admin: any, user: any, body: any) {
     return err("PREBOOK_NO_ID", "LiteAPI did not return prebookId", 502);
   }
 
+  const prebookPrice = numberOr(
+    root?.price,
+    numberOr(root?.booking?.pricing?.totalAmount, verifiedPrice),
+  );
+  const currency = root?.currency ?? root?.booking?.pricing?.currency ?? session.currency ?? "AED";
+  const servicesAttachable = normalizeServicesAttachable(root?.servicesAttachable);
+  const priceBreakdown = buildPriceBreakdown(
+    root?.booking?.journey ?? session.journey?.journey,
+    root?.booking?.pricing,
+    prebookPrice,
+    session,
+  );
+  const enrichedJourney = {
+    ...asObject(session.journey),
+    servicesAttachable,
+    selectedServices: [],
+    bookedServices: [],
+    priceBreakdown,
+  };
+
   const { error: updErr } = await admin
     .from("flight_booking_sessions")
     .update({
@@ -401,8 +632,11 @@ async function handlePrebook(admin: any, user: any, body: any) {
       prebook_id: prebookId,
       transaction_id: transactionId,
       secret_key: secretKey,
+      verified_price: prebookPrice,
+      currency,
       contact,
       passengers: normalizedPassengers,
+      journey: enrichedJourney,
       expires_at: minutesFromNow(15),
       updated_at: iso(new Date()),
     })
@@ -410,7 +644,120 @@ async function handlePrebook(admin: any, user: any, body: any) {
 
   if (updErr) throw new Error(`DB session update failed: ${updErr.message}`);
 
-  return json({ prebookId, secretKey });
+  return json({
+    prebookId,
+    secretKey,
+    price: prebookPrice,
+    currency,
+    priceBreakdown,
+    servicesAttachable,
+    selectedServices: [],
+    bookedServices: [],
+  });
+}
+
+async function handleAttachServices(admin: any, user: any, body: any) {
+  const loaded = await loadSession(admin, user, body?.sessionId);
+  if (loaded.error) return loaded.error;
+  const session = loaded.session as any;
+
+  if (session.status !== "PREBOOKED" || !session.prebook_id)
+    return err("INVALID_STATE", "Prebook must be created first", 409);
+
+  const searchCounts = {
+    adults: Math.max(1, numberOr(session.search_params?.adults, 1)),
+    children: Math.max(0, numberOr(session.search_params?.children, 0)),
+    infants: Math.max(0, numberOr(session.search_params?.infants, 0)),
+  };
+  const passengerTotal = searchCounts.adults + searchCounts.children + searchCounts.infants;
+  const catalog = servicesFromSession(session);
+  const catalogById = new Map(catalog.map((service: any) => [service?.serviceId, service]));
+  const requested = asArray(body?.selectedServices);
+  if (requested.length > 64) return err("BAD_REQUEST", "Too many services selected");
+
+  const normalized: { passengerIndex: number; serviceId: string; quantity: number }[] = [];
+  const seen = new Set<string>();
+  for (const item of requested) {
+    const serviceId = item?.serviceId;
+    const passengerIndex = Number(item?.passengerIndex);
+    const quantity = Number(item?.quantity ?? 1);
+    if (!serviceId || !catalogById.has(serviceId))
+      return err("BAD_REQUEST", "Unknown service selected");
+    if (!Number.isInteger(passengerIndex) || passengerIndex < 0 || passengerIndex >= passengerTotal)
+      return err("BAD_REQUEST", "Invalid passenger for service");
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 9)
+      return err("BAD_REQUEST", "Invalid service quantity");
+    const key = `${passengerIndex}:${serviceId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({ passengerIndex, serviceId, quantity });
+  }
+
+  const { status, data } = await liteapi(
+    `/flights/prebooks/${encodeURIComponent(session.prebook_id)}/services`,
+    "POST",
+    { selectedServices: normalized },
+    ATTACH_TIMEOUT_MS,
+  );
+
+  if (status !== 200) {
+    if (isSoldOut(data)) return err("OFFER_SOLD_OUT", SOLD_OUT_MESSAGE, 409);
+    if (status >= 500)
+      console.error(JSON.stringify({ fn: "flights-booking", action: "attachServices", sessionId: session.id, upstreamStatus: status }));
+    return passthrough(status, data);
+  }
+
+  const updated = asArray(data?.data)[0] ?? data?.data ?? {};
+  const booking = updated?.booking ?? {};
+  const newPrice = numberOr(updated?.price, numberOr(booking?.pricing?.totalAmount, session.verified_price));
+  const currency = updated?.currency ?? booking?.pricing?.currency ?? session.currency ?? "AED";
+  const servicesAttachable = normalizeServicesAttachable(
+    updated?.servicesAttachable?.groups?.length
+      ? updated.servicesAttachable
+      : session.journey?.servicesAttachable,
+  );
+  const bookedServices = asArray(booking?.bookedServices)
+    .map(normalizeService)
+    .filter(Boolean);
+  const priceBreakdown = buildPriceBreakdown(
+    booking?.journey ?? session.journey?.journey,
+    booking?.pricing,
+    newPrice,
+    session,
+  );
+  const enrichedJourney = {
+    ...asObject(session.journey),
+    ...(booking?.journey ? { journey: booking.journey } : {}),
+    servicesAttachable,
+    selectedServices: normalized,
+    bookedServices,
+    priceBreakdown,
+  };
+
+  const { error: updErr } = await admin
+    .from("flight_booking_sessions")
+    .update({
+      transaction_id: updated?.transactionId ?? session.transaction_id,
+      secret_key: updated?.secretKey ?? session.secret_key,
+      verified_price: newPrice,
+      currency,
+      journey: enrichedJourney,
+      expires_at: minutesFromNow(15),
+      updated_at: iso(new Date()),
+    })
+    .eq("id", session.id);
+
+  if (updErr) throw new Error(`DB session update failed: ${updErr.message}`);
+
+  return json({
+    secretKey: updated?.secretKey ?? session.secret_key,
+    price: newPrice,
+    currency,
+    priceBreakdown,
+    servicesAttachable,
+    selectedServices: normalized,
+    bookedServices,
+  });
 }
 
 async function handleBook(admin: any, user: any, body: any) {
@@ -448,108 +795,136 @@ async function handleBook(admin: any, user: any, body: any) {
     });
   }
 
-  if (session.status !== "PREBOOKED" || !session.prebook_id)
+  if (!session.prebook_id)
     return err("INVALID_STATE", "Prebook must be created first", 409);
   if (!session.transaction_id)
     return err("NO_TRANSACTION", "transactionId is missing in session", 409);
 
-  // Атомарный захват: только один параллельный вызов уйдёт в LiteAPI
-  const { data: claimed } = await admin
+  const staleBooking =
+    session.status === "BOOKING" &&
+    (!Number.isFinite(Date.parse(session.updated_at ?? "")) ||
+      now() - Date.parse(session.updated_at) > STALE_BOOKING_MS);
+
+  if (session.status === "BOOKING" && !staleBooking)
+    return err(
+      "BOOKING_IN_PROGRESS",
+      "Booking is already being confirmed. Please check My Bookings in a minute.",
+      409,
+    );
+
+  if (session.status !== "PREBOOKED" && session.status !== "BOOKING")
+    return err("INVALID_STATE", "Prebook must be created first", 409);
+
+  // Атомарный захват: только один параллельный вызов уйдёт в LiteAPI.
+  // Зависший BOOKING (например, после kill по лимиту Edge Function) можно
+  // перехватить повторно: LiteAPI book идемпотентен по prebookId.
+  let claimQuery = admin
     .from("flight_booking_sessions")
     .update({ status: "BOOKING", updated_at: iso(new Date()) })
-    .eq("id", session.id)
-    .eq("status", "PREBOOKED")
-    .select("id");
+    .eq("id", session.id);
+
+  claimQuery =
+    session.status === "BOOKING"
+      ? claimQuery
+          .eq("status", "BOOKING")
+          .lt("updated_at", iso(new Date(now() - STALE_BOOKING_MS)))
+      : claimQuery.eq("status", "PREBOOKED");
+
+  const { data: claimed } = await claimQuery.select("id");
 
   if (!claimed?.length)
     return err("BOOKING_IN_PROGRESS", "Booking is already in progress", 409);
 
-  let lastStatus = 0;
-  let lastData: any = null;
+  const res = await liteapi(
+    "/flights/bookings",
+    "POST",
+    {
+      prebookId: session.prebook_id,
+      payment: { method: "TRANSACTION_ID", transactionId: session.transaction_id },
+      customTags: { ORDER_REF: session.order_ref },
+    },
+    BOOK_TIMEOUT_MS,
+  );
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const res = await liteapi("/flights/bookings", "POST", {
-        prebookId: session.prebook_id,
-        payment: { method: "TRANSACTION_ID", transactionId: session.transaction_id },
-        customTags: { ORDER_REF: session.order_ref },
-      });
-      lastStatus = res.status;
-      lastData = res.data;
+  // 201 Created (и любой 2xx) — бронь создана
+  if (res.status >= 200 && res.status < 300) {
+    const summary = buildBookingSummary(res.data, session);
+    const bookingId = summary.bookingId ?? `prebook:${session.prebook_id}`;
 
-      // 201 Created (и любой 2xx) — бронь создана
-      if (res.status >= 200 && res.status < 300) {
-        const summary = buildBookingSummary(res.data, session);
-        const bookingId = summary.bookingId ?? `prebook:${session.prebook_id}`;
+    const { error: fbErr } = await admin.from("flight_bookings").upsert(
+      {
+        session_id: session.id,
+        user_id: user.id,
+        booking_id: bookingId,
+        booking_ref: summary.bookingRef,
+        status: summary.status,
+        total_amount: summary.total,
+        currency: summary.currency,
+        provider_payload: { ...res.data, pnr: summary.pnr },
+      },
+      { onConflict: "booking_id" }
+    );
+    if (fbErr) throw new Error(`DB flight_bookings upsert failed: ${fbErr.message}`);
 
-        const { error: fbErr } = await admin.from("flight_bookings").upsert(
-          {
-            session_id: session.id,
-            user_id: user.id,
-            booking_id: bookingId,
-            booking_ref: summary.bookingRef,
-            status: summary.status,
-            total_amount: summary.total,
-            currency: summary.currency,
-            provider_payload: { ...lastData, pnr: summary.pnr },
-          },
-          { onConflict: "booking_id" }
-        );
-        if (fbErr) throw new Error(`DB flight_bookings upsert failed: ${fbErr.message}`);
+    const { error: bErr } = await admin.from("bookings").insert({
+      user_id: user.id,
+      name: summary.tourName,
+      sum: summary.total,
+      Service: "Flight",
+      status: "Confirmed",
+      reference: summary.pnr ?? summary.bookingRef,
+      order_ref: session.order_ref,
+      meta: summary.meta,
+      currency: summary.currency,
+    });
+    if (bErr)
+      console.error(JSON.stringify({ fn: "flights-booking", action: "book", sessionId: session.id, dbError: bErr.message }));
 
-        const { error: bErr } = await admin.from("bookings").insert({
-          user_id: user.id,
-          name: summary.tourName,
-          sum: summary.total,
-          Service: "Flight",
-          status: "Confirmed",
-          reference: summary.pnr ?? summary.bookingRef,
-          order_ref: session.order_ref,
-          meta: summary.meta,
-          currency: summary.currency,
-        });
-        if (bErr)
-          console.error(JSON.stringify({ fn: "flights-booking", action: "book", sessionId: session.id, dbError: bErr.message }));
+    await admin
+      .from("flight_booking_sessions")
+      .update({ status: "CONFIRMED", updated_at: iso(new Date()) })
+      .eq("id", session.id);
 
-        await admin
-          .from("flight_booking_sessions")
-          .update({ status: "CONFIRMED", updated_at: iso(new Date()) })
-          .eq("id", session.id);
-
-        return json(summary);
-      }
-
-      // 409 — prebook не позволяет бронь: не ретраим
-      if (res.status === 409) break;
-
-      // Ретрай только на 5xx
-      if (res.status >= 500 && attempt < 3) {
-        await sleep(1000 * attempt);
-        continue;
-      }
-      break;
-    } catch (e: any) {
-      if (attempt < 3) {
-        await sleep(1000 * attempt);
-        continue;
-      }
-      lastStatus = 0;
-      lastData = { error: { description: String(e?.message ?? e) } };
-      break;
-    }
+    return json(summary);
   }
 
-  // Неудача — возвращаем сессию в PREBOOKED, чтобы пользователь мог повторить
+  const touchBooking = () =>
+    admin
+      .from("flight_booking_sessions")
+      .update({ updated_at: iso(new Date()) })
+      .eq("id", session.id);
+
+  // Таймаут/сеть/5xx: результат неизвестен. Оставляем BOOKING, чтобы повторный
+  // вызов не создал вторую бронь и мог получить existing booking от LiteAPI.
+  if (res.status === 0 || res.status >= 500) {
+    await touchBooking();
+    console.error(JSON.stringify({ fn: "flights-booking", action: "book", sessionId: session.id, upstreamStatus: res.status, upstreamCode: res.data?.error?.code ?? null }));
+    return err(
+      "BOOKING_UNKNOWN",
+      "The airline is still confirming this booking. Check My Bookings in a minute, then try again.",
+      res.status === 0 ? 504 : 502,
+    );
+  }
+
+  // LiteAPI 45035 — параллельный book уже выполняется.
+  if (res.status === 409 && Number(res.data?.error?.code) === 45035) {
+    await touchBooking();
+    return err(
+      "BOOKING_IN_PROGRESS",
+      "Booking is already being confirmed. Please check My Bookings in a minute.",
+      409,
+    );
+  }
+
+  // Терминальная ошибка (4xx/409): можно вернуться к prebook и повторить.
   await admin
     .from("flight_booking_sessions")
     .update({ status: "PREBOOKED", updated_at: iso(new Date()) })
     .eq("id", session.id);
 
-  console.error(JSON.stringify({ fn: "flights-booking", action: "book", sessionId: session.id, upstreamStatus: lastStatus }));
-  if (!lastStatus || lastStatus < 100)
-    return err("NETWORK_ERROR", lastData?.error?.description ?? "Network failure", 502);
-  if (isSoldOut(lastData)) return err("OFFER_SOLD_OUT", SOLD_OUT_MESSAGE, 409);
-  return passthrough(lastStatus, lastData);
+  console.error(JSON.stringify({ fn: "flights-booking", action: "book", sessionId: session.id, upstreamStatus: res.status, upstreamCode: res.data?.error?.code ?? null }));
+  if (isSoldOut(res.data)) return err("OFFER_SOLD_OUT", SOLD_OUT_MESSAGE, 409);
+  return passthrough(res.status, res.data);
 }
 
 async function handleGet(admin: any, user: any, body: any) {
@@ -557,6 +932,26 @@ async function handleGet(admin: any, user: any, body: any) {
     const loaded = await loadSession(admin, user, body.sessionId);
     if (loaded.error) return loaded.error;
     const session = loaded.session as any;
+
+    if (body?.refreshServices && session.status === "PREBOOKED" && session.prebook_id) {
+      const { status, data } = await liteapi(
+        `/flights/prebooks/${encodeURIComponent(session.prebook_id)}`,
+        "GET",
+      );
+      const root = data?.data?.[0] ?? data?.data ?? {};
+      const servicesAttachable = normalizeServicesAttachable(root?.servicesAttachable);
+      if (status === 200 && servicesAttachable.groups.length > 0) {
+        const nextJourney = {
+          ...asObject(session.journey),
+          servicesAttachable,
+        };
+        const { error: updErr } = await admin
+          .from("flight_booking_sessions")
+          .update({ journey: nextJourney, updated_at: iso(new Date()) })
+          .eq("id", session.id);
+        if (!updErr) session.journey = nextJourney;
+      }
+    }
 
     return json({
       session: {
@@ -568,8 +963,14 @@ async function handleGet(admin: any, user: any, body: any) {
         currency: session.currency,
         searchParams: session.search_params,
         verified: session.journey ?? null, // { journey, changes }
+        contact: session.contact ?? null,
+        passengers: asArray(session.passengers),
         expiresAt: session.expires_at,
         prebookId: session.prebook_id ?? null,
+        servicesAttachable: session.journey?.servicesAttachable ?? null,
+        selectedServices: selectedServicesFromSession(session),
+        bookedServices: session.journey?.bookedServices ?? [],
+        priceBreakdown: session.journey?.priceBreakdown ?? null,
         // secretKey нужен только для checkout-экрана и только до брони
         secretKey: session.status === "PREBOOKED" ? session.secret_key : null,
       },
@@ -621,6 +1022,8 @@ Deno.serve(async (req) => {
         return await handleVerify(admin, user, body);
       case "prebook":
         return await handlePrebook(admin, user, body);
+      case "attachServices":
+        return await handleAttachServices(admin, user, body);
       case "book":
         return await handleBook(admin, user, body);
       case "get":

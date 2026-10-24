@@ -1,5 +1,6 @@
 import { useSearchParams, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import PageLoader from "../../loaders/PageLoader";
 import Sorting from "../sorting/sortingHotel";
 import { SORT_OPTIONS } from "../sorting/sortOptions";
@@ -32,23 +33,10 @@ import {
 import hotel from "../../../img/icons/tabicons/not.svg";
 import "./style.css";
 
-// Импортируем наш сервис
-import { hotelService } from "../../../services/SupebaseService";
-import { DEFAULT_CURRENCY, getStoredCurrency, isCurrencyError } from "../../../utils/currency";
-
-const fetchRatesWithCurrencyFallback = async (payload) => {
-  try {
-    return await hotelService.fetchHotelsList(payload);
-  } catch (err) {
-    if (getStoredCurrency() !== DEFAULT_CURRENCY && isCurrencyError(err)) {
-      console.warn(
-        `Currency ${getStoredCurrency()} is not supported by the provider, falling back to ${DEFAULT_CURRENCY}`,
-      );
-      return hotelService.fetchHotelsList({ ...payload, currency: DEFAULT_CURRENCY });
-    }
-    throw err;
-  }
-};
+import { useHotelListRates } from "../../../hooks/queries/useHotelListRates";
+import { hotelDetailQueryOptions } from "../../../hooks/queries/useHotelDetail";
+import { normalizeHotelSearch } from "../../../utils/queryParams";
+import { getStoredCurrency } from "../../../utils/currency";
 
 const DEFAULT_FILTERS = {
   starRating: [],
@@ -57,173 +45,65 @@ const DEFAULT_FILTERS = {
   facilities: [],
   bedTypes: [],
   boardType: [],
+  chainIds: [],
   refundableOnly: false,
-};
-
-const parseChildrenAges = (value) => {
-  if (Array.isArray(value)) {
-    return value
-      .map((age) => parseInt(age, 10))
-      .filter((age) => !Number.isNaN(age));
-  }
-  if (typeof value === "string" && value.trim()) {
-    return value
-      .split(",")
-      .map((age) => parseInt(age, 10))
-      .filter((age) => !Number.isNaN(age));
-  }
-  return [];
 };
 
 const HotelList = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [sort, setSort] = useState({
     field: "price",
     direction: "ascending",
   });
-  //new constant
-  const [hotels, setHotels] = useState([]);
-  const [ratesData, setRatesData] = useState(() => new Map());
-
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  // const {
-  //   facilities,
-  //   loading: facilitiesLoading,
-  //   error: facilitiesError,
-  // } = useFacilities();
 
-  // const checkin = searchParams.get('checkin') || '';
-  // const checkout = searchParams.get('checkout') || '';
-  const adults = parseInt(searchParams.get("adults") || "2");
-  const children = parseInt(searchParams.get("children") || "0");
-  const childrenAgesStr = searchParams.get("childrenAges") || "";
-  const childrenAges = useMemo(
-    () => (childrenAgesStr ? childrenAgesStr.split(",").map(Number) : []),
-    [childrenAgesStr],
-  );
-  // const placeId = searchParams.get('placeId');
-  const placeName = searchParams.get("placeName");
-
-  const [selectedStars, setSelectedStars] = useState([]);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: Infinity });
-  const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [minGuestRating, setMinGuestRating] = useState(null);
-  const [sortType, setSortType] = useState(6);
-
-  // Получаем параметры из URL
-  const city = searchParams.get("city");
-  const placeId = searchParams.get("pleaseId");
-  const checkin = searchParams.get("checkIn");
-  const checkout = searchParams.get("checkOut");
-  const adultsParams = searchParams.get("adults");
-  const childrenParams = searchParams.get("children");
-  const childrenAgesParams = searchParams.get("childrenAges");
-
-  // const adults = parseInt(adultsParams, 10) || 2;
-  // const children = parseInt(childrenParams, 10) || 0;
-  // const childrenAges = parseChildrenAges(childrenAgesParams);
-  const normalizedChildrenAges =
-    childrenAges.length > 0
-      ? childrenAges
-      : Array.from({ length: children }, () => 5);
+  const search = useMemo(() => normalizeHotelSearch(searchParams), [searchParams]);
+  const { city, placeId, checkIn, checkOut, adults, children, childrenAges } = search;
+  const currency = user?.currency || getStoredCurrency();
   const quests = adults + children;
 
-  const checkIn = checkin ? new Date(checkin) : null;
-  const checkOut = checkout ? new Date(checkout) : null;
+  const ratesQuery = useHotelListRates({ search, filters, currency });
+  const hotels = useMemo(
+    () => (Array.isArray(ratesQuery.data?.data?.hotels) ? ratesQuery.data.data.hotels : []),
+    [ratesQuery.data],
+  );
+  const ratesData = useMemo(
+    () =>
+      new Map(
+        (Array.isArray(ratesQuery.data?.data?.data) ? ratesQuery.data.data.data : []).map(
+          (item) => [String(item.hotelId), item],
+        ),
+      ),
+    [ratesQuery.data],
+  );
+  const loading = ratesQuery.isLoading;
+  const updating = ratesQuery.isFetching && !loading;
+  const error = ratesQuery.error
+    ? ratesQuery.error.message || "Failed to fetch hotels"
+    : "";
 
-  const [hotelData, setHotelData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const nights = useMemo(() => {
+    const from = checkIn ? new Date(checkIn) : null;
+    const to = checkOut ? new Date(checkOut) : null;
+    if (!from || !to || to <= from) return 0;
+    return Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+  }, [checkIn, checkOut]);
 
-  let nights = 0;
-  if (checkIn && checkOut && checkOut > checkIn) {
-    nights = Math.ceil(
-      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
-    );
-  }
+  const getHotelRate = useCallback(
+    (hotelId) =>
+      ratesData.get(String(hotelId))?.roomTypes?.[0]?.rates?.[0] ?? null,
+    [ratesData],
+  );
 
-  // Запрос по новому
-  useEffect(() => {
-    let mounted = true;
-        const fetchRates = async () => {
-      setLoading(true);
-      try {
-        const occupancies = [{ adults }];
-
-        if (children > 0 && childrenAges.length > 0) {
-          occupancies[0].children = childrenAges;
-        }
-
-        const body = {
-          occupancies,
-          currency: getStoredCurrency(),
-          guestNationality: "US",
-          checkin,
-          checkout,
-          roomMapping: true,
-          maxRatesPerHotel: 1,
-          includeHotelData: true,
-          placeId,
-          limit: 200,
-          margin: 10,
-        };
-
-        // НАЧАЛО ПРОВЕРКИ: Проверяем, есть ли фильтры вообще
-        console.log("Текущие фильтры в компоненте:", filters);
-
-        if (filters?.starRating?.length > 0) body.starRating = filters.starRating;
-        if (filters?.minRating > 0) body.minRating = filters.minRating;
-        if (filters?.minReviewsCount > 0) body.minReviewsCount = filters.minReviewsCount;
-        if (filters?.facilities?.length > 0) body.facilities = filters.facilities;
-        if (filters?.bedTypes?.length > 0) body.bedTypes = filters.bedTypes;
-
-        if (filters?.boardType?.length > 0) {
-          body.boardType = filters.boardType.join(",");
-        }
-        if (filters?.refundableOnly) body.refundableRatesOnly = true;
-
-        console.log("Финальный body перед отправкой в Supabase:", body);
-
-        // Сам вызов сервиса
-        const data = await fetchRatesWithCurrencyFallback(body);
-        console.log("Данные, которые вернулись в компонент из сервиса:", data);
-
-        const hotelList = Array.isArray(data?.hotels) ? data.hotels : [];
-        const ratesMap = new Map(
-          (Array.isArray(data?.data) ? data.data : []).map((item) => [
-            String(item.hotelId),
-            item,
-          ])
-        );
-
-        if (!mounted) return;
-        setHotels(hotelList);
-        setRatesData(ratesMap);
-
-      } catch (err) {
-        if (!mounted) return;
-        // КРИТИЧЕСКИЙ ЛОГ: Выведет точную причину падения кода прямо в консоль!
-        console.error("🔥 ОШИБКА ВНУТРИ EFFECT В COMPONENT:", err);
-        setError("Failed to fetch hotels");
-      }
-      if (mounted) setLoading(false);
-    };
-
-
-    fetchRates();
-
-    return () => {
-      mounted = false;
-    };
-  }, [checkin, checkout, adults, children, childrenAges, placeId, filters]);
-
-  const getHotelRate = (hotelId) =>
-    ratesData.get(String(hotelId))?.roomTypes?.[0]?.rates?.[0] ?? null;
+  const prefetchHotel = (hotelId) => {
+    if (!hotelId) return;
+    queryClient.prefetchQuery(hotelDetailQueryOptions(hotelId));
+  };
 
   const handleSignInClick = (event) => {
     event.preventDefault();
@@ -263,7 +143,7 @@ const HotelList = () => {
         ? bValue - aValue
         : aValue - bValue;
     });
-  }, [hotels, ratesData, sort]);
+  }, [hotels, sort, getHotelRate]);
 
  
 
@@ -271,17 +151,14 @@ const HotelList = () => {
     const urlParams = new URLSearchParams();
     urlParams.set("city", city || "");
     urlParams.set("pleaseId", placeId || "");
-    urlParams.set("checkIn", checkin || "");
-    urlParams.set("checkOut", checkout || "");
+    urlParams.set("checkIn", checkIn || "");
+    urlParams.set("checkOut", checkOut || "");
     urlParams.set("adults", String(adults));
     urlParams.set("children", String(children));
     if (childrenAges?.length > 0)
       urlParams.set("childrenAges", childrenAges.join(","));
     return urlParams.toString();
   }, [city, placeId, checkIn, checkOut, adults, children, childrenAges]);
-
-  console.log(hotels);
-  console.log(ratesData);
 
   if (loading) return <PageLoader />;
 
@@ -295,6 +172,7 @@ const HotelList = () => {
               filters={filters}
               onChange={setFilters}
               onClear={() => setFilters(DEFAULT_FILTERS)}
+              placeId={placeId}
             />
           </FilterDrawer>
           <button
@@ -309,13 +187,39 @@ const HotelList = () => {
         </div>
         <div className="hotel-box">
           <Sorting sort={sort} onChange={setSort} />
-          <div className="hotelbox-grid">
-            {hotels.length === 0 ? (
-              <div className="found-not">
-                <img src={hotel} alt="no hotels found" />
-                <h3>Nothing found matching your request</h3>
-                <span>Please specify other search parameters</span>
-              </div>
+          {error && (
+            <div className="found-not" role="alert">
+              <h3>Could not load hotels</h3>
+              <span>{error}</span>
+            </div>
+          )}
+          <div
+            className={`hotelbox-grid${updating ? " is-updating" : ""}`}
+            aria-busy={updating}
+          >
+            {updating ? (
+              Array.from({ length: 3 }, (_, index) => (
+                <div className="hotel-skeleton" key={index} aria-hidden="true">
+                  <div className="hotel-skeleton-media" />
+                  <div className="hotel-skeleton-body">
+                    <span className="hotel-skeleton-line hotel-skeleton-line--title" />
+                    <span className="hotel-skeleton-line hotel-skeleton-line--meta" />
+                    <span className="hotel-skeleton-line hotel-skeleton-line--meta is-short" />
+                    <div className="hotel-skeleton-footer">
+                      <span className="hotel-skeleton-line hotel-skeleton-line--price" />
+                      <span className="hotel-skeleton-line hotel-skeleton-line--button" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : hotels.length === 0 ? (
+              error ? null : (
+                <div className="found-not">
+                  <img src={hotel} alt="no hotels found" />
+                  <h3>Nothing found matching your request</h3>
+                  <span>Please specify other search parameters</span>
+                </div>
+              )
             ) : (
               
               sortedHotels.map((item) => {
@@ -331,6 +235,8 @@ const HotelList = () => {
                   <NavLink
                     key={`${item.id}`}
                     to={`/hotelpage/${item.id}?${params}`}
+                    onMouseEnter={() => prefetchHotel(item.id)}
+                    onFocus={() => prefetchHotel(item.id)}
                   >
                     <div className="grid-card">
                       <div className="grid-card-img-box">
@@ -451,10 +357,17 @@ const HotelList = () => {
                                 for {nights} nights for {quests} guests
                               </span>
                               {taxes && (
-                                <span className="hc-tax-note">
-                                  + {formatNumber(taxes.amount, 2)}{" "}
-                                  {taxes.currency} taxes and fees
-                                </span>
+                                <>
+                                  <span className="hc-tax-note">
+                                    + {formatNumber(taxes.amount, 2)}{" "}
+                                    {taxes.currency} taxes and fees
+                                  </span>
+                                  {taxes.descriptions && (
+                                    <span className="hc-tax-desc">
+                                      {taxes.descriptions}
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

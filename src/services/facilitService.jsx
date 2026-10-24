@@ -1,25 +1,19 @@
-const BASE_URL = "https://api.liteapi.travel/v3.0";
-const API_KEY = import.meta.env.VITE_LITE_API_KEY;
-
-// Хелпер для обработки ошибок
-async function handleResponse(res) {
-  if (!res.ok) throw new Error(`API Error: ${res.status}`);
-  return res.json();
-  console.log(res);
-  
-}
+import { supabase } from "../supabaseClient";
 
 export const facilitService = {
-  /**
-   * 1. Получение списка отелей места (Rates_Plase)
-   */
-  
   async fetchFacilitiesList() {
-    const res = await fetch(`${BASE_URL}/data/facilities?lang=en`, {
+    const response = await supabase.functions.invoke("liteapi-proxy", {
       method: "GET",
-      headers: {'X-API-Key': API_KEY, 'accept': 'application/json' },
+      headers: {
+        "x-target-url": "https://api.liteapi.travel/v3.0/data/facilities?lang=en",
+        "x-service-type": "hotels",
+      },
     });
-    
-    return handleResponse(res);
-  }
+
+    if (response.error) {
+      throw new Error(`Supabase System Error: ${response.error.message}`);
+    }
+
+    return response.data;
+  },
 };

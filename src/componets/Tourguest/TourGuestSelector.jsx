@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import GuestsContent from "../quest/GuestsContent";
+import AnchoredPopover from "../searchfields/AnchoredPopover";
 import { normalizeTourGuests, guestsDisplayText } from "../quest/guestsUtils";
 
-/* Селектор гостей для туров (попап внутри поля): взрослые / дети / младенцы.
-   Значение контролируется родителем (value) либо живёт локально. */
 const Questselector = ({ value, initialGuests, onGuestsChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [innerValue, setInnerValue] = useState(() =>
@@ -12,16 +11,6 @@ const Questselector = ({ value, initialGuests, onGuestsChange }) => {
   const containerRef = useRef(null);
 
   const guests = value ?? innerValue;
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleChange = (next) => {
     if (value === undefined) {
@@ -37,14 +26,22 @@ const Questselector = ({ value, initialGuests, onGuestsChange }) => {
         <button type="button" onClick={() => setIsOpen(!isOpen)} className="dp">
           <span>{guestsDisplayText(guests)}</span>
         </button>
-        {isOpen && (
+
+        <AnchoredPopover
+          open={isOpen}
+          anchorRef={containerRef}
+          onClose={() => setIsOpen(false)}
+          preferredWidth={378}
+          ariaLabel="Choose guests"
+        >
           <GuestsContent
+            variant="anchored"
             mode="tour"
             value={guests}
             onChange={handleChange}
             onDone={() => setIsOpen(false)}
           />
-        )}
+        </AnchoredPopover>
       </div>
     </div>
   );

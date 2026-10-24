@@ -33,6 +33,7 @@ const CalendarGrid = ({
   onCheckOutChange,
   onDone,
   variant = "popup",
+  monthCount = 1,
 }) => {
   const [month, setMonth] = useState(() =>
     checkIn ? new Date(checkIn.getFullYear(), checkIn.getMonth()) : new Date(),
@@ -55,17 +56,13 @@ const CalendarGrid = ({
     );
   };
 
-  const toCurrentMonthDate = (day) =>
-    new Date(month.getFullYear(), month.getMonth(), day);
-
   const isPast = (date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date < today;
   };
 
-  const getButtonClass = (day) => {
-    const currentDate = toCurrentMonthDate(day);
+  const getButtonClass = (currentDate) => {
     if (isPast(currentDate)) return "disabled";
 
     if (mode === "single") {
@@ -80,14 +77,12 @@ const CalendarGrid = ({
     return "";
   };
 
-  const handleSingleClick = (day) => {
-    onCheckInChange?.(toCurrentMonthDate(day));
+  const handleSingleClick = (date) => {
+    onCheckInChange?.(date);
     onDone?.();
   };
 
-  const handleRangeClick = (day) => {
-    const selectedDate = toCurrentMonthDate(day);
-
+  const handleRangeClick = (selectedDate) => {
     if (!checkIn) {
       onCheckInChange?.(selectedDate);
       return;
@@ -109,53 +104,98 @@ const CalendarGrid = ({
     onCheckOutChange?.(null);
   };
 
-  const handleDayClick = (day) => {
-    if (mode === "single") handleSingleClick(day);
-    else handleRangeClick(day);
+  const handleDayClick = (date) => {
+    if (mode === "single") handleSingleClick(date);
+    else handleRangeClick(date);
   };
 
   const stepMonth = (delta) =>
     setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
 
-  const { firstDay, daysInMonth } = getDaysInMonth(month);
+  const months = Array.from(
+    { length: monthCount },
+    (_, index) => new Date(month.getFullYear(), month.getMonth() + index, 1),
+  );
 
   return (
-    <div className={variant === "sheet" ? "calendar-sheet" : "date-wrapper"}>
-      <div className="month">
-        <button type="button" aria-label="Previous month" onClick={() => stepMonth(-1)}>
-          <img src={arrLeft} alt="prev" />
-        </button>
-        <span>
-          {MONTHS[month.getMonth()]} {month.getFullYear()}
-        </span>
-        <button type="button" aria-label="Next month" onClick={() => stepMonth(1)}>
-          <img src={arrRigth} alt="next" />
-        </button>
-      </div>
+    <div
+      className={`${
+        variant === "sheet"
+          ? "calendar-sheet"
+          : variant === "plain"
+            ? "calendar-plain"
+            : "date-wrapper"
+      }${monthCount > 1 ? " calendar-multi" : ""}`}
+    >
+      <div className="calendar-months">
+        {months.map((monthDate, index) => {
+          const { firstDay, daysInMonth } = getDaysInMonth(monthDate);
+          const monthKey = `${monthDate.getFullYear()}-${monthDate.getMonth()}`;
 
-      <div className="dp-days">
-        <div className="wekday">
-          {DAYS.map((day) => (
-            <div key={day} className="wekday-block">
-              {day}
+          return (
+            <div className="calendar-month" key={monthKey}>
+              <div className="month">
+                {index === 0 ? (
+                  <button
+                    type="button"
+                    aria-label="Previous month"
+                    onClick={() => stepMonth(-1)}
+                  >
+                    <img src={arrLeft} alt="prev" />
+                  </button>
+                ) : (
+                  <span className="month__spacer" aria-hidden="true" />
+                )}
+                <span>
+                  {MONTHS[monthDate.getMonth()]} {monthDate.getFullYear()}
+                </span>
+                {index === months.length - 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next month"
+                    onClick={() => stepMonth(1)}
+                  >
+                    <img src={arrRigth} alt="next" />
+                  </button>
+                ) : (
+                  <span className="month__spacer" aria-hidden="true" />
+                )}
+              </div>
+
+              <div className="dp-days">
+                <div className="wekday">
+                  {DAYS.map((day) => (
+                    <div key={day} className="wekday-block">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                <div className="days">
+                  {Array.from({ length: firstDay }).map((_, i) => (
+                    <div key={`empty-${i}`}></div>
+                  ))}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const date = new Date(
+                      monthDate.getFullYear(),
+                      monthDate.getMonth(),
+                      i + 1,
+                    );
+                    return (
+                      <button
+                        key={i + 1}
+                        type="button"
+                        onClick={() => handleDayClick(date)}
+                        className={getButtonClass(date)}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="days">
-          {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`empty-${i}`}></div>
-          ))}
-          {Array.from({ length: daysInMonth }).map((_, i) => (
-            <button
-              key={i + 1}
-              type="button"
-              onClick={() => handleDayClick(i + 1)}
-              className={getButtonClass(i + 1)}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );

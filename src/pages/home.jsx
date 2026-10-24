@@ -6,7 +6,8 @@ const Home = () => {
       <div className="container">
         <NavBar />
         <div className="section">
-          <h1 className="H1_big">Plan, book, enjoy</h1>
+          <h1 className="H1_big">One Travel Platform</h1>
+          <h2 >Discover Your Dream Destination with Us</h2>
           
         </div>
         <Search/>

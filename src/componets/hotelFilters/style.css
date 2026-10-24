@@ -263,7 +263,7 @@ color: var(--red);
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    height: 48px;
+    height: auto;
 }
 .rating-box{
     display: grid;
@@ -384,5 +384,45 @@ color: var(--red);
         font-size: 15px;
         height: auto;
         min-height: 24px;
+    }
+}
+
+/* Hotel chain filter */
+.fb-chain-search {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid var(--gray_stoke);
+    border-radius: 15px;
+    background: var(--white);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--black);
+    outline: none;
+}
+.fb-chain-search:focus {
+    border-color: var(--green);
+}
+.fb-chain-search::placeholder {
+    color: var(--gray_text);
+}
+.fb-chain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-height: 280px;
+    padding-right: 4px;
+    overflow-y: auto;
+}
+.fb-chain-list .filter-checkbox {
+    height: auto;
+    min-height: 24px;
+}
+
+@media (max-width: 640px) {
+    .fb-chain-list {
+        max-height: 220px;
     }
 }

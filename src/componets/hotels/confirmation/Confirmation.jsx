@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { hotelBookService } from "../../../services/SupebaseBookService";
+import { useBookHotel } from "../../../hooks/mutations/useHotelBookingMutations";
 import { useAuth } from "../../../context/AuthContext";
 import { getStoredCurrency } from "../../../utils/currency";
 import { CheckCircleOutlined, ReceiptLong, Person, ContactMail, ConfirmationNumber, ArrowForward } from '@mui/icons-material';
@@ -11,6 +11,7 @@ import "./style.css";
 const ConfirmationPage = () => {
   const navigate = useNavigate();
   const { addBooking } = useAuth();
+  const { mutateAsync: bookHotel } = useBookHotel();
   
   const [searchParams] = useSearchParams();
   const prebookId = searchParams.get('prebookId') || '';
@@ -29,9 +30,13 @@ const ConfirmationPage = () => {
         return;
       }
 
-      const guestDetails = typeof window !== 'undefined' 
-        ? JSON.parse(localStorage.getItem('guestDetails') || '{}')
-        : {};
+      const guestDetails = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('guestDetails') || '{}');
+        } catch {
+          return {};
+        }
+      })();
 
       if (!guestDetails.firstName || !guestDetails.email) {
         setError('Missing guest details. Please start a new booking.');
@@ -59,7 +64,7 @@ const ConfirmationPage = () => {
           }],
         };
         
-        const data = await hotelBookService.fetchBook(body);
+        const data = await bookHotel(body);
 
         if (data.error) {
           setError(data.error.description || 'Booking failed');
@@ -136,21 +141,21 @@ const ConfirmationPage = () => {
             meta: bookingMeta,
           });
           localStorage.removeItem('hotelBookingMeta');
-          console.log(`Заказ успешно сохранен в Supabase! Отель: ${realHotelName}, Цена: ${realPrice} ${priceCurrency}`);
-        } catch (dbErr) {
-          console.error("Ошибка записи копии бронирования в базу Supabase:", dbErr);
+          sessionStorage.removeItem('hotelCheckoutOffer');
+        } catch {
+          // Бронь уже создана провайдером — ошибка локальной копии не должна её отменять
         }
 
         localStorage.removeItem('guestDetails');
       } catch (err) {
-        setError('Failed to complete booking');
+        setError(err?.message || 'Failed to complete booking');
       }
       setLoading(false);
 
     };
 
     completeBooking();
-  }, [prebookId, transactionId]);
+  }, [prebookId, transactionId, addBooking, bookHotel]);
 
       const handleBookMore = () => {
     // Извлекаем параметры региона и гостей, которые мы только что пробросили из CheckoutPage

@@ -89,8 +89,7 @@ const TourFilters = ({
     setPriceMin("");
     setPriceMax("");
     setSelectedStars([]);
-    setSelectedAmenities(null);
-    setMinGuestRating(null);
+    setSelectedAmenities?.(null);
 
     if (priceChange) {
       priceChange({ min: 0, max: Infinity });

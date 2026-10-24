@@ -931,3 +931,53 @@
         flex-shrink: 0;
     }
 }
+
+/* Check-in / check-out */
+.checkin-out-box {
+    gap: 16px;
+}
+.checkin-out-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
+}
+.checkin-out-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 160px;
+}
+.hinfo-box .checkin-out-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray_text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.hinfo-box .checkin-out-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--black);
+}
+.checkin-out-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding-left: 20px;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--gray_text);
+}
+.checkin-out-special {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--black);
+}
+
+@media (max-width: 640px) {
+    .checkin-out-row {
+        min-width: 120px;
+    }
+}

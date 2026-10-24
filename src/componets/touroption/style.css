@@ -435,7 +435,7 @@ color: var(--black);
     }
 
     .rate-box {
-        padding: 4px;
+        padding: 0px;
     }
     .rate-item {
         padding: 10px;

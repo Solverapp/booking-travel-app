@@ -85,6 +85,31 @@
 	flex-shrink: 0;
 }
 
+.bottomsheet--search {
+	background: var(--white);
+	padding-top: 12px;
+}
+
+.bottomsheet--search .bottomsheet-header {
+	padding-bottom: 4px;
+	border-bottom-color: transparent;
+}
+
+.bottomsheet--search .bottomsheet-close {
+	width: 40px;
+	height: 40px;
+	background: transparent;
+	border-color: transparent;
+}
+
+.bottomsheet--airport {
+	background: var(--gray2);
+}
+
+.bottomsheet-header--no-title {
+	justify-content: flex-end;
+}
+
 .bottomsheet-body {
 	flex: 1 1 auto;
 	min-height: 0;
@@ -95,6 +120,10 @@
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.bottomsheet--search .bottomsheet-body {
+	padding-top: 8px;
 }
 
 .bottomsheet-footer {

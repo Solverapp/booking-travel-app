@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import PageLoader from "../../loaders/PageLoader";
-import { reviewsService } from "../../../services/SupebaseReviewsService";
+import { useHotelReviews } from "../../../hooks/queries/useHotelReviews";
 import {
   Person,
   FavoriteBorder,
@@ -44,35 +44,16 @@ const TRAVELLER_TYPES = [
 ];
 
 const GuestReviews = ({ sentiment, reviewCount, hotelId }) => {
-  const [reviews, setReviews] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState("newest");
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP);
 
-  useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await reviewsService.fetchReviews({ id: hotelId, limit: FETCH_LIMIT });
-        if (isMounted) {
-          const items = (res?.data || []).map((r) => ({ ...r, ts: parseTs(r.date) }));
-          setReviews(items);
-          setTotal(res?.total || items.length);
-        }
-      } catch {
-        if (isMounted) {
-          setReviews([]);
-          setTotal(0);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    if (hotelId) load();
-    return () => { isMounted = false; };
-  }, [hotelId]);
+  const reviewsQuery = useHotelReviews(hotelId, FETCH_LIMIT);
+  const reviews = useMemo(
+    () => (reviewsQuery.data?.data || []).map((r) => ({ ...r, ts: parseTs(r.date) })),
+    [reviewsQuery.data],
+  );
+  const total = reviewsQuery.data?.total || reviews.length;
+  const loading = reviewsQuery.isLoading;
 
   const handleSort = useCallback((e) => {
     setSort(e.target.value);

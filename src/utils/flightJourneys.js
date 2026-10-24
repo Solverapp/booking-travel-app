@@ -69,3 +69,47 @@ export const segmentFlightLabel = (segment) => {
   const codeNumber = `${code}${number ? ` ${number}` : ""}`.trim();
   return [name, codeNumber].filter(Boolean).join(" · ");
 };
+
+export const legStops = (leg) => {
+  const segments = Array.isArray(leg) ? leg : [];
+  const connections = Math.max(0, segments.length - 1);
+  const technical = segments.reduce(
+    (total, segment) => total + (Number(segment?.stopCount) || 0),
+    0,
+  );
+  return connections + technical;
+};
+
+export const legFlightNumbers = (leg) => {
+  const numbers = new Set();
+  (Array.isArray(leg) ? leg : []).forEach((segment) => {
+    const code = segment?.carrier?.marketingCode ?? "";
+    const number = segment?.flight?.marketingNumber ?? "";
+    const label = `${code}${number ? ` ${number}` : ""}`.trim();
+    if (label) numbers.add(label);
+  });
+  return Array.from(numbers);
+};
+
+export const legDuration = (leg) => {
+  const segments = Array.isArray(leg) ? leg : [];
+  if (segments.length === 0) return null;
+  return minutesBetween(
+    segments[0]?.departureTime,
+    segments[segments.length - 1]?.arrivalTime,
+  );
+};
+
+export const segmentLabelsByKey = (segments) => {
+  const counters = { outbound: 0, inbound: 0 };
+  const labels = new Map();
+  (Array.isArray(segments) ? segments : []).forEach((segment) => {
+    const inbound = segment?.direction === "INBOUND";
+    const key = inbound ? "inbound" : "outbound";
+    counters[key] += 1;
+    if (segment?.segmentKey) {
+      labels.set(segment.segmentKey, `${inbound ? "Return" : "Outbound"} ${counters[key]}`);
+    }
+  });
+  return labels;
+};

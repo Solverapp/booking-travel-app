@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import CalendarGrid from "../datepicker/CalendarGrid";
+import AnchoredPopover from "../searchfields/AnchoredPopover";
 import "./style.css";
 
-/* Поле дат для отелей: диапазон check-in → check-out (mode="range") */
 const DatePickerH = ({
   checkInH,
   checkOutH,
@@ -12,51 +12,72 @@ const DatePickerH = ({
   const [isOpenH, setIsOpenH] = useState(false);
   const containerRefH = useRef(null);
 
-  useEffect(() => {
-    function handleClickOutsideH(event) {
-      if (
-        containerRefH.current &&
-        !containerRefH.current.contains(event.target)
-      ) {
-        setIsOpenH(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutsideH);
-    return () => document.removeEventListener("mousedown", handleClickOutsideH);
-  }, []);
+  const handleClear = () => {
+    onCheckInChangeH?.(null);
+    onCheckOutChangeH?.(null);
+  };
 
   return (
-    <div className="sop-box-dpicker">
+    <div className="sop-box-dpicker" ref={containerRefH}>
       <div className="dpicker-checkin">
         <p>Check-in</p>
-        <div className="dp-wrapper" ref={containerRefH}>
-          <button
-            type="button"
-            onClick={() => setIsOpenH(!isOpenH)}
-            className="dp"
-          >
-            <span>
-              {checkInH ? checkInH.toLocaleDateString() : "Select dates"}
-            </span>
-          </button>
-          {isOpenH && (
-            <CalendarGrid
-              mode="range"
-              checkIn={checkInH}
-              checkOut={checkOutH}
-              onCheckInChange={onCheckInChangeH}
-              onCheckOutChange={onCheckOutChangeH}
-              onDone={() => setIsOpenH(false)}
-            />
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsOpenH(true)}
+          className="dp"
+        >
+          <span>
+            {checkInH ? checkInH.toLocaleDateString() : "Select dates"}
+          </span>
+        </button>
       </div>
       <div className="dpicker-checout">
         <p>Check-out</p>
-        <span>
-          {checkOutH ? checkOutH.toLocaleDateString() : "Select dates"}
-        </span>
+        <button
+          type="button"
+          onClick={() => setIsOpenH(true)}
+          className="dp"
+        >
+          <span>
+            {checkOutH ? checkOutH.toLocaleDateString() : "Select dates"}
+          </span>
+        </button>
       </div>
+
+      <AnchoredPopover
+        open={isOpenH}
+        anchorRef={containerRefH}
+        onClose={() => setIsOpenH(false)}
+        preferredWidth={704}
+        allowOverlap
+        ariaLabel="Choose hotel dates"
+      >
+        <CalendarGrid
+          variant="plain"
+          mode="range"
+          monthCount={2}
+          checkIn={checkInH}
+          checkOut={checkOutH}
+          onCheckInChange={onCheckInChangeH}
+          onCheckOutChange={onCheckOutChangeH}
+        />
+        <div className="date-popover__footer">
+          <button
+            type="button"
+            className="date-popover__btn date-popover__btn--clear"
+            onClick={handleClear}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className="date-popover__btn date-popover__btn--apply"
+            onClick={() => setIsOpenH(false)}
+          >
+            Apply
+          </button>
+        </div>
+      </AnchoredPopover>
     </div>
   );
 };

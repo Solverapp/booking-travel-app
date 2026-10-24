@@ -1,5 +1,5 @@
 ﻿import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import "./style.css";
 import { Rating } from "@mui/material";
 import PageLoader from "../../loaders/PageLoader";
@@ -10,155 +10,86 @@ import PopularFacilities from "./PopularFacilities";
 import Rooms from "../rooms/Roomsnew";
 
 import left from "../../../img/icons/tabicons/arrow-left.svg";
-import search from "../../../img/icons/tabicons/search-normal.svg";
+import searchIcon from "../../../img/icons/tabicons/search-normal.svg";
 import loc from "../../../img/icons/tabicons/location.svg";
 
 
-// Ð˜Ð¼Ð¿Ð¾Ñ€Ñ‚Ð¸Ñ€ÑƒÐµÐ¼ Ð½Ð°Ñˆ ÑÐµÑ€Ð²Ð¸Ñ
-import { hotelService } from "../../../services/SupebaseService";
-import { hotelIdService } from "../../../services/SupebaseHotelIdService";
-import { DEFAULT_CURRENCY, getStoredCurrency, isCurrencyError } from "../../../utils/currency";
-
-const fetchRatesWithCurrencyFallback = async (payload) => {
-  try {
-    return await hotelService.fetchHotelsList(payload);
-  } catch (err) {
-    if (getStoredCurrency() !== DEFAULT_CURRENCY && isCurrencyError(err)) {
-      console.warn(
-        `Currency ${getStoredCurrency()} is not supported by the provider, falling back to ${DEFAULT_CURRENCY}`,
-      );
-      return hotelService.fetchHotelsList({ ...payload, currency: DEFAULT_CURRENCY });
-    }
-    throw err;
-  }
-};
-
-const parseChildrenAges = (value) => {
-  if (Array.isArray(value)) {
-    return value.map((age) => parseInt(age, 10)).filter((age) => !Number.isNaN(age));
-  }
-  if (typeof value === "string" && value.trim()) {
-    return value.split(",").map((age) => parseInt(age, 10)).filter((age) => !Number.isNaN(age));
-  }
-  return [];
-};
+import { useHotelDetail } from "../../../hooks/queries/useHotelDetail";
+import { useHotelDetailRates } from "../../../hooks/queries/useHotelDetailRates";
+import { normalizeHotelSearch } from "../../../utils/queryParams";
+import { getStoredCurrency } from "../../../utils/currency";
+import { useAuth } from "../../../context/AuthContext";
 
 const HotelDetails = ({ id }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const hid = id.id;
+  const { user } = useAuth();
+  const hotelId = id?.id;
 
-  const city = searchParams.get("city");
-  const pleaseId = searchParams.get("pleaseId");
-  const checkInParam = searchParams.get("checkIn");
-  const checkin = searchParams.get("checkIn");
-  const checkOutParam = searchParams.get("checkOut");
-  const checkout = searchParams.get("checkOut");
-  const adultsParams = searchParams.get("adults");
-  const childrenParams = searchParams.get("children");
-  const childrenAgesParams = searchParams.get("childrenAges");
-  
-  const adults = parseInt(adultsParams, 10) || 2;
-  const childern = parseInt(childrenParams, 10) || 0;
-  const childrenAges = parseChildrenAges(childrenAgesParams);
-  
-  const checkIn = checkInParam ? new Date(checkInParam) : null;
-  const checkOut = checkOutParam ? new Date(checkOutParam) : null;
+  const search = useMemo(() => normalizeHotelSearch(searchParams), [searchParams]);
+  const { city, placeId, checkIn, checkOut, adults, children, childrenAges } = search;
+  const currency = user?.currency || getStoredCurrency();
 
-  const [hotelData, setHotelData] = useState(null);
-  const [hotel, setHotel] = useState({});
-  const [images, setImages] = useState([]);
-  const [hotelFacilities, setHotelFacilities] = useState([]);
-  const [rooms, setRooms] = useState([]);
-  const [rates, setRates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const detailQuery = useHotelDetail(hotelId);
+  const ratesQuery = useHotelDetailRates({ hotelId, search, currency });
 
-  const occupancies = [{ adults }];
+  const hotel = detailQuery.data;
+  const images = hotel?.hotelImages || [];
+  const hotelFacilities = hotel?.facilities || [];
+  const rooms = hotel?.rooms || [];
+  const rates = ratesQuery.data?.roomTypes || [];
+  const loading = detailQuery.isLoading;
+  const error = detailQuery.error?.message || ratesQuery.error?.message || "";
 
-        if (childern > 0 && childrenAges.length > 0) {
-          occupancies[0].childern = childrenAges;
-        }
-
-        const body = {
-          occupancies,
-          hotelIds: [hid],
-          currency: getStoredCurrency(),
-          guestNationality: "US",
-          checkin,
-          checkout,
-          roomMapping: true,
-          includeHotelData: true,
-          margin: 10,
-        };
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchNewData = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const [hotelRes, ratesRes] = await Promise.all ([
-          
-          hotelIdService.fetchHotelDetalis(id),
-          fetchRatesWithCurrencyFallback(body),
-
-        ])
-        const data = await hotelRes.data;
-        const ratesData = await ratesRes.data;
-console.log(data);
-
-        if (isMounted && data && ratesData) {
-          setHotelData(data);
-          setHotel(data || {});
-          setImages(data?.hotelImages || []);
-          setHotelFacilities(data?.facilities || []);
-          setRooms(data?.rooms || []);
-          setRates(ratesData?.[0]?.roomTypes || []);
-        }
-      } catch (err) {
-        if (isMounted) setError('Failed to load Hotels');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchNewData();
-    return () => { isMounted = false; };
-  }, [hid, checkInParam, checkOutParam, adults]);
-
-  let nights = useMemo(() => {
-    if (checkIn && checkOut && checkOut > checkIn) {
-      return Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-    }
-    return 0;
+  const nights = useMemo(() => {
+    const from = checkIn ? new Date(checkIn) : null;
+    const to = checkOut ? new Date(checkOut) : null;
+    if (!from || !to || to <= from) return 0;
+    return Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
   }, [checkIn, checkOut]);
 
   const handleBack = () => {
     const params = new URLSearchParams();
     params.set("city", city || "");
-    params.set("pleaseId", pleaseId || "");
-    params.set("checkIn", checkInParam || "");
-    params.set("checkOut", checkOutParam || "");
+    params.set("pleaseId", placeId || "");
+    params.set("checkIn", checkIn || "");
+    params.set("checkOut", checkOut || "");
     params.set("adults", String(adults));
-    params.set("children", String(childern));
+    params.set("children", String(children));
     if (childrenAges?.length > 0) {
       params.set("childrenAges", childrenAges.join(","));
     }
     navigate(`/hotels?${params.toString()}`);
   };
-console.log(hotel);
+
+  const checkinCheckoutTimes = hotel?.checkinCheckoutTimes || null;
+  const checkinInstructions = Array.isArray(checkinCheckoutTimes?.instructions)
+    ? checkinCheckoutTimes.instructions.filter((item) => item?.instruction)
+    : [];
+  const hasCheckinCheckoutInfo = Boolean(
+    checkinCheckoutTimes?.checkin_start ||
+      checkinCheckoutTimes?.checkin_end ||
+      checkinCheckoutTimes?.checkout ||
+      checkinInstructions.length ||
+      checkinCheckoutTimes?.special_instructions,
+  );
+  const checkinWindow = [
+    checkinCheckoutTimes?.checkin_start,
+    checkinCheckoutTimes?.checkin_end,
+  ]
+    .filter(Boolean)
+    .join(" – ");
 
   return (
     <div className="maincontent">
       <div className="hcontainer">
         {loading ? (
           <PageLoader embedded />
-        ) : !hotelData ? (
+        ) : !hotel ? (
           <div className="option-not">
-            <img src={search} alt="hotel" />
-            <h3>Nothing found matching your request</h3>
-            <span>Please specify other search parameters</span>
+            <img src={searchIcon} alt="hotel" />
+            <h3>{error ? "Could not load hotel" : "Nothing found matching your request"}</h3>
+            <span>{error || "Please specify other search parameters"}</span>
           </div>
         ) : (
           <div className="hotinfo">
@@ -212,7 +143,7 @@ console.log(hotel);
             <GuestReviews
               sentiment={hotel.sentiment_analysis || hotel.sentimentAnalysis}
               reviewCount={hotel.reviewCount}
-              hotelId={hid}
+              hotelId={hotelId}
             />
 
             <div className="hotel-about">
@@ -224,6 +155,41 @@ console.log(hotel);
               <div className="hinfo-box">
                 <span>{(hotel.hotelImportantInformation || "").replace(/<[^>]*>?/gm, '')}</span>
               </div>
+              {hasCheckinCheckoutInfo && (
+                <>
+                  <h2>Check-in and check-out</h2>
+                  <div className="hinfo-box checkin-out-box">
+                    <div className="checkin-out-grid">
+                      {checkinWindow && (
+                        <div className="checkin-out-row">
+                          <span className="checkin-out-label">Check-in</span>
+                          <span className="checkin-out-value">{checkinWindow}</span>
+                        </div>
+                      )}
+                      {checkinCheckoutTimes?.checkout && (
+                        <div className="checkin-out-row">
+                          <span className="checkin-out-label">Check-out</span>
+                          <span className="checkin-out-value">
+                            {checkinCheckoutTimes.checkout}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {checkinInstructions.length > 0 && (
+                      <ul className="checkin-out-instructions">
+                        {checkinInstructions.map((item, index) => (
+                          <li key={item.id ?? index}>{item.instruction}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {checkinCheckoutTimes?.special_instructions && (
+                      <p className="checkin-out-special">
+                        {checkinCheckoutTimes.special_instructions}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
               <PopularFacilities facilities={hotelFacilities} />
             </div>
 

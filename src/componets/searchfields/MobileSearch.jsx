@@ -1,20 +1,27 @@
 import { useState } from "react";
+import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import PersonOutlineOutlined from "@mui/icons-material/PersonOutlineOutlined";
 import BottomSheet from "../bottomsheet/BottomSheet";
 import PleaseSearch from "../qureytour/Pleasenew";
 import CityTour from "../qureytour/CityTour";
 import CalendarGrid from "../datepicker/CalendarGrid";
 import GuestsContent from "../quest/GuestsContent";
-import { guestsDisplayText } from "../quest/guestsUtils";
-import sbtn from "../../img/icons/tabicons/search.svg";
+import MobileSearchField from "./MobileSearchField";
+import MobileDateRangeField from "./MobileDateRangeField";
+import {
+  guestsDisplayText,
+  hotelGuestsDisplayText,
+} from "../quest/guestsUtils";
+import { formatShortDate } from "../../utils/dateFormat";
+import { TOUR_DESTINATIONS } from "../../mock/searchDestinations";
 import "./style.css";
+import "./mobileSearchBlock.css";
 
 /* Мобильный поиск (≤968px, см. useMediaQuery).
-   variant="home"    — главная: чипы, у каждого поля своя шторка,
-                       красная кнопка Search под чипами;
-   variant="results" — /hotels и /tours: кнопка-саммари (вместо липкой
-                       панели полей), одна шторка со всеми полями
-                       и Search в футере.
-   Стейт (город/даты/гости) и обработчик поиска живут у родителя. */
+   Туры и отели используют stacked-поля; отели дополнительно получают
+   диапазон дат и поиск города с популярными/ближайшими направлениями.
+   Состояние и обработчик поиска живут у родителя. */
 const MobileSearch = ({
   variant = "home",
   mode = "hotel",
@@ -32,50 +39,11 @@ const MobileSearch = ({
   searchHint,
   onCityEdit,
 }) => {
-  const [sheet, setSheet] = useState(null); // null | "city" | "date" | "guests" | "all"
+  const [sheet, setSheet] = useState(null);
 
   const closeSheet = () => setSheet(null);
 
   const isTour = mode === "tour";
-  const isRange = dateMode === "range";
-
-  const fmt = (date) => (date ? date.toLocaleDateString() : "");
-
-  const locationValue = city || "Choose destination";
-  const dateValue = isRange
-    ? checkIn && checkOut
-      ? `${fmt(checkIn)} – ${fmt(checkOut)}`
-      : "Select dates"
-    : fmt(checkIn) || "Select dates";
-  const guestsValue = guestsDisplayText(guests);
-  const summaryText = [locationValue, dateValue, guestsValue].join("  ·  ");
-
-  // Выбор города закрывает собственную шторку на главной (как даты через onDone)
-  const handleLocationChange = (...args) => {
-    onCityChange?.(...args);
-    if (variant === "home") closeSheet();
-  };
-
-  // Локация: туры — статичный список, отели — поиск через LiteAPI
-  const locationField = isTour ? (
-    <CityTour
-      variant="sheet"
-      initialCity={city}
-      onCityChange={handleLocationChange}
-      key={`city-${city}`}
-    />
-  ) : (
-    <PleaseSearch
-      variant="sheet"
-      initialCity={city}
-      onCityChange={handleLocationChange}
-      onCityEdit={onCityEdit}
-      key={`city-${city}`}
-    />
-  );
-
-  // В собственной шторке на главной закрываем её после выбора даты
-  const handleDone = variant === "home" ? closeSheet : undefined;
 
   const runSearch = () => {
     if (searchDisabled) return;
@@ -83,132 +51,228 @@ const MobileSearch = ({
     closeSheet();
   };
 
-  const hint = searchDisabled && searchHint ? (
-    <p className="msearch-hint">{searchHint}</p>
-  ) : null;
+  if (isTour) {
+    const selectedCity = TOUR_DESTINATIONS.find(
+      (item) => item.name.toLowerCase() === String(city ?? "").toLowerCase(),
+    );
+    const tourCityValue = selectedCity
+      ? `${selectedCity.name}, ${selectedCity.country}`
+      : city;
+    const tourDateValue = formatShortDate(checkIn, { weekday: true });
+    const tourGuestsValue = guestsDisplayText(guests);
 
-  const searchButton = (
-    <button
-      type="button"
-      className={`msearch-btn${searchDisabled ? " is-disabled" : ""}`}
-      disabled={searchDisabled}
-      onClick={runSearch}
-    >
-      <img src={sbtn} alt="" />
-      <span>Search</span>
-    </button>
-  );
-
-  const locationGroup = (
-    <div className="bs-group bs-field">
-      
-      {locationField}
-      {variant !== "home" && hint}
-    </div>
-  );
-
-  const dateGroup = (
-    <div className="bs-group">
-      {/* <p className="bs-label">{isRange ? "Dates" : "When"}</p> */}
-     
-      <CalendarGrid
-        variant="sheet"
-        mode={dateMode}
-        checkIn={checkIn}
-        checkOut={checkOut}
-        onCheckInChange={onCheckInChange}
-        onCheckOutChange={onCheckOutChange}
-        onDone={handleDone}
-      />
-    </div>
-  );
-
-  const guestsGroup = (
-    <div className="bs-group">
-      <p className="bs-label">Guests</p>
-      <GuestsContent
-        variant="sheet"
-        mode={mode}
-        value={guests}
-        onChange={onGuestsChange}
-      />
-    </div>
-  );
-
-  if (variant === "home") {
     return (
-      <div className="msearch msearch--home">
-        <div className="mchips">
-          <button
-            type="button"
-            className="mchip"
+      <div
+        className={`msearch msearch--stacked ${
+          variant === "home" ? "msearch--home" : "msearch--results"
+        }`}
+      >
+        <div className="msb">
+          <MobileSearchField
+            icon={<LocationOnOutlined />}
+            label="Where to?"
+            value={tourCityValue}
+            placeholder="Select destination"
             onClick={() => setSheet("city")}
-          >
-            <span className="mchip-label">Where to?</span>
-            <span className="mchip-value">{locationValue}</span>
-          </button>
-          <button
-            type="button"
-            className="mchip"
+            ariaLabel="Choose tour destination"
+          />
+          <MobileSearchField
+            icon={<CalendarMonthOutlined />}
+            label="When"
+            value={tourDateValue}
+            placeholder="Select date"
             onClick={() => setSheet("date")}
-          >
-            <span className="mchip-label">{isRange ? "Dates" : "When"}</span>
-            <span className="mchip-value">{dateValue}</span>
-          </button>
+            ariaLabel="Choose tour date"
+          />
+          <MobileSearchField
+            icon={<PersonOutlineOutlined />}
+            label="Guests"
+            value={tourGuestsValue}
+            onClick={() => setSheet("guests")}
+            ariaLabel="Choose guests"
+          />
           <button
             type="button"
-            className="mchip"
-            onClick={() => setSheet("guests")}
+            className="msb-btn"
+            disabled={searchDisabled}
+            onClick={runSearch}
           >
-            <span className="mchip-label">Guests</span>
-            <span className="mchip-value">{guestsValue}</span>
+            Search
           </button>
+          {searchDisabled && searchHint ? (
+            <p className="msb-hint">{searchHint}</p>
+          ) : null}
         </div>
-
-        {searchButton}
-        {hint}
 
         <BottomSheet
           open={sheet === "city"}
           onClose={closeSheet}
-          title="Where to?"
+          title="City"
+          variant="search"
+          showHandle={false}
         >
-          {locationGroup}
+          <CityTour
+            variant="sheet"
+            initialCity={city}
+            onCityChange={(value) => {
+              onCityChange?.(value);
+              closeSheet();
+            }}
+          />
         </BottomSheet>
 
         <BottomSheet
           open={sheet === "date"}
           onClose={closeSheet}
-          title={isRange ? "Dates" : "When"}
+          title="When"
+          variant="search"
+          showHandle={false}
         >
-          {dateGroup}
+          <CalendarGrid
+            variant="sheet"
+            mode="single"
+            checkIn={checkIn}
+            onCheckInChange={onCheckInChange}
+            onDone={closeSheet}
+          />
         </BottomSheet>
 
         <BottomSheet
           open={sheet === "guests"}
           onClose={closeSheet}
           title="Guests"
+          variant="search"
+          showHandle={false}
+          footer={
+            <button
+              type="button"
+              className="msb-sheet-done"
+              onClick={closeSheet}
+            >
+              Done
+            </button>
+          }
         >
-          {guestsGroup}
+          <GuestsContent
+            variant="sheet"
+            mode="tour"
+            value={guests}
+            onChange={onGuestsChange}
+          />
         </BottomSheet>
       </div>
     );
   }
 
-  return (
-    <div className="msearch msearch--results">
-      <button
-        type="button"
-        className="msummary-btn"
-        onClick={() => setSheet("all")}
-      >
-        <span className="msummary-text">{summaryText}</span>
-      </button>
+  const hotelDateStart = formatShortDate(checkIn);
+  const hotelDateEnd = formatShortDate(checkOut);
 
-      <BottomSheet open={sheet === "all"} onClose={closeSheet} title={summaryText} footer={searchButton}>
-        {locationGroup}
-        {dateGroup}
-        {guestsGroup}
+  return (
+    <div
+      className={`msearch msearch--stacked ${
+        variant === "home" ? "msearch--home" : "msearch--results"
+      }`}
+    >
+      <div className="msb">
+        <MobileSearchField
+          icon={<LocationOnOutlined />}
+          label="Where to?"
+          value={city}
+          placeholder="Select destination"
+          onClick={() => setSheet("city")}
+          ariaLabel="Choose hotel destination"
+        />
+        <MobileDateRangeField
+          icon={<CalendarMonthOutlined />}
+          startValue={hotelDateStart}
+          endValue={hotelDateEnd}
+          startPlaceholder="Check-in"
+          endPlaceholder="Check-out"
+          onOpen={() => setSheet("date")}
+          showClear
+          onClear={() => {
+            onCheckInChange?.(null);
+            onCheckOutChange?.(null);
+          }}
+          ariaLabel="Choose dates"
+        />
+        <MobileSearchField
+          icon={<PersonOutlineOutlined />}
+          label="Guests"
+          value={hotelGuestsDisplayText(guests)}
+          onClick={() => setSheet("guests")}
+          ariaLabel="Choose guests"
+        />
+        <button
+          type="button"
+          className="msb-btn"
+          disabled={searchDisabled}
+          onClick={runSearch}
+        >
+          Search
+        </button>
+        {searchDisabled && searchHint ? (
+          <p className="msb-hint">{searchHint}</p>
+        ) : null}
+      </div>
+
+      <BottomSheet
+        open={sheet === "city"}
+        onClose={closeSheet}
+        title="City"
+        variant="search"
+        showHandle={false}
+      >
+        <PleaseSearch
+          key={`city-${city}`}
+          variant="sheet"
+          active={sheet === "city"}
+          initialCity={city}
+          onCityChange={(value, placeId) => {
+            onCityChange?.(value, placeId);
+            if (value) closeSheet();
+          }}
+          onCityEdit={onCityEdit}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheet === "date"}
+        onClose={closeSheet}
+        title="Dates"
+        variant="search"
+        showHandle={false}
+      >
+        <CalendarGrid
+          variant="sheet"
+          mode={dateMode}
+          monthCount={dateMode === "range" ? 2 : 1}
+          checkIn={checkIn}
+          checkOut={checkOut}
+          onCheckInChange={onCheckInChange}
+          onCheckOutChange={onCheckOutChange}
+          onDone={closeSheet}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheet === "guests"}
+        onClose={closeSheet}
+        title="Guests"
+        variant="search"
+        showHandle={false}
+        footer={
+          <button type="button" className="msb-sheet-done" onClick={closeSheet}>
+            Done
+          </button>
+        }
+      >
+        <GuestsContent
+          variant="sheet"
+          mode="hotel"
+          value={guests}
+          onChange={onGuestsChange}
+        />
       </BottomSheet>
     </div>
   );

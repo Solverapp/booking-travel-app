@@ -1,27 +1,44 @@
-const BASE_URL = "https://api.liteapi.travel/v3.0/data";
-const API_KEY = import.meta.env.VITE_LITE_API_KEY;
+import { supabase } from "../supabaseClient";
 
-// Хелпер для обработки ошибок
-async function handleResponse(res) {
-  if (!res.ok) throw new Error(`Lite API Error: ${res.status}`);
-  const data = await res.json();
-  return data.data;
-}
+const BASE_URL = "https://api.liteapi.travel/v3.0/data";
 
 export const placesService = {
-  /**
-   * 1. Получение списка места (Plase)
-   */
-  async fetchPlacesList(params) {
-    const res = await fetch(`${BASE_URL}/places?textQuery=${params.query}&type=political%2Clocality%2Cgeocode`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" ,
-        'X-API-Key': API_KEY,
-      },
-      
+  async fetchPlacesList({
+    query,
+    types = "political,locality,geocode,hotel",
+    language = "en",
+    signal,
+  } = {}) {
+    const textQuery = String(query ?? "").trim();
+    if (!textQuery) return [];
+
+    const params = new URLSearchParams({
+      textQuery,
+      type: types,
+      language,
     });
-    return handleResponse(res);
+
+    const response = await supabase.functions.invoke("liteapi-proxy", {
+      method: "GET",
+      headers: {
+        "x-target-url": `${BASE_URL}/places?${params.toString()}`,
+        "x-service-type": "hotels",
+      },
+      ...(signal ? { signal } : {}),
+    });
+
+    if (response.error) {
+      throw new Error(`Supabase System Error: ${response.error.message}`);
+    }
+
+    const liteApiData = response.data;
+
+    if (liteApiData?.error) {
+      throw new Error(
+        `LiteAPI Error: ${liteApiData.error.message || liteApiData.error || "Bad Request"}`,
+      );
+    }
+
+    return Array.isArray(liteApiData?.data) ? liteApiData.data : [];
   },
-
-
 };

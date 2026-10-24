@@ -1,12 +1,14 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient'; // Импортируем созданный клиент Supabase
-import PageLoader from '../componets/loaders/PageLoader';
+import BootLoader from '../componets/loaders/BootLoader';
 import { normalizeCurrency, setStoredCurrency } from '../utils/currency';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,11 +49,12 @@ export const AuthProvider = ({ children }) => {
         });
       } else {
         setUser(null);
+        queryClient.clear();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
     // 🔐 РЕГИСТРАЦИЯ С АВТОМАТИЧЕСКИМ ЛОГИНОМ
   const register = async (email, password, firstname, lastname) => {
@@ -96,7 +99,7 @@ export const AuthProvider = ({ children }) => {
 
   // 🔐 АВТОРИЗАЦИЯ (ЛОГИН)
   const login = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -110,6 +113,7 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.signOut();
     if (error) throw new Error(error.message);
     setUser(null);
+    queryClient.clear();
   };
 
   // 🔐 ОБНОВЛЕНИЕ ЛИЧНЫХ ДАННЫХ (first/last name в user_metadata)
@@ -135,6 +139,8 @@ export const AuthProvider = ({ children }) => {
 
     setStoredCurrency(currency);
     setUser((prev) => (prev ? { ...prev, currency } : prev));
+    queryClient.removeQueries({ queryKey: ["v1", "hotels", "rates"] });
+    queryClient.removeQueries({ queryKey: ["v1", "flights", "rates"] });
   };
 
   // 🔐 СМЕНА ПАРОЛЯ: сначала подтверждаем текущий, затем меняем
@@ -156,54 +162,58 @@ export const AuthProvider = ({ children }) => {
   };
 
     // 🔐 ПОЛУЧЕНИЕ ОРДЕРОВ (БРОНИРОВАНИЙ) ИЗ SUPABASE
-  const orders = async (user_id) => {
-    // Делаем запрос к таблице 'bookings'
-    // Выбираем все поля (*), где поле 'user_id' равно ID текущего пользователя
+  const orders = useCallback(async (user_id) => {
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
       .eq('user_id', user_id)
-      .order('created_at', { ascending: false }); // Сортируем: сначала новые заказы
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Ошибка при получении заказов из Supabase:", error.message);
       throw new Error(error.message);
     }
 
-    // Возвращаем данные. Если заказов нет, вернется пустой массив [].
-    // Массив объектов будет содержать id, name, sum, Service, status — 
-    // именно те поля, которые ваш компонент ProfileCard.jsx перебирает через .map()!
-    return data || []; 
-  };
+    return data || [];
+  }, []);
 
   // 🔐 СОЗДАНИЕ НОВОГО БРОНИРОВАНИЯ В БАЗЕ ДАННЫХ SUPABASE
   // extra: { reference, orderRef, meta, currency } — необязательные детали брони
-  const addBooking = async (name, sum, serviceType, extra = {}) => {
-    // 1. Проверяем, залогинен ли пользователь, совершающий бронирование
+  const addBooking = useCallback(async (name, sum, serviceType, extra = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       console.warn("Анонимное бронирование: пользователь не авторизован");
       return null;
     }
 
-    // 2. Собираем запись для таблицы 'bookings'
     const row = {
-      user_id: session.user.id, // Привязываем UUID залогиненного юзера
-      name: name,               // Название отеля
-      sum: Number(sum),         // Сумма
-      Service: serviceType,     // "Hotel"
-      status: 'Confirmed'       // Начальный статус
+      user_id: session.user.id,
+      name: name,
+      sum: Number(sum),
+      Service: serviceType,
+      status: 'Confirmed'
     };
     if (extra.reference) row.reference = extra.reference;
     if (extra.orderRef) row.order_ref = extra.orderRef;
     if (extra.currency) row.currency = extra.currency;
     if (extra.meta && Object.keys(extra.meta).length) row.meta = extra.meta;
 
-    // 3. Вставляем запись
+    if (extra.reference) {
+      const { data: existing, error: existingError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('reference', extra.reference)
+        .limit(1);
+
+      if (existingError) throw new Error(existingError.message);
+      if (existing?.length) return existing;
+    }
+
     const { data, error } = await supabase
       .from('bookings')
       .insert([row])
-      .select(); // Просим вернуть созданную строку
+      .select();
 
     if (error) {
       console.error("Не удалось сохранить бронирование в базу:", error.message);
@@ -211,11 +221,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, register, login, logout, updateProfile, updatePassword, updateCurrency, orders, addBooking }}>
-      {loading ? <PageLoader /> : children}
+      {loading ? <BootLoader /> : children}
     </AuthContext.Provider>
   );
 };

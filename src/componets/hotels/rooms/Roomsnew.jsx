@@ -4,7 +4,25 @@ import "./style.css";
 import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ShoppingCart, Restaurant, KingBed, MeetingRoom } from '@mui/icons-material';
 import RoomDetailsPopup from "./RoomDetailsPopup";
 import { getStoredCurrency } from "../../../utils/currency";
-import { mealsIncluded } from "../../../utils/hotelRate";
+import {
+  excludedTaxItems,
+  formatMoney,
+  formatPolicyDeadline,
+  formatTaxDescriptions,
+  formatTaxTotals,
+  mealsIncluded,
+  rateCancelPolicies,
+  taxesAndFeesBreakdown,
+} from "../../../utils/hotelRate";
+
+const roomImageFor = (mappedRoomId, roomsdata, hotel) => {
+  if (!roomsdata.length) return null;
+  const room = roomsdata.find((item) => item.id === mappedRoomId);
+  if (room?.photos && room.photos.length > 0) {
+    return room.photos[0].url;
+  }
+  return hotel?.main_photo || "";
+};
 
 const Rooms = ({ hotel, rooms, rates }) => {
 const [searchParams] = useSearchParams();
@@ -18,20 +36,9 @@ const navigate = useNavigate();
   const hotelId = hotel.id;
   const [offerItem, setOfferItem] = useState([]);
   const [detailRoom, setDetailRoom] = useState(null);
-  const roomsdata = rooms || [];
-  const roomRates = rates || [];
-
-  const getRoomImage = (mappedRoomId) => {
-    if (!roomsdata.length) return null;
-    const room = roomsdata.find(r => r.id === mappedRoomId);
-    if (room?.photos && room.photos.length > 0) {
-      return room.photos[0].url;
-    }
-    return hotel?.main_photo || '';
-  };
-
-  // Оптимизируем группировку тарифов, чтобы она не вызывалась на каждый чих рендера
   const allRooms = useMemo(() => {
+    const roomsdata = rooms || [];
+    const roomRates = rates || [];
     const grouped = {};
     
     roomRates.forEach(rt => {
@@ -43,7 +50,7 @@ const navigate = useNavigate();
           }
           grouped[roomId].push({
             roomName: rate.name,
-            image: getRoomImage(roomId) || '',
+            image: roomImageFor(roomId, roomsdata, hotel) || '',
             offerId: rt.offerId,
             rate,
           });
@@ -59,7 +66,7 @@ const navigate = useNavigate();
         offers: data,
       };
     });
-  }, [roomsdata, roomRates, hotel]);
+  }, [rooms, rates, hotel]);
   
   const facilityIcons = [
     { keywords: ["wifi"], icon: Wifi },
@@ -166,6 +173,7 @@ const navigate = useNavigate();
                           room: room.roomInfos[0] || {},
                           roomName,
                           hotelPhoto: hotel?.main_photo || "",
+                          offers: room.offers,
                         })
                       }
                     >
@@ -207,18 +215,52 @@ const navigate = useNavigate();
                       const isSmokeFree = (bedroom.roomAmenities || []).some((amenity) =>
                         /non-?smok/i.test(amenity?.name || ""),
                       );
+                      const taxesBreakdown = taxesAndFeesBreakdown(item.rate);
+                      const includedTaxes = formatTaxTotals(taxesBreakdown.includedTotals);
+                      const excludedTaxes = formatTaxTotals(taxesBreakdown.excludedTotals);
+                      const excludedTaxDescriptions = formatTaxDescriptions(
+                        excludedTaxItems(item.rate),
+                      );
+                      const penaltyPolicy = rateCancelPolicies(item.rate).find(
+                        (policy) => policy.amount > 0,
+                      );
 
                       return (
                         <div className="rates-item" key={key}>
                           <div className="infoitem">
                             <div className="infoprice">
                               <h2>{ratePrice} {rateCurrency}</h2>
-                              <span>Including taxes and fees</span>
+                              <span>
+                                Including taxes and fees
+                                {includedTaxes ? `: ${includedTaxes}` : ""}
+                              </span>
+                              {excludedTaxes && (
+                                <>
+                                  <span className="rate-taxes-excluded">
+                                    + {excludedTaxes}
+                                  </span>
+                                  {excludedTaxDescriptions && (
+                                    <span className="rate-taxes-desc">
+                                      {excludedTaxDescriptions}
+                                    </span>
+                                  )}
+                                </>
+                              )}
                               <div className="canseletion">
                                 <span className={`rfn ${isRefundable ? "rf" : ""}`}>
                                   {isRefundable ? `Refund to ${cancelTime}` : 'Non-refundable'}
                                 </span>
                               </div>
+                              {penaltyPolicy && (
+                                <span className="rate-cancel-fee">
+                                  Cancellation fee{" "}
+                                  {formatMoney(penaltyPolicy.amount, penaltyPolicy.currency)} after{" "}
+                                  {formatPolicyDeadline(
+                                    penaltyPolicy.cancelTime,
+                                    penaltyPolicy.timezone,
+                                  )}
+                                </span>
+                              )}
                             </div>
                             <div className="rate-amenit">
                               <div className={`rate-fact${hasMeals ? " is-meals" : " is-off"}`}>
@@ -248,7 +290,7 @@ const navigate = useNavigate();
                           <div className="addCard">
                             <button onClick={() => addCheckout(item.offerId, roomName, ratePrice, item.rate, bedroom)}>
                               <ShoppingCart />
-                              Buy Now
+                              Choose room
                               
                             </button>
                           </div>
@@ -268,6 +310,7 @@ const navigate = useNavigate();
           room={detailRoom.room}
           roomName={detailRoom.roomName}
           hotelPhoto={detailRoom.hotelPhoto}
+          offers={detailRoom.offers}
           onClose={() => setDetailRoom(null)}
         />
       )}

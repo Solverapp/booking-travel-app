@@ -1,15 +1,16 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import PageLoader from "../loaders/PageLoader";
 import FlightSearchForm from "./FlightSearchForm";
 import MobileFlightSearch from "./MobileFlightSearch";
 import FilterDrawer from "../filterdrawer/FilterDrawer";
 import FlightFilters from "./FlightFilters";
+import FlightCard from "./FlightCard";
+import FlightDetailsDrawer from "./FlightDetailsDrawer";
+import FlightFaresModal from "./FlightFaresModal";
 import useMediaQuery from "../../utils/useMediaQuery";
-import { fetchFlightsRates } from "../../services/flights/flightApiService";
-import { flightsBookingService } from "../../services/flights/flightBookingService";
+import { useFlightRates } from "../../hooks/queries/useFlightRates";
+import { useVerifyFlight } from "../../hooks/mutations/useFlightBookingMutations";
 import {
   buildRatesRequest,
   buildFlightsParams,
@@ -17,17 +18,14 @@ import {
   flightFormInitial,
   FLIGHT_TIME_SLOTS,
 } from "../../utils/flightSearch";
-import { formatDuration, formatTimeHM, dayChangeLabel } from "../../utils/flightFormatters";
-import { DEFAULT_CURRENCY, getStoredCurrency, isCurrencyError } from "../../utils/currency";
+import { fareOptions } from "../../utils/flightOffers";
+import { getStoredCurrency } from "../../utils/currency";
 import {
   journeyOffer,
   journeyPrice,
   durationMinutes,
-  minutesBetween,
-  dayOffset,
   legsOf,
   carriersOf,
-  segmentFlightLabel,
 } from "../../utils/flightJourneys";
 import "./style.css";
 
@@ -36,20 +34,6 @@ const SORTERS = [
   { id: "fastest", label: "Fastest" },
   { id: "earliest", label: "Earliest" },
 ];
-
-const fetchRatesWithCurrencyFallback = async (params) => {
-  try {
-    return await fetchFlightsRates(buildRatesRequest(params));
-  } catch (err) {
-    if (getStoredCurrency() !== DEFAULT_CURRENCY && isCurrencyError(err)) {
-      console.warn(
-        `Currency ${getStoredCurrency()} is not supported by the provider, falling back to ${DEFAULT_CURRENCY}`,
-      );
-      return fetchFlightsRates(buildRatesRequest(params, { currency: DEFAULT_CURRENCY }));
-    }
-    throw err;
-  }
-};
 
 // Пересадки journey для фильтра (максимум по направлениям)
 const stopsCategory = (journey) => {
@@ -91,135 +75,6 @@ const DEFAULT_FLIGHT_FILTERS = {
   refundableOnly: false,
 };
 
-const LegRow = ({ segments, expanded, onToggle }) => {
-  const first = segments[0] ?? {};
-  const last = segments[segments.length - 1] ?? {};
-  const stops = segments.length - 1;
-  const duration = minutesBetween(first?.departureTime, last?.arrivalTime);
-  const carriers = carriersOf(segments);
-  const dayChange = dayChangeLabel(
-    dayOffset(first?.departureTime, last?.arrivalTime),
-  );
-
-  return (
-    <div className="fleg">
-      <div className="fleg-time">
-        <p>{formatTimeHM(first?.departureTime) || "--:--"}</p>
-        <span>{first?.originCode ?? "—"}</span>
-      </div>
-      <button
-        type="button"
-        className="fleg-mid"
-        onClick={onToggle}
-        title={expanded ? "Hide details" : "Show details"}
-      >
-        <span className="fleg-duration">{formatDuration(duration)}</span>
-        <div className="fleg-line" />
-        <span className={`fleg-stops ${stops === 0 ? "is-direct" : ""}`}>
-          {stops === 0 ? "Direct" : stops === 1 ? "1 stop" : `${stops} stops`}
-        </span>
-        <span className="fleg-expand">
-          {expanded ? (
-            <ExpandLessIcon fontSize="inherit" />
-          ) : (
-            <ExpandMoreIcon fontSize="inherit" />
-          )}
-        </span>
-      </button>
-      <div className="fleg-time">
-        <p>
-          {formatTimeHM(last?.arrivalTime) || "--:--"}
-          {dayChange ? ` ${dayChange}` : ""}
-        </p>
-        <span>{last?.destinationCode ?? "—"}</span>
-      </div>
-      <div className="fleg-carriers">
-        {carriers.map((carrier) =>
-          carrier.logo ? (
-            <img key={carrier.code} src={carrier.logo} alt="" loading="lazy" />
-          ) : null,
-        )}
-        <span>{carriers.map((carrier) => carrier.name).filter(Boolean).join(", ")}</span>
-      </div>
-    </div>
-  );
-};
-
-const TimelinePoint = ({ time, code, name, meta, isArrival = false }) => (
-  <div className="ftl-point">
-    <span className="ftl-time">{time}</span>
-    <span className="ftl-linecol">
-      <span className={`ftl-dot${isArrival ? " is-arrival" : ""}`} />
-    </span>
-    <div className="ftl-body">
-      <p className="ftl-place">
-        <span className="ftl-code">{code}</span>
-        <span className="ftl-name">{name}</span>
-      </p>
-      {meta ? <span className="ftl-meta">{meta}</span> : null}
-    </div>
-  </div>
-);
-
-// Раскрытая детализация маршрута: вертикальный таймлайн по направлениям
-const JourneyDetails = ({ journey }) => {
-  const legs = legsOf(journey);
-  if (legs.length === 0) return null;
-  const showLabels = legs.length > 1;
-
-  return (
-    <div className="fdetails">
-      {legs.map((leg, legIndex) => (
-        <div className="fdetails-leg" key={legIndex}>
-          {showLabels && (
-            <p className="fdetails-leg-label">
-              {legIndex === 0 ? "Outbound" : "Return"}
-            </p>
-          )}
-          <div className="ftimeline">
-            {leg.map((segment, index) => {
-              const next = leg[index + 1] ?? null;
-              const layover = next
-                ? minutesBetween(segment?.arrivalTime, next?.departureTime)
-                : null;
-              return (
-                <Fragment key={segment?.segmentKey ?? index}>
-                  <TimelinePoint
-                    time={formatTimeHM(segment?.departureTime) || "--:--"}
-                    code={segment?.originCode ?? "—"}
-                    name={segment?.originName ?? ""}
-                    meta={[segmentFlightLabel(segment), formatDuration(segment?.duration)]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  />
-                  <TimelinePoint
-                    time={formatTimeHM(segment?.arrivalTime) || "--:--"}
-                    code={segment?.destinationCode ?? "—"}
-                    name={segment?.destinationName ?? ""}
-                    isArrival
-                  />
-                  {next && Number.isFinite(layover) && layover > 0 && (
-                    <div className="ftl-point ftl-point--layover">
-                      <span className="ftl-time" />
-                      <span className="ftl-linecol" />
-                      <div className="ftl-body">
-                        <span className="ftl-layover">
-                          Layover {formatDuration(layover)} in{" "}
-                          {segment?.destinationCode ?? ""}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </Fragment>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 const FlightsResult = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -228,43 +83,25 @@ const FlightsResult = () => {
   const params = useMemo(() => parseFlightsParams(searchParams), [searchParams]);
   const searchKey = searchParams.toString();
 
-  const [journeys, setJourneys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sort, setSort] = useState("cheapest");
-  const [reloadKey, setReloadKey] = useState(0);
   const [modifyOpen, setModifyOpen] = useState(false);
-  const [verifyingOfferId, setVerifyingOfferId] = useState(null);
   const [bookingError, setBookingError] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FLIGHT_FILTERS);
-  const [expandedOfferId, setExpandedOfferId] = useState(null);
+  const [panel, setPanel] = useState(null);
 
   const validSearch = Boolean(params.origin && params.destination && params.depart);
+  const ratesQuery = useFlightRates({ params, enabled: validSearch });
+  const verifyFlight = useVerifyFlight();
 
-  useEffect(() => {
-    if (!validSearch) return;
-
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchRatesWithCurrencyFallback(params);
-        const root = data?.data?.[0] ?? {};
-        const list = Array.isArray(root?.journeys) ? root.journeys : [];
-        if (!cancelled) setJourneys(list);
-      } catch (err) {
-        if (!cancelled) setError(err?.message || "Failed to load flights");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [params, validSearch, reloadKey]);
+  const journeys = useMemo(() => {
+    const root = ratesQuery.data?.data?.[0] ?? {};
+    return Array.isArray(root?.journeys) ? root.journeys : [];
+  }, [ratesQuery.data]);
+  const loading = ratesQuery.isLoading;
+  const error = ratesQuery.error?.message || null;
+  const verifyingOfferId = verifyFlight.isPending
+    ? verifyFlight.variables?.offer?.offerId ?? null
+    : null;
 
   const sorted = useMemo(() => {
     const list = journeys
@@ -373,12 +210,11 @@ const FlightsResult = () => {
   };
 
   const handleSelectOffer = async (offer) => {
-    if (!offer?.offerId || verifyingOfferId !== null) return;
-    setVerifyingOfferId(offer.offerId);
+    if (!offer?.offerId || verifyFlight.isPending) return;
     setBookingError(null);
     try {
-      const verified = await flightsBookingService.verifyFlight({
-        offerId: offer.offerId,
+      const verified = await verifyFlight.mutateAsync({
+        offer,
         searchParams: buildRatesRequest(params),
       });
       navigate(`/flightpage/${verified.sessionId}`);
@@ -394,10 +230,40 @@ const FlightsResult = () => {
             ? "This flight just sold out — please pick another offer from the results."
             : err?.message || "Could not check the offer, please try again.",
       );
-    } finally {
-      setVerifyingOfferId(null);
     }
   };
+
+  const openDetails = (journey, offer) => {
+    setBookingError(null);
+    setPanel({ type: "details", journey, offer });
+  };
+
+  const openFares = (journey, offer) => {
+    setBookingError(null);
+    setPanel({ type: "fares", journey, offer });
+  };
+
+  const closePanel = () => setPanel(null);
+
+  const showFaresFromDetails = () =>
+    setPanel((current) =>
+      current ? { ...current, type: "fares" } : current,
+    );
+
+  const activeJourney = panel?.journey ?? null;
+  const activeOffer = panel?.offer ?? null;
+  const activeFareList = useMemo(
+    () => (activeJourney ? fareOptions(activeJourney) : []),
+    [activeJourney],
+  );
+
+  const routeLabels = useMemo(
+    () => ({
+      origin: params.originLabel || params.origin || "",
+      destination: params.destinationLabel || params.destination || "",
+    }),
+    [params],
+  );
 
   const routeTitle = `${params.originLabel || params.origin || "—"} → ${
     params.destinationLabel || params.destination || "—"
@@ -435,7 +301,7 @@ const FlightsResult = () => {
             <button
               type="button"
               className="fselect-btn"
-              onClick={() => setReloadKey((key) => key + 1)}
+              onClick={() => ratesQuery.refetch()}
             >
               Retry
             </button>
@@ -474,8 +340,6 @@ const FlightsResult = () => {
           </div>
         </div>
 
-        {bookingError && <p className="flights-error">{bookingError}</p>}
-
         {filtered.length === 0 ? (
           <div className="flights-status">
             <p>No flights match your filters.</p>
@@ -489,44 +353,16 @@ const FlightsResult = () => {
           </div>
         ) : (
           <div className="flights-list">
-            {filtered.map(({ journey, offer }, index) => {
-              const isExpanded =
-                Boolean(offer?.offerId) && expandedOfferId === offer.offerId;
-              const toggleExpanded = () =>
-                setExpandedOfferId(isExpanded ? null : offer.offerId);
-              return (
-                <div className="fjourney" key={offer?.offerId ?? index}>
-                  <div className="fjourney-main">
-                    {legsOf(journey).map((leg, legIndex) => (
-                      <LegRow
-                        key={legIndex}
-                        segments={leg}
-                        expanded={isExpanded}
-                        onToggle={toggleExpanded}
-                      />
-                    ))}
-                    {isExpanded && <JourneyDetails journey={journey} />}
-                  </div>
-                  <div className="fjourney-price">
-                    <div>
-                      <p>
-                        {Math.round(journeyPrice(offer))}{" "}
-                        {offer?.pricing?.display?.currency ?? ""}
-                      </p>
-                      <span>incl. taxes</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="fselect-btn"
-                      disabled={verifyingOfferId !== null}
-                      onClick={() => handleSelectOffer(offer)}
-                    >
-                      {verifyingOfferId === offer?.offerId ? "Checking..." : "Select"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {filtered.map(({ journey, offer }) => (
+              <FlightCard
+                key={offer.offerId}
+                journey={journey}
+                offer={offer}
+                fareCount={fareOptions(journey).length}
+                onDetails={() => openDetails(journey, offer)}
+                onViewFares={() => openFares(journey, offer)}
+              />
+            ))}
           </div>
         )}
       </>
@@ -585,6 +421,28 @@ const FlightsResult = () => {
         </FilterDrawer>
         <div className="flights-results">{renderBody()}</div>
       </div>
+
+      <FlightDetailsDrawer
+        open={panel?.type === "details"}
+        onClose={closePanel}
+        journey={activeJourney}
+        offer={activeOffer}
+        routeLabels={routeLabels}
+        title={routeTitle}
+        hasMultipleFares={activeFareList.length > 1}
+        onViewFares={showFaresFromDetails}
+      />
+
+      <FlightFaresModal
+        open={panel?.type === "fares"}
+        onClose={closePanel}
+        journey={activeJourney}
+        offers={activeFareList}
+        routeLabels={routeLabels}
+        onSelect={handleSelectOffer}
+        verifyingOfferId={verifyingOfferId}
+        error={bookingError}
+      />
     </div>
   );
 };

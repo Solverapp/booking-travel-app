@@ -6,6 +6,7 @@ import Questselector from "../Tourguest/TourGuestSelector";
 import MobileSearch from "../searchfields/MobileSearch";
 import useMediaQuery from "../../utils/useMediaQuery";
 import defaultdates from "../../utils/defaultdates";
+import { DEFAULT_TOUR_CITY } from "../../mock/searchDestinations";
 import sbtn from "../../img/icons/tabicons/search.svg";
 
 import "./style.css";
@@ -16,7 +17,7 @@ const SearchOption = () => {
   const isMobile = useMediaQuery("(max-width: 968px)");
 
   const [checkIn, setCheckIn] = useState(null);
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(DEFAULT_TOUR_CITY.name);
   const [guestsHotel, setGuestsHotel] = useState({
     adults: 1,
     children: 0,
@@ -40,14 +41,14 @@ const SearchOption = () => {
     if (urlCity) {
       setCity(urlCity);
     } else {
-      setCity("");
+      setCity(DEFAULT_TOUR_CITY.name);
     }
 
     if (urlAdults || urlChildren || urlInfants) {
       setGuestsHotel({
         adults: parseInt(urlAdults) || 1,
         children: parseInt(urlChildren) || 0,
-        infants:  0,
+        infants: parseInt(urlInfants) || 0,
       });
     } else {
       setGuestsHotel({
@@ -82,7 +83,7 @@ const SearchOption = () => {
         checkIn: fmt(checkIn) || defaultdates.tomorrow,
         adults: String(guestsHotel.adults),
         children: String(guestsHotel.children),
-        infants: 0,
+        infants: String(guestsHotel.infants || 0),
       });
 
       if (window.location.pathname.includes("/tours")) {

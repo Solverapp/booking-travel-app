@@ -797,9 +797,8 @@ document.documentElement.scrollWidth > window.innerWidth
 Проверка перед любым шагом:
 ```bash
 npm run build   # обязан пройти
-npm run lint    # базовая линия: 79 problems (68 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
-                # (до чистки мёртвого кода было 192; +1 к прошлой базе 80 — не из файлов
-                #  сессии 15.10, git-бинарника нет для точной атрибуции; после сессии профиля 68)
+npm run lint    # базовая линия: 78 problems (67 errors, 11 warnings) — НЕ УВЕЛИЧИВАТЬ
+                # (до чистки мёртвого кода было 192; 78 — актуальный baseline после Sprint 5)
 ```
 
 ## Выполнено
@@ -842,6 +841,8 @@ npm run lint    # базовая линия: 79 problems (68 errors, 11 warnings
 | 7+ | **Профиль · Stay details + Vouchers**: в деталях брони — Stay details (Room/Meal plan/Guests/Check-in/Check-out + бейдж Free cancellation/Non-refundable из `meta.rooms[].refundable`) и Vouchers для всех типов: ссылки из `meta.vouchers` (`[{title,url}]`) либо заглушка «will appear here» (наполнение — из админ-панели, будущее) | `profile/BookingDetailsPopup.jsx`, `profile/style.css` |
 | 7+ | **Flights · Мультипассажиры (Sprint 4)**: `passengerType` (0/1/2) в prebook-payload; серверная валидация counts/types/DOB/паспорта (`BAD_REQUEST`); возрастные хинты в картах (`.fpax-card-hint` — 12+ / 2–11 / Under 2) и DOB `min/max` от даты вылета; smoke multi-pax flow (негативные count/type/DOB → исправный цикл) | `flights/FlightDetails.jsx`, `flights/style.css`, `flights-booking/index.ts`, `scripts/flights-smoke.mjs` |
 | 7+ | **Отель · Полная meta брони**: цепочка `Roomsnew → Checkout → Confirmation` сохраняет в `bookings.meta` всё — отель (id/address/city/country/stars/rating/photo), номер (`rateId`/`bedType`/`size`/`maxGuests`), возврат с дедлайном (`cancellationPolicies.cancelPolicyInfos[0]`), `nights`, `holder`/`email`, цену (`total`/`perNight`) и разбивку налогов (`retailRate.taxesAndFees`); в деталях профиля — Stay details (Bed type/Room size/Nights/Address + дедлайн «Free cancellation until … GMT») и блок **Price details** (налог «(payable at hotel)» для `included:false`) | `hotels/rooms/Roomsnew.jsx`, `hotels/checkout/Checkout.jsx`, `hotels/confirmation/Confirmation.jsx`, `profile/BookingDetailsPopup.jsx`, `profile/bookingUtils.jsx` |
+| 7+ | **Поиск · Sprint 5, mobile**: Tour/Hotel — stacked-поля `.msb` без саммари и чипов, rows 48px / gap 8 / radius 12, CTA 48px text-only; home — белые поля, results — `--light_gray` + лёгкая тень, sticky summary убран; Flights — `MobileFlightSearch` с route-card From/To + swap, range-датами и пассажирами; город/аэропорт/даты/гости — `BottomSheet` (город без handle), `AirportPickerSheet` с табами, `Near you` (до 3 в радиусе 500 км), popular/results, auto-GPS при открытии; туры — 3 фиксированных направления, по умолчанию Dubai | `searchfields/MobileSearch.jsx`, `flights/MobileFlightSearch.jsx`, `flights/AirportPickerSheet.jsx`, `bottomsheet/`, `mobileSearchBlock.css` |
+| 7+ | **Поиск · Sprint 5, desktop**: city/airport/guests — `AnchoredPopover` (flip/clamp, outside click, Escape, возврат фокуса) вместо absolute-попапов; даты (Hotel/Tour/Flights) — `CalendarGrid variant="plain"` + footer **Clear/Apply**, применение только по Apply; кликабельны Check-in/Check-out (у Flights Return — только round); популярные/ближайшие подсказки + кнопка `Near me` (GPS по запросу), debounce 300 ms, abort/stale guard, dedupe | `searchfields/AnchoredPopover.jsx`, `qureytour/`, `flights/AirportSearch.jsx`, `datepicker/`, `datepickerhotel/DatePickerH.jsx`, `flights/FlightDates.jsx`, `quest/` |
 
 ### Сессия 15.10 — PageLoader, туры, страница отеля (всё подтверждено пользователем)
 
@@ -862,13 +863,19 @@ npm run lint    # базовая линия: 79 problems (68 errors, 11 warnings
 ## Мобильный поиск ≤968 — архитектура
 
 - Включение: `useMediaQuery("(max-width: 968px)")` (`src/utils/useMediaQuery.js`, `useSyncExternalStore`). Компоненты монтируются **условно** — десктопные панели на мобиле просто не рендерятся, `display:none`-хаки не нужны.
-- `src/componets/searchfields/MobileSearch.jsx` — единственный вход, два режима:
-  - `variant="home"` (главная): чипы `.mchip` (label + value) → по клику своя `BottomSheet` (город / даты / гости), под чипами красная `.msearch-btn`. Вкладка Flights на мобиле скрыта (статический демо-блок).
-  - `variant="results"` (`/hotels`, `/tours`): липкая `.msearch--results` (top:0, z-index 1000) с `.msummary-btn` — саммари «город · даты · гости», стоит **над** кнопкой Filters; одна шторка, поля стопкой, Search в `footer`.
-- Контент шторок — те же компоненты с `variant="sheet"`: `Pleasenew|CityTour` (`.dest-wrapper--sheet` — список в потоке, скролл), `CalendarGrid` (`.calendar-sheet`), `GuestsContent` (`.gcontent-sheet`).
-- Стейт поиска — у родителей (`Search`, `NewHotelSearch`, `Toursearch`), URL = источник истины; поля получают `value=` + `onXChange`; у локации `key={`city-${city}`}` (mount-init вместо эффекта, `initialCity` — единственный вход).
-- Календарь: туры `mode="single"`, отели `mode="range"`; в home-шторке передаём `onDone` → шторка закрывается после выбора.
-- z-index: шторка 2100/2150 (= filterdrawer), навбар 2000, сводка 1000.
+- `src/componets/searchfields/MobileSearch.jsx` — Tour/Hotel: stacked-поля `.msb` (без чипов и саммари), `variant="home"` — белые поля без рамки; `variant="results"` — статичный блок (не sticky) с рамкой `--light_gray` и лёгкой тенью. Размеры: строка 48px, gap 8px, radius 12px, CTA `.msb-btn` 48px.
+  - Tour: `Where to?` / `When` / `Guests`; городов ровно 3 (`TOUR_DESTINATIONS`: Dubai, Abu Dhabi, Singapore), дефолт Dubai; календарь `mode="single"`.
+  - Hotel: город / диапазон дат (`MobileDateRangeField` + clear) / гости; календарь `mode="range"`, два месяца подряд (`monthCount={2}`, stacked, без горизонтальных колонок).
+  - Шторки: `City` (заголовок, без handle; `PleaseSearch|CityTour` `variant="sheet"`), `Dates` (`CalendarGrid variant="sheet"` + `onDone`), `Guests` (`GuestsContent variant="sheet"` + footer Done). Город закрывает шторку после выбора.
+- `src/componets/flights/MobileFlightSearch.jsx` — отдельный stacked-блок Flights:
+  - Route-card `.msb-route`: две строки 48px (From / Where to?) и круглая `.msb-swap` справа по центру; IATA — trailing-текст, без label сверху.
+  - Даты — `MobileDateRangeField` (`Depart` / `Return`, One way при `endDisabled`, clear); пассажиры + cabin — `MobileSearchField` с chevron.
+  - Шторка аэропорта — `BottomSheet variant="airport"` (`showHandle=false`, `showTitle=false`, close X) + `AirportPickerSheet`; даты — `FlightDates variant="sheet"`; пассажиры — `GuestsContent` (`hints` 2–11 / Under 2, cabin).
+  - `AirportPickerSheet`: табы `From`/`To`, поиск с prefill выбранного аэропорта, clear-X сбрасывает выбор; `Near you` — до 3 ближайших в радиусе 500 км, popular исключает уже показанные nearby; поиск 300 ms / min 2 символа, `AbortController` + requestId, dedupe по IATA. Выбор From переключает на To и оставляет шторку открытой, выбор To закрывает.
+- Геолокация: `useGeolocation` — browser GPS, cache 30 мин (`bigkey.geo.v1`), timeout 8 s, без автозапуска. Mobile airport sheet запрашивает GPS при открытии; desktop — только кнопка `Near me` (без автопромпта). Координаты локальные, на сервер не уходят.
+- Стейт Tour/Hotel — у родителей (`Search`, `NewHotelSearch`, `Toursearch`), URL = источник истины; поля получают `value=` + `onXChange`; у города `key={`city-${city}`}` (mount-init через `initialCity`). Flights хранит стейт внутри `MobileFlightSearch` и отдаёт готовые значения через `onSearch`.
+- Desktop (не mobile): город/аэропорт/гости — `AnchoredPopover` (portal в body, flip/clamp, outside click, Escape, возврат фокуса; `preferredWidth` 348–380); даты — `CalendarGrid variant="plain"` + footer Clear/Apply, Check-in/Check-out кликабельны, Return — только для round. Отель — `preferredWidth={704}` и `monthCount={2}` (два месяца рядом), авиа — 420; для дат включён `allowOverlap`: если попап целиком влезает во viewport, он перекрывает якорь, но не получает внутренний скролл. Старые absolute-попапы больше не используются.
+- z-index: шторка 2100/2150 (= filterdrawer), навбар 2000, `AnchoredPopover` 3000.
 - Табы главной (финальные цифры): десктоп `.tabsoption` — `padding:10px 16px`, `min-height:72px`, `max-width:726px`, `rgba(255,255,255,.17)` + `blur(8px)`, radius 50; ≤968 — `flex-wrap:nowrap`, `gap:4px`, `padding:6px`, `margin-bottom:6px`, radius 18, `.tab-btn { flex:1 1 0; height:46px; font-size:14px; border-radius:14px; align-items:center }`, иконки 18px; ≤640 — `height:44px`, `font-size:13px`, radius 12, иконки 16px.
 - `BottomSheet`: `aria-hidden` на панели **не ставим** (конфликтует с фокусом → «Blocked aria-hidden…»), только `inert`; фокус возвращается на элемент-триггер при закрытии.
 
@@ -913,11 +920,13 @@ CSS в бандле склеивается в порядке импорта из
 
 ### Заметки по мобильному поиску
 
-- [ ] Вкладка Flights на главной в мобиле скрыта — решить, показывать ли её (сейчас там статичный демо-блок с нерабочей кнопкой).
+- [x] ~~Вкладка Flights на главной в мобиле скрыта~~ — подключён `MobileFlightSearch` с рабочим поиском и шторками.
 - [ ] Закомментированный демо-код в `Search.jsx` (ThemeTour, tourTypes) ссылается на **удалённые** импорты — при раскомментировании вернуть импорты.
-- [ ] Чипсы на главной на ≤640 идут столбиком (`flex: 1 1 100%` в `searchfields/style.css`) — если нужен один ряд, как у табов, подправить `.mchip`.
-- [ ] Локация — единственное поле **не** через `value=` (mount-init по `key`), поэтому чип/саммари показывает последний **выбранный** город, а не текст, который пользователь успел напечатать (поиск при этом заблокирован — guard по `pleaseId`). Полный фикс = перевести `Pleasenew`/`CityTour` на контролируемые `value` + `onChange` у родителя.
+- [x] ~~Чипсы на главной идут столбиком~~ — чипы `.mchip` заменены stacked-полями `.msb`; мёртвые стили чипов/саммари/старых шторок удалены.
+- [ ] Desktop-локация всё ещё mount-init по `key` (не через `value=`): после ручной правки текста показывается последний выбранный город (поиск блокируется guard’ом `pleaseId`). Полный фикс = контролируемые `value` + `onChange` у родителей.
 - [ ] `/hotels` без `pleaseId` в URL (прямой заход) — guard’а нет, кнопка Search живая, уходит в пустой `placeId`. Добавить так же, как на главной, если будет запрос.
+- [x] ~~Sprint 5: визуальный smoke~~ — CDP-smoke 440/1440 выполнен: Tour/Hotel/Flights home, airport sheet (From → To, закрытие после To), city/date sheets; desktop hotel/flight dates (Clear/Apply + Apply-closes), hotel/guest popovers, airport popover; `docScrollWidth = clientWidth`, 0 ошибок консоли, 0 overflow (кроме штатного off-canvas `.mobile-menu`).
+- [ ] Sprint 5: скриншот-ревью и проверка живой выдачи LiteAPI (hotel-vs-city, placeIds, координаты аэропортов) — остаются.
 - [ ] Минифайлер бандла оставляет только `-webkit-backdrop-filter` для `blur(8px)/16px/2px` (со всеми glass-элементами проекта) — в Firefox размытия не будет, только полупрозрачный фон. Если важен FF — проверить, почему `backdrop-filter` (без префикса) выпадает.
 
 ## Полезные находки
@@ -927,6 +936,7 @@ CSS в бандле склеивается в порядке импорта из
 - `Loader` = `src/componets/loaders/loading.jsx` (`OrbitProgress`) — **заменён на `PageLoader`** (`loaders/PageLoader.jsx`, проп `embedded` для встраивания). Старый `loading.jsx` оставлен, сверяться, не мёртв ли.
 - **LiteAPI Flights · prebook**: `passengers[].passengerType` (0=adult, 1=child, 2=infant) — request-поле; `type` (ADT/CHD/INF) только в ответах; длина `passengers` = adults+children+infants из поиска; возрастных ограничений в API нет — IATA-правила (12+ / 2–11 / <2 на дату вылета) валидируем сами; sandbox-офферы часто sold out (код 52010) — при e2e перебирать офферы, в UI маппить в `OFFER_SOLD_OUT` (инвентарь real-time, может «продаться» в любой момент между verify и book).
 - **LiteAPI Flights · автокомплит аэропортов** (`/data/flights/airports`): возвращает дубли IATA («San Diego - All Airports» + «San Diego International Airport» = `SAN`, также `SJO`) — React-ключи списка уникализировать (`iata-index`), иначе duplicate key warning.
+- **Ключи LiteAPI/Rayna — только в Supabase Edge Functions** (`LITE_API_KEY` / `RAYNA_API_KEY`). Клиентские сервисы (`placesService`, flights, отели, бронирование) ходят через `supabase.functions.invoke("liteapi-proxy")`; `VITE_LITE_API_KEY` из `.env` удалён и в клиентском коде не используется.
 - **LiteAPI-данные отеля** (через Supabase edge fn `liteapi-proxy`, заголовки `x-target-url` + `x-service-type: 'hotels'`, паттерн в `SupebaseHotelIdService.jsx`):
   - `hotel.sentiment_analysis` = `{categories:[{name,rating(1-10),description}], pros[], cons[]}` (fallback-ключ `sentimentAnalysis`);
   - `hotel.facilities` = `[{facilityId,name}]` — **без категорий** → keyword-группировка локальная (`PopularFacilities.jsx`);

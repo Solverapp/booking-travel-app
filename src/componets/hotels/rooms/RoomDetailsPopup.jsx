@@ -22,6 +22,13 @@ import {
   RoomService,
   Extension,
 } from "@mui/icons-material";
+import {
+  excludedTaxItems,
+  formatMoney,
+  formatPolicyDeadline,
+  rateCancelPolicies,
+  ratePerks,
+} from "../../../utils/hotelRate";
 
 const POPULAR_ICON_MAP = [
   { keywords: ["wifi", "internet"], icon: Wifi },
@@ -118,7 +125,26 @@ const groupAmenities = (amenities) => {
 
 const cleanText = (str) => (str || "").replace(/<[^>]*>?/gm, "");
 
-const RoomDetailsPopup = ({ room = {}, roomName, hotelPhoto, onClose }) => {
+const cancellationPolicyLabel = (policy) => {
+  const deadline = formatPolicyDeadline(policy.cancelTime, policy.timezone);
+  const fee = formatMoney(policy.amount, policy.currency);
+
+  if (policy.amount > 0) {
+    return deadline
+      ? `After ${deadline} — cancellation fee ${fee}`
+      : `Cancellation fee ${fee}`;
+  }
+
+  return deadline ? `Free cancellation until ${deadline}` : "Free cancellation";
+};
+
+const RoomDetailsPopup = ({
+  room = {},
+  roomName,
+  hotelPhoto,
+  offers = [],
+  onClose,
+}) => {
   const [idx, setIdx] = useState(0);
 
   const gallery = useMemo(() => {
@@ -126,6 +152,37 @@ const RoomDetailsPopup = ({ room = {}, roomName, hotelPhoto, onClose }) => {
     if (photos.length) return photos;
     return hotelPhoto ? [hotelPhoto] : [];
   }, [room.photos, hotelPhoto]);
+
+  const rateConditions = useMemo(
+    () =>
+      (Array.isArray(offers) ? offers : [])
+        .map((offer, index) => {
+          const rate = offer?.rate || {};
+          const policies = rateCancelPolicies(rate);
+          const perks = ratePerks(rate);
+          const taxes = excludedTaxItems(rate);
+          const refundableTag = rate?.cancellationPolicies?.refundableTag || "";
+          const total = rate?.retailRate?.total?.[0] || null;
+
+          return {
+            key: offer?.offerId || rate?.rateId || `rate-${index}`,
+            name: offer?.roomName || rate?.name || `Rate ${index + 1}`,
+            total,
+            policies,
+            perks,
+            taxes,
+            refundableTag,
+          };
+        })
+        .filter(
+          (item) =>
+            item.policies.length > 0 ||
+            item.perks.length > 0 ||
+            item.taxes.length > 0 ||
+            Boolean(item.refundableTag),
+        ),
+    [offers],
+  );
 
   const prev = useCallback(() => {
     setIdx((i) => (i - 1 + gallery.length) % gallery.length);
@@ -228,6 +285,73 @@ const RoomDetailsPopup = ({ room = {}, roomName, hotelPhoto, onClose }) => {
             </div>
 
             {description && <p className="rd-desc">{description}</p>}
+
+            {rateConditions.length > 0 && (
+              <>
+                <hr className="rd-divider" />
+                <h5 className="rd-section">Rate conditions</h5>
+                <div className="rd-rates">
+                  {rateConditions.map((item) => (
+                    <div className="rd-rate" key={item.key}>
+                      <div className="rd-rate-head">
+                        <strong>{item.name}</strong>
+                        {item.total?.amount != null && (
+                          <span>
+                            {formatMoney(item.total.amount, item.total.currency)}
+                          </span>
+                        )}
+                      </div>
+
+                      {item.policies.length > 0 ? (
+                        <ul className="rd-rate-list">
+                          {item.policies.map((policy, index) => (
+                            <li key={`${item.key}-policy-${index}`}>
+                              {cancellationPolicyLabel(policy)}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : item.refundableTag === "NRFN" ? (
+                        <p className="rd-rate-note">Non-refundable</p>
+                      ) : item.refundableTag === "RFN" ? (
+                        <p className="rd-rate-note">Free cancellation</p>
+                      ) : null}
+
+                      {item.taxes.length > 0 && (
+                        <div className="rd-taxes">
+                          <span className="rd-rate-subtitle">
+                            Payable at hotel
+                          </span>
+                          <ul className="rd-rate-list">
+                            {item.taxes.map((tax, index) => (
+                              <li key={`${item.key}-tax-${index}`}>
+                                {tax.description} -{" "}
+                                {formatMoney(tax.amount, tax.currency)}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {item.perks.length > 0 && (
+                        <div className="rd-perks">
+                          <span className="rd-rate-subtitle">Extras</span>
+                          <ul className="rd-rate-list">
+                            {item.perks.map((perk, index) => (
+                              <li key={perk.perkId ?? `${item.key}-perk-${index}`}>
+                                {perk.name || "Extra"}
+                                {Number(perk.amount) > 0
+                                  ? ` — ${formatMoney(perk.amount, perk.currency)}`
+                                  : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             {popular.length > 0 && (
               <>

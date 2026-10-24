@@ -30,6 +30,17 @@
     text-align: left;
 }
 
+.gcontent-anchored {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 16px;
+    text-align: left;
+}
+
 .gcontent .selector-box {
     display: flex;
     flex-direction: column;

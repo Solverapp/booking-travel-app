@@ -1,116 +1,82 @@
-import { useState, useRef, useEffect } from "react";
-
+import { useRef, useState } from "react";
+import LocationCityOutlined from "@mui/icons-material/LocationCityOutlined";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
+import AnchoredPopover from "../searchfields/AnchoredPopover";
+import SuggestionItem from "../searchfields/SuggestionItem";
+import { TOUR_DESTINATIONS } from "../../mock/searchDestinations";
 import "./style.css";
-import search from "../../img/icons/tabicons/search-normal.svg";
-import checkk from "../../img/icons/tabicons/tick-circle.svg";
 
-/* Выбор локации из списка (туры).
-   variant="popup" — список-попап под инпутом (десктоп),
-   variant="sheet" — тот же список внутри нижней шторки (статичный, скроллится). */
-const QureyTour = ({ onCityChange, initialCity, variant = "popup" }) => {
-  const destantion = [
-    {
-      id: 13668,
-      name: "Dubai",
-      location: "UAE",
-    },
-    {
-      id: 13236,
-      name: "Abu Dhabi",
-      location: "UAE",
-    },
-    {
-      id: 23726,
-      name: "Singapore",
-      location: "Singapore",
-    },
-  ];
+const CityTour = ({ onCityChange, initialCity, variant = "popup" }) => {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
 
-  const [query, setQuery] = useState(() => {
-    if (!initialCity) return "";
-    const city = destantion.find(
-      (item) => item.name.toLowerCase() === initialCity.toLowerCase(),
-    );
-    return city ? `${city.name}, ${city.location}` : "";
-  });
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const dropdownRef = useRef(null);
+  const selected = TOUR_DESTINATIONS.find(
+    (item) => item.name.toLowerCase() === String(initialCity ?? "").toLowerCase(),
+  );
+  const displayValue = selected
+    ? `${selected.name}, ${selected.country}`
+    : initialCity || "";
 
-  const trimmed = query.trim().toLowerCase();
-  const filtered = trimmed
-    ? destantion.filter(
-        (item) =>
-          item.name.toLowerCase().includes(trimmed) ||
-          item.location.toLowerCase().includes(trimmed),
-      )
-    : [];
-
-  const handleInputChange = (e) => {
-    setQuery(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleSelectItem = (item) => {
-    setQuery(`${item.name}, ${item.location}`);
-    setShowSuggestions(false);
-
-    // Отправляем город в родительский компонент
+  const handleSelect = (item) => {
+    setOpen(false);
     onCityChange?.(item.name);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const destClassName =
-    variant === "sheet" ? "dest-wrapper dest-wrapper--sheet" : "dest-wrapper";
-
   const renderItem = (item) => (
-    <div
-      className="dest__list-item"
-      key={`${item.id}`}
-      onClick={() => handleSelectItem(item)}
-    >
-      <div className="list-itemleft">
-        <img src={search} alt="search" />
-        {item.location}, {item.name}
-      </div>
-      {query === `${item.name}, ${item.location}` && (
-        <img src={checkk} alt="ch" />
-      )}
-    </div>
+    <SuggestionItem
+      key={item.id}
+      icon={<LocationCityOutlined />}
+      iconVariant="boxed"
+      title={item.name}
+      subtitle={item.country}
+      selected={selected?.id === item.id}
+      onClick={() => handleSelect(item)}
+    />
   );
 
-  return (
-    <div className="sop-box-search">
-      <p>Where to?</p>
-      <div className="dropdown" ref={dropdownRef}>
-        <input
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => setShowSuggestions(true)}
-          placeholder="Search destination..."
-        />
+  if (variant === "sheet") {
+    return (
+      <div className="tour-city-sheet">{TOUR_DESTINATIONS.map(renderItem)}</div>
+    );
+  }
 
-        {showSuggestions && (
-          <div className={destClassName}>
-            <p>Popular destinations</p>
-            {filtered.length > 0 ? filtered.map(renderItem) : destantion.map(renderItem)}
+  return (
+    <div className="tour-city">
+      <p>Where to?</p>
+      <button
+        type="button"
+        ref={triggerRef}
+        className="tour-city__trigger"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <span className={displayValue ? "" : "is-placeholder"}>
+          {displayValue || "Select destination"}
+        </span>
+        <KeyboardArrowDown
+          className={`tour-city__arrow${open ? " is-open" : ""}`}
+        />
+      </button>
+
+      <AnchoredPopover
+        open={open}
+        anchorRef={triggerRef}
+        onClose={() => setOpen(false)}
+        preferredWidth={360}
+        ariaLabel="Tour destinations"
+      >
+        <div className="search-popover__section">
+          <div className="search-popover__section-head">
+            <span className="search-popover__section-title">
+              Popular destinations
+            </span>
           </div>
-        )}
-      </div>
+          {TOUR_DESTINATIONS.map(renderItem)}
+        </div>
+      </AnchoredPopover>
     </div>
   );
 };
 
-export default QureyTour;
+export default CityTour;

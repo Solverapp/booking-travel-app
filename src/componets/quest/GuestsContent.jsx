@@ -1,6 +1,7 @@
 import minus from "../../img/icons/tabicons/minus.svg";
 import plus from "../../img/icons/tabicons/plus.svg";
 import { MAX_GUESTS } from "./guestsUtils";
+import { CABIN_OPTIONS } from "../../utils/flightFormatters";
 import "./guests.css";
 
 /* Счётчики гостей — общий контент.
@@ -11,13 +12,6 @@ import "./guests.css";
    hints — переопределение подсказок (пустая строка убирает подсказку).
    cabin/onCabinChange — блок выбора класса обслуживания (flights).
    Компонент контролируемый: значение приходит снаружи (value/onChange). */
-const CABIN_OPTIONS = [
-  { id: "all", label: "All cabins" },
-  { id: "economy", label: "Economy" },
-  { id: "business", label: "Business" },
-  { id: "first", label: "First class" },
-];
-
 const GuestsContent = ({
   mode = "hotel",
   variant = "popup",
@@ -130,7 +124,11 @@ const GuestsContent = ({
   return (
     <div
       className={`${
-        variant === "sheet" ? "gcontent gcontent-sheet" : "gcontent gcontent-popup"
+        variant === "sheet"
+          ? "gcontent gcontent-sheet"
+          : variant === "anchored"
+            ? "gcontent gcontent-anchored"
+            : "gcontent gcontent-popup"
       }${hints ? " gcontent-inline-hints" : ""}`}
     >
       <div className="selector-box">

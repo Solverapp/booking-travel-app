@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
@@ -6,9 +6,16 @@ import PeopleIcon from "@mui/icons-material/People";
 import EventIcon from "@mui/icons-material/Event";
 import SecurityIcon from "@mui/icons-material/Security";
 import PageLoader from "../loaders/PageLoader";
-import { flightsBookingService } from "../../services/flights/flightBookingService";
+import FlightAmenities from "./FlightAmenities";
+import FlightPriceBreakdown from "./FlightPriceBreakdown";
+import { useFlightSession } from "../../hooks/queries/useFlightSession";
 import { formatDateShort } from "../../utils/flightFormatters";
-import { legsOf } from "../../utils/flightJourneys";
+import { legsOf, segmentLabelsByKey } from "../../utils/flightJourneys";
+import { offerBaggage } from "../../utils/flightOffers";
+import {
+  buildPriceBreakdown,
+  passengerCountLabel,
+} from "../../utils/flightPricing";
 import "./style.css";
 
 const countsOf = (searchParams) => ({
@@ -21,59 +28,29 @@ const FlightCheckout = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
 
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [statusError, setStatusError] = useState("");
-  const [ready, setReady] = useState(false);
+  const sessionQuery = useFlightSession(sessionId);
+  const session = sessionQuery.data?.session ?? null;
+  const loading = sessionQuery.isLoading;
+  const ready = session?.status === "PREBOOKED" && Boolean(session.secretKey);
+  const redirectTo =
+    session?.status === "CONFIRMED"
+      ? `/flightconfirmation?sessionId=${sessionId}`
+      : session?.status === "VERIFIED"
+        ? `/flightpage/${sessionId}`
+        : "";
+  const statusError =
+    sessionQuery.error?.message ||
+    (!session
+      ? "Booking session not found"
+      : session.status === "BOOKING"
+        ? "Your booking is being processed. Check My Bookings in a moment."
+        : !ready
+          ? "This booking session can no longer be paid"
+          : "");
 
   useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setStatusError("");
-      try {
-        const data = await flightsBookingService.getFlightSession(sessionId);
-        if (cancelled) return;
-        const next = data?.session ?? null;
-        if (!next) throw new Error("Booking session not found");
-
-        if (next.status === "CONFIRMED") {
-          navigate(`/flightconfirmation?sessionId=${sessionId}`, { replace: true });
-          return;
-        }
-        if (next.status === "VERIFIED") {
-          navigate(`/flightpage/${sessionId}`, { replace: true });
-          return;
-        }
-        if (next.status === "PREBOOKED" && next.secretKey) {
-          setSession(next);
-          setReady(true);
-          return;
-        }
-        if (next.status === "BOOKING") {
-          setStatusError("Your booking is being processed. Check My Bookings in a moment.");
-          return;
-        }
-        throw new Error("This booking session can no longer be paid");
-      } catch (err) {
-        if (!cancelled) {
-          if (err?.code === "UNAUTHORIZED") {
-            navigate("/login", { state: { from: `/flightcheckout/${sessionId}` } });
-            return;
-          }
-          setStatusError(err?.message || "Failed to load booking session");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, navigate]);
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate]);
 
   useEffect(() => {
     if (!ready || !session?.secretKey) return undefined;
@@ -107,7 +84,7 @@ const FlightCheckout = () => {
     };
   }, [ready, session, sessionId]);
 
-  if (loading) {
+  if (loading || redirectTo) {
     return <PageLoader text="Preparing secure payment..." />;
   }
 
@@ -133,8 +110,19 @@ const FlightCheckout = () => {
   const journey = session?.verified?.journey ?? null;
   const legs = journey ? legsOf(journey) : [];
   const counts = countsOf(session?.searchParams);
-  const price = Number(session?.verifiedPrice) || 0;
   const currency = session?.currency || "AED";
+  const segmentLabels = segmentLabelsByKey(journey?.segments);
+  const fareFamily = journey?.fare?.family ?? "";
+  const baggage = offerBaggage({ baggage: journey?.baggage });
+  const priceBreakdown = buildPriceBreakdown({
+    journey,
+    breakdown: session?.priceBreakdown,
+    counts,
+    currency,
+  });
+  const selectedServices = Array.isArray(session?.bookedServices)
+    ? session.bookedServices
+    : [];
   // Маршрут — по первому направлению (для round-trip «туда», а не «туда→обратно→туда»)
   const outboundLeg = legs[0] ?? [];
   const firstSegment = outboundLeg[0] ?? {};
@@ -147,16 +135,20 @@ const FlightCheckout = () => {
     <main className="checkout-main-content">
       <div className="checkout-layout-container">
         <div className="checkout-left-panel fcheckout-panel">
-          <button type="button" className="back-nav-btn" onClick={() => navigate("/flights")}>
+          <button
+            type="button"
+            className="back-nav-btn"
+            onClick={() => navigate(`/flightseats/${sessionId}`)}
+          >
             <ChevronLeftIcon />
-            <span>Back to search results</span>
+            <span>Back to seats & baggage</span>
           </button>
 
           <h1 className="page-main-title">Secure Payment</h1>
 
           <div className="form-card-ui animate-fade-in">
             <div className="form-card-header">
-              <div className="step-badge">Step 2 of 2</div>
+              <div className="step-badge">Step 3 of 3</div>
               <h2>Payment</h2>
               <p>Please complete your transaction details below.</p>
             </div>
@@ -198,9 +190,7 @@ const FlightCheckout = () => {
                   <div>
                     <span className="meta-label">Passengers</span>
                     <span className="meta-value">
-                      {counts.adults} adults
-                      {counts.children > 0 ? ` · ${counts.children} children` : ""}
-                      {counts.infants > 0 ? ` · ${counts.infants} infants` : ""}
+                      {passengerCountLabel(counts)}
                     </span>
                   </div>
                 </div>
@@ -218,24 +208,46 @@ const FlightCheckout = () => {
 
               <div className="summary-price-breakdown-divider" />
 
-              <div className="price-summary-table">
-                <div className="price-row">
-                  <span>Subtotal</span>
-                  <span>
-                    {price.toFixed(2)} {currency}
-                  </span>
-                </div>
-                <div className="price-row">
-                  <span>Taxes & Fees</span>
-                  <span className="green-text">Included</span>
-                </div>
-                <div className="price-row total-row-highlight">
-                  <span>Total amount</span>
-                  <span>
-                    {price.toFixed(2)} {currency}
-                  </span>
-                </div>
+              <FlightPriceBreakdown
+                breakdown={priceBreakdown}
+                fareFamily={fareFamily}
+                counts={counts}
+              />
+
+              <div className="summary-price-breakdown-divider" />
+
+              <div className="fcheckout-extras">
+                <h4 className="fcheckout-extras-title">Seats & baggage</h4>
+                {selectedServices.length > 0 ? (
+                  <ul className="fcheckout-extras-list">
+                    {selectedServices.map((service, index) => (
+                      <li key={`${service.serviceId}-${index}`}>
+                        <span>
+                          {[segmentLabels.get(service.segmentKey), service.name || "Extra service"]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                        {Number(service.price) > 0 ? (
+                          <span>
+                            {service.currency || currency}{" "}
+                            {Number(service.price).toFixed(2)}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="fcheckout-extras-empty">No extras selected.</p>
+                )}
               </div>
+
+              <div className="summary-price-breakdown-divider" />
+
+              <FlightAmenities
+                amenities={[]}
+                baggage={baggage}
+                title="Baggage"
+              />
             </div>
           </div>
         </div>

@@ -6,11 +6,6 @@ import Hotel from "../componets/hotels/hotelpage/HotelPages";
 
 const Hotelpage = () => {
     const id = useParams();
-    const hid = toString(id)
-    
-    
-     
-
 
     return ( 
        

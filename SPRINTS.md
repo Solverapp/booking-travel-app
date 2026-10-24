@@ -1,8 +1,8 @@
 # Спринты BigKey — модуль авиабилетов (Flights / LiteAPI)
 
-Актуально на: 18.10.2026. Документ фиксирует, что сделано по спринтам, ключевые решения и как это проверять/продолжать.
+Актуально на: 21.10.2026. Документ фиксирует, что сделано по спринтам, ключевые решения и как это проверять/продолжать.
 Перед любой работой по вёрстке обязательно читать `ADAPTIVE.md` (правила адаптива проекта).
-**Статус на 18.10:** профиль — пауза после редизайна (см. «Профиль»); выполнены Sprint 1–4 Flights (Sprint 4 — мультипассажиры children/infants), спринт «Полная meta отеля» (полные данные брони отеля в `bookings.meta` + детали в профиле), «Валюта отеля = валюта профиля», «Детали брони рейса в профиле» (пассажиры, контакт, пересадки/длительность в `meta` + рендер), «Round-trip оформление» (ваучер по направлениям, фикс reused-book, per-leg duration, dynamic currency фильтра) и «UI отелей: карточки списка + мобильные правки» (рейтинг-плашка и гостевая цена в карточках, кнопка-шторка сортировки, дравер фильтров, popular facilities по sort, карточка тарифа с иконками питания/bed/no-smoking). Дальше — см. «Куда двигаться дальше».
+**Статус на 21.10:** профиль — пауза после редизайна (см. «Профиль»); выполнены Sprint 1–5 Flights (Sprint 4 — мультипассажиры children/infants), спринт «Полная meta отеля» (полные данные брони отеля в `bookings.meta` + детали в профиле), «Валюта отеля = валюта профиля», «Детали брони рейса в профиле» (пассажиры, контакт, пересадки/длительность в `meta` + рендер), «Round-trip оформление» (ваучер по направлениям, фикс reused-book, per-leg duration, dynamic currency фильтра), «UI отелей: карточки списка + мобильные правки» и **Sprint 5 — единый редизайн поиска Tour/Hotel/Flights** (мобильные stacked-блоки и шторки, популярные/ближайшие направления, desktop `AnchoredPopover` + Clear/Apply). Календари дат: desktop — 2 месяца у отеля без внутреннего скролла, mobile — 2 месяца stacked; LiteAPI-ключ убран из клиента. Build OK, lint 77 = baseline; CDP-smoke 390/1179 — без overflow и ошибок консоли. Дальше — см. «Куда двигаться дальше».
 
 ---
 
@@ -150,6 +150,31 @@
 - Адаптив от 380 (запрос пользователя): CDP-свип 320–440 (`mobile: false`) на `/`, `/hotels`, `/hotelpage` — **0 overflow** на всех ширинах (docScrollWidth = clientWidth); интерактив на 380: шторка поиска с календарём/гостями, дравер фильтров, сорт-шторка, поп-ап Room details, `/checkout`, бургер-меню, профиль (логин) — чисто, 0 ошибок консоли. Жалоба «<440 всё ломается» на текущей сборке не воспроизводится — если повторится, нужен конкретный экран/скриншот.
 - Lint: **78 problems (67 errors / 11 warnings)** — ниже прежнего baseline 79 (ушёл неиспользуемый `useState` в sorting). Build OK.
 
+### Sprint 5 — редизайн поиска Tour / Hotel / Flights (21.10)
+
+**Мобильный поиск (≤968, компоненты монтируются условно):**
+- `MobileSearch` (Tour/Hotel) переведён на stacked-поля `.msb`: Tour — `Where to?` / `When` / `Guests`, Hotel — город / диапазон дат / гости; строки 48px, gap 8, radius 12, CTA 48px text-only. Саммари и чипы убраны; home — белые поля, results — рамка `--light_gray` + лёгкая тень, sticky-панель отключена (`.msearch--stacked.msearch--results`). Календарь отеля в шторке — два месяца подряд (`monthCount={2}`, stacked).
+- Туры: 3 фиксированных направления (`TOUR_DESTINATIONS`: Dubai, Abu Dhabi, Singapore), дефолт Dubai, выбор сразу в шторке. Отели: город в шторке с popular/nearby/results и `Near me`, диапазон дат с clear, гости в отдельной шторке с Done.
+- Flights: `MobileFlightSearch` — route-card From/To + swap, IATA trailing, range-даты `Depart`/`Return` (One way), пассажиры + cabin; шторки route (`BottomSheet variant="airport"`), dates (`FlightDates variant="sheet"`) и guests. Выбор From переключает на To и не закрывает шторку, выбор To закрывает.
+- `AirportPickerSheet`: табы, поиск с prefill выбранного аэропорта, clear-X сбрасывает выбор, `Near you` (до 3 ближайших в радиусе 500 км), popular исключает nearby, результаты с `City · IATA` / страной; debounce 300 ms, min 2 символа, `AbortController` + requestId, dedupe по IATA; GPS запрашивается при открытии.
+- `useGeolocation` (`bigkey.geo.v1`, TTL 30 мин, timeout 8 s) — только браузерный GPS + локальный mock, координаты на сервер не уходят. На desktop автопромпта нет — только кнопка `Near me`.
+- `MobileSearchField` / `MobileDateRangeField` — общие поля шторок/stacked-блока; `formatShortDate(..., { weekday: true })` даёт `21 Oct, Wed`.
+
+**Desktop:**
+- `AirportSearch` — `AnchoredPopover preferredWidth={372}`, popular/nearby/results, `Near me`, те же debounce/abort/dedupe-правила; sheet-вариант удалён.
+- `DatePickerH` / `DatePickerOne` / `FlightDates` — `AnchoredPopover` (отель 704 + два месяца, тур 348, авиа 420), `CalendarGrid variant="plain"`, footer **Clear/Apply**; Check-in/Check-out кликабельны, Return у Flights — только для round. `allowOverlap` не даёт календарю уйти во внутренний скролл, если попап целиком помещается во viewport. Применение дат — по Apply (mobile-шторки по-прежнему `onDone`).
+- `QuestSelector` / `TourGuestSelector` / `FlightGuests` — `AnchoredPopover` 378 + `GuestsContent variant="anchored"`.
+- `AnchoredPopover`: portal в body, z-index 3000, flip top/bottom + clamp + `maxHeight`, `allowOverlap` для дат (календарь может перекрыть якорь, но не получает скролл), outside click, Escape, возврат фокуса. Новых зависимостей нет.
+
+**Данные/сервисы:**
+- `src/mock/searchDestinations.js`: `DEFAULT_TOUR_CITY`, `TOUR_DESTINATIONS`, `POPULAR_HOTEL_DESTINATIONS`, `POPULAR_AIRPORTS`, `NEARBY_RADIUS_KM = 500`.
+- `src/utils/geo.js` (`distanceKm`, `nearestItems`), `src/utils/useGeolocation.js`, `src/utils/dateFormat.js`.
+- `placesService.fetchPlacesList` — LiteAPI `/data/places` через Supabase edge `liteapi-proxy`; `flightApiService.fetchAirportSuggestions` — `/data/flights/airports` через тот же прокси; оба принимают `signal`, abort не подменяется cache fallback. `VITE_LITE_API_KEY` удалён из `.env` — LiteAPI-ключ живёт только в edge function (`LITE_API_KEY`).
+
+**Чистка:** удалены мёртвые mobile-стили `.mchip*` / `.msearch-btn` / `.msummary-btn` / `.bs-*` / `.msearch-hint`, `.fdate-popup`, `.airport-sheet*`, `.airport-swap-btn`, `.airport-input--sheet`; `field-common.css` больше не содержит `.msearch-btn`.
+
+**Проверка:** `npm run build` OK; `npm run lint` — 77 = baseline, новых нет. URL-контракты `/hotels`, `/tours`, `/flights` не менялись. CDP-smoke: 390 — отель показывает два месяца stacked, выбор check-in → check-out между месяцами, city-поиск через edge; 1179×647 — отель 704px / 2 месяца, авиа 420px, у попапов `scrollHeight = clientHeight` (без внутреннего скролла), `docScrollWidth = clientWidth`, 0 ошибок консоли. Живой LiteAPI `/data/places` через `liteapi-proxy` вернул результаты (Paris). Осталось: скриншот-ревью и живая выдача LiteAPI (hotel-vs-city, placeIds, координаты аэропортов).
+
 ---
 
 ## Проверка и тестирование
@@ -186,10 +211,12 @@
 
 ## Карта файлов модуля
 
-- Компоненты: `src/componets/flights/*` (`FlightsResult`, `FlightDetails`, `FlightCheckout`, `FlightConfirmation`, `FlightSearchForm`, `MobileFlightSearch`, `FlightFilters`, `AirportSearch`, `FlightDates`, `FlightGuests`, `style.css`).
+- Компоненты Flights: `src/componets/flights/*` (`FlightsResult`, `FlightDetails`, `FlightCheckout`, `FlightConfirmation`, `FlightSearchForm`, `MobileFlightSearch`, `AirportPickerSheet`, `FlightFilters`, `AirportSearch`, `FlightDates`, `FlightGuests`, `style.css`).
+- Поиск (общий): `src/componets/searchfields/*` (`MobileSearch`, `MobileSearchField`, `MobileDateRangeField`, `AnchoredPopover`, `SuggestionItem`, `searchUi.css`, `mobileSearchBlock.css`), `src/componets/qureytour/` (`CityTour`, `Pleasenew`), `src/componets/bottomsheet/`, `src/componets/quest/GuestsContent.jsx`.
 - Страницы: `src/pages/flights.jsx`, `flightpage.jsx`, `flightcheckout.jsx`, `flightconfirmation.jsx`.
-- Утилиты: `src/utils/flightSearch.js`, `src/utils/flightJourneys.js`, `src/utils/flightFormatters.js`, `src/utils/currency.js`.
-- Сервис: `src/services/flights/flightBookingService.jsx`.
+- Утилиты: `src/utils/flightSearch.js`, `src/utils/flightJourneys.js`, `src/utils/flightFormatters.js`, `src/utils/currency.js`, `src/utils/geo.js`, `src/utils/useGeolocation.js`, `src/utils/dateFormat.js`.
+- Моки: `src/mock/searchDestinations.js` (направления, аэропорты, `NEARBY_RADIUS_KM`).
+- Сервисы: `src/services/flights/flightBookingService.jsx`, `src/services/flights/flightApiService.jsx`, `src/services/placesService.jsx`.
 - Edge: `supabase/functions/flights-booking/index.ts`, `supabase/functions/liteapi-proxy/index.ts`, `supabase/config.toml`.
 - Миграция: `supabase/migrations/0001_flights.sql`.
 - Smoke: `scripts/flights-smoke.mjs`, `scripts/flights-roundtrip-flow.mjs`, `scripts/flights-roundtrip-prebook.mjs`.
@@ -220,3 +247,13 @@
 - `childrenAges`/`infantAges` в `/flights/rates` (опционально по докам LiteAPI) — точный возраст в поисковом запросе, когда появится возрастной визард.
 - **Валюты — остатки хардкода AED** (аудит 17.10): туры — `tours/Tournew.jsx:144`, `tourpage/Tour.jsx:89`, `touroption/Optionew.jsx:302/334/369`, `tourbook/TourBook.jsx:122/125/134`. Фильтр рейсов уже динамический (сделан в round-trip спринте). Туры — осознанное исключение (Rayna API только AED). Проверено пробой: LiteAPI отели поддерживают USD/EUR/GBP/AED; фолбэк на AED при неподдерживаемой валюте остаётся.
 - Мёртвый Xano-сервис `services/hotelService.jsx` (хардкоды AED, никем не импортируется) — кандидат на удаление в следующей чистке.
+
+### Flights: seats, baggage и полный price breakdown (20.10)
+
+- Prebook теперь сохраняет `servicesAttachable` в `flight_booking_sessions.journey`; новый action edge-функции `attachServices` валидирует услуги, вызывает LiteAPI `/flights/prebooks/{prebookId}/services`, обновляет `transaction_id`/`secret_key`/`verified_price` и сохраняет `selectedServices` + `bookedServices` + `priceBreakdown`. Пустой `selectedServices: []` очищает допы (проверено).
+- Добавлена страница `/flightseats/:sessionId` (Step 2 of 3): baggages по пассажирам (включённая норма + платные опции), seat map по сегментам и пассажирам, восстановление ранее выбранных мест/сумок, preview цены, кнопка продолжает в checkout. Seat passengers = adults + children; infants без места.
+- Price breakdown (Tickets / Taxes, fees & charges / Service fee / Seats / Baggage / Total) выводится в details, seats, checkout, confirmation и profile. База и налоги считаются из `perPassenger`, seats/baggage — из `booking.pricing`.
+- Baggage в fares/details/amenities показывает personal/carry-on/checked, вес и размеры; платные опции помечены `PAID` и не попадают в бесплатные amenities.
+- В `bookings.meta` сохраняются `services`, `seats`, `baggage.included`, `baggage.purchased`, `priceBreakdown`, `fareFamily`; в `slimSegments` добавлен `segmentKey`. В profile добавлен блок **Seats & baggage**, строки цены рейса и метки Outbound/Return.
+- Edge `flights-booking` задеплоен 20.10 (`segzcvdtkevkehvhssgs`). Проверки: `deno check` OK, `npm run build` OK, lint 78 = baseline. Sandbox E2E: prebook → attach seat + 2 bags → book, total 873.01 AED, услуги и разбивка сохранились; CDP 1440/440 без overflow. Скриншоты: `71`–`79` в temp/shots.
+- Допустимое расхождение preview и финальной суммы — 0.01–0.02 AED из-за округления LiteAPI при конвертации; checkout показывает авторитетную сумму после attach.

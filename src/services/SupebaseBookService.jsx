@@ -1,33 +1,22 @@
 import { supabase } from "../supabaseClient";
+import {
+  apiErrorFromData,
+  apiErrorFromResponse,
+  createAbortError,
+} from "../utils/apiError";
 
 export const hotelBookService = {
-  /**
-   * 1. Получение списка отелей места (Rates_Place)
-   */
-  async fetchBook(params) {
-    // ОБЪЯВЛЯЕМ ПЕРЕМЕННУЮ response
-    const response = await supabase.functions.invoke('liteapi-proxy', {
-      method: 'POST',
-      headers: {
-        'x-target-url': 'https://api.liteapi.travel/v3.0/rates/book',
-        'x-service-type': 'hotels'
-      },
-      body: params
+  async fetchBook(params, { signal } = {}) {
+    const response = await supabase.functions.invoke("hotels-booking", {
+      method: "POST",
+      body: params,
+      ...(signal ? { signal } : {}),
     });
 
-    // Теперь эта проверка сработает идеально, так как response существует!
-    if (response.error) {
-      throw new Error(`Supabase System Error: ${response.error.message}`);
-    }
+    if (signal?.aborted) throw createAbortError();
+    if (response.error) throw await apiErrorFromResponse(response);
+    if (response.data?.error) throw apiErrorFromData(response.data);
 
-    // Достаем данные от LiteAPI, которые лежат внутри response.data
-    const liteApiData = response.data;
-
-    if (liteApiData?.error) {
-      throw new Error(`LiteAPI Error: ${liteApiData.error.message || "Bad Request"}`);
-    }
-
-    // Возвращаем чистый объект отелей в компонент
-    return liteApiData;
+    return response.data;
   },
 };

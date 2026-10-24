@@ -36,6 +36,71 @@ color: var(--black);
   width: 100%;
 }
 
+.hotel-skeleton {
+  display: flex;
+  min-width: 0;
+  max-width: 950px;
+  min-height: 250px;
+  padding: 0 9px 0 0;
+  background: var(--white);
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  overflow: hidden;
+}
+.hotel-skeleton-media {
+  width: 30%;
+  min-height: 250px;
+  flex-shrink: 0;
+  background: #ececec;
+}
+.hotel-skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 70%;
+  padding: 18px 16px;
+}
+.hotel-skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ededed 25%, #f7f7f7 37%, #ededed 63%);
+  background-size: 400% 100%;
+  animation: hotel-skeleton-shimmer 1.3s ease-in-out infinite;
+}
+.hotel-skeleton-line--title {
+  width: 62%;
+  height: 18px;
+}
+.hotel-skeleton-line--meta {
+  width: 82%;
+}
+.hotel-skeleton-line--meta.is-short {
+  width: 48%;
+}
+.hotel-skeleton-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #f0f0f0;
+}
+.hotel-skeleton-line--price {
+  width: 120px;
+  height: 26px;
+}
+.hotel-skeleton-line--button {
+  width: 90px;
+  height: 36px;
+  border-radius: 12px;
+}
+@keyframes hotel-skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
 /* Ряд мобильных кнопок [Filters][Sort] — на десктопе растворяется */
 .mcontrols {
   display: contents;
@@ -328,6 +393,12 @@ color: var(--black);
   font-weight: 400;
   color: var(--gray_text);
 }
+.hc-tax-desc {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--gray_text);
+}
 
 @media (max-width: 1200px) {
   .mcontrols {
@@ -355,6 +426,21 @@ color: var(--black);
   .hotelbox-grid {
     gap: 12px;
     padding: 0;
+  }
+
+  .hotel-skeleton {
+    flex-direction: column;
+    padding: 8px 8px 12px;
+    border-radius: 20px;
+  }
+  .hotel-skeleton-media {
+    width: 100%;
+    min-height: 0;
+    height: 180px;
+    border-radius: 16px;
+  }
+  .hotel-skeleton-body {
+    width: 100%;
   }
 
   /* Горизонтальная карточка → вертикальная */
@@ -427,5 +513,11 @@ color: var(--black);
   }
   .hc-rating-text span {
     font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotel-skeleton-line {
+    animation: none;
   }
 }

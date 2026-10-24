@@ -9,7 +9,19 @@ const MOBILE_BREAKPOINT = 968;
    открывается/закрывается без лишних ререндеров. Содержимое помечено
    inert, пока шторка закрыта: не ловит фокус и не видна скринридерам.
    Дети монтирует родитель — здесь только обвязка и жизненный цикл. */
-const BottomSheet = ({ open, onClose, title, footer, children }) => {
+const BottomSheet = ({
+  open,
+  onClose,
+  title,
+  footer,
+  children,
+  showHandle = true,
+  showTitle = true,
+  variant = "default",
+  ariaLabel,
+  className = "",
+  initialFocusRef,
+}) => {
   const closeRef = useRef(null);
   const triggerRef = useRef(null);
 
@@ -56,10 +68,12 @@ const BottomSheet = ({ open, onClose, title, footer, children }) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Фокус на крестик при открытии — клавиатурная навигация
+  // Фокус на крестик или на переданный элемент при открытии
   useEffect(() => {
-    if (open) closeRef.current?.focus();
-  }, [open]);
+    if (!open) return;
+    const target = initialFocusRef?.current || closeRef.current;
+    target?.focus?.({ preventScroll: true });
+  }, [open, initialFocusRef]);
 
   const close = useCallback(() => onClose?.(), [onClose]);
 
@@ -72,19 +86,31 @@ const BottomSheet = ({ open, onClose, title, footer, children }) => {
       />
 
       <div
-        className={`bottomsheet${open ? " is-open" : ""}`}
+        className={`bottomsheet${
+          variant === "search"
+            ? " bottomsheet--search"
+            : variant === "airport"
+              ? " bottomsheet--airport"
+              : ""
+        }${className ? ` ${className}` : ""}${open ? " is-open" : ""}`}
         role="dialog"
         aria-modal={open ? "true" : undefined}
-        aria-label={open ? title : undefined}
+        aria-label={open ? ariaLabel || title || "Dialog" : undefined}
         /* aria-hidden намеренно не ставим: он конфликтует с фокусом внутри
            («Blocked aria-hidden... retained focus»). inert и так убирает
            панель и из фокуса, и из дерева доступности. */
         inert={!open}
       >
-        <div className="bottomsheet-handle" aria-hidden="true" />
+        {showHandle ? <div className="bottomsheet-handle" aria-hidden="true" /> : null}
 
-        <div className="bottomsheet-header">
-          <h3 className="bottomsheet-title">{title}</h3>
+        <div
+          className={`bottomsheet-header${
+            showTitle ? "" : " bottomsheet-header--no-title"
+          }`}
+        >
+          {showTitle ? (
+            <h3 className="bottomsheet-title">{title}</h3>
+          ) : null}
           <button
             type="button"
             className="bottomsheet-close"

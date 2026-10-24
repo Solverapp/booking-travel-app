@@ -3,7 +3,7 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 gap: 16px;
-margin-top: 32px;
+margin-top: 0px;
 padding: 20px var(--pad-page);
 height: auto;
 min-height: 129px;

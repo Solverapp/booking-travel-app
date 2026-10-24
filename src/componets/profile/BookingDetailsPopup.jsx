@@ -10,7 +10,11 @@ import {
   formatDuration,
   formatTimeHM,
 } from "../../utils/flightFormatters";
-import { dayOffset, minutesBetween } from "../../utils/flightJourneys";
+import {
+  dayOffset,
+  minutesBetween,
+  segmentLabelsByKey,
+} from "../../utils/flightJourneys";
 import {
   cabinLabel,
   formatBookingDate,
@@ -23,6 +27,7 @@ import {
   serviceMeta,
   statusLabel,
 } from "./bookingUtils";
+import { formatTaxTotals, taxesAndFeesBreakdown } from "../../utils/hotelRate";
 import "./style.css";
 
 const groupSegments = (segments) => {
@@ -33,6 +38,22 @@ const groupSegments = (segments) => {
   if (inbound.length) groups.push({ id: "inbound", label: "Return", list: inbound });
   return groups;
 };
+
+const baggageTypeLabel = (type) => {
+  const value = String(type ?? "").toLowerCase();
+  if (value === "personal") return "Personal item";
+  if (value === "cabin") return "Carry-on bag";
+  if (value === "checked") return "Checked bag";
+  return "Baggage";
+};
+
+const baggageDetails = (item) =>
+  [
+    item?.weightKg ? `${item.weightKg} kg` : "",
+    item?.size || "",
+  ]
+    .filter(Boolean)
+    .join(" · ") || "Included";
 
 const FlightLeg = ({ group }) => {
   const first = group.list[0] ?? {};
@@ -113,6 +134,7 @@ const FlightLeg = ({ group }) => {
 const BookingDetails = ({ booking }) => {
   const meta = booking.meta ?? {};
   const segments = Array.isArray(meta.segments) ? meta.segments : [];
+  const segmentLabels = segmentLabelsByKey(segments);
   const groups = groupSegments(segments);
   const service = serviceMeta(booking.Service);
   const Icon = service.icon;
@@ -143,6 +165,99 @@ const BookingDetails = ({ booking }) => {
   const passengerList = Array.isArray(meta.passengerList)
     ? meta.passengerList.filter((pax) => pax && (pax.firstName || pax.lastName))
     : [];
+
+  const passengerNameByIndex = (index) => {
+    const pax = passengerList[Number(index)];
+    if (!pax) return `Passenger ${Number(index) + 1}`;
+    return (
+      [pax.title, pax.firstName, pax.lastName].filter(Boolean).join(" ") ||
+      `Passenger ${Number(index) + 1}`
+    );
+  };
+
+  const services = Array.isArray(meta.services) ? meta.services : [];
+  const seats = Array.isArray(meta.seats)
+    ? meta.seats
+    : services.filter((service) => service?.category === "seat");
+  const baggageMeta = meta.baggage && typeof meta.baggage === "object" ? meta.baggage : {};
+  const includedBags = Array.isArray(baggageMeta.included) ? baggageMeta.included : [];
+  const purchasedBags = Array.isArray(baggageMeta.purchased)
+    ? baggageMeta.purchased
+    : services.filter((service) => service?.category === "baggage");
+
+  const seatsByPassenger = new Map();
+  seats.forEach((service) => {
+    const index = Number.isFinite(Number(service?.passengerIndex))
+      ? Number(service.passengerIndex)
+      : 0;
+    const list = seatsByPassenger.get(index) ?? [];
+    list.push(service);
+    seatsByPassenger.set(index, list);
+  });
+  const seatRows = Array.from(seatsByPassenger.entries()).map(([index, list]) => [
+    "Seats",
+    `${passengerNameByIndex(index)} · ${list
+      .map((service) => {
+        const label = [
+          segmentLabels.get(service?.segmentKey),
+          service?.seat?.seatNumber || service?.name || "Seat",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        return Number(service?.price) > 0
+          ? `${label} · ${formatMoney(service.price, service.currency || booking.currency)}`
+          : label;
+      })
+      .join("; ")}`,
+  ]);
+
+  const bagsByPassenger = new Map();
+  purchasedBags.forEach((service) => {
+    const index = Number.isFinite(Number(service?.passengerIndex))
+      ? Number(service.passengerIndex)
+      : 0;
+    const list = bagsByPassenger.get(index) ?? [];
+    list.push(service);
+    bagsByPassenger.set(index, list);
+  });
+  const purchasedBagRows = Array.from(bagsByPassenger.entries()).map(([index, list]) => [
+    "Extra baggage",
+    `${passengerNameByIndex(index)} · ${list
+      .map((service) =>
+        [
+          [segmentLabels.get(service?.segmentKey), service?.name || "Extra baggage"]
+            .filter(Boolean)
+            .join(" · "),
+          Number(service?.price) > 0
+            ? formatMoney(service.price, service.currency || booking.currency)
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      )
+      .join("; ")}`,
+  ]);
+  const includedBagRows = includedBags.map((item) => [
+    baggageTypeLabel(item?.type),
+    baggageDetails(item),
+  ]);
+  const serviceRows = [
+    ...seatRows.map(([label, value], index) => ({
+      key: `seat-${index}`,
+      label,
+      value,
+    })),
+    ...includedBagRows.map(([label, value], index) => ({
+      key: `bag-included-${index}`,
+      label,
+      value,
+    })),
+    ...purchasedBagRows.map(([label, value], index) => ({
+      key: `bag-purchased-${index}`,
+      label,
+      value,
+    })),
+  ].filter((row) => row.value);
 
   const contact = meta.contact && typeof meta.contact === "object" ? meta.contact : null;
   const contactPhone = contact?.phoneNumber
@@ -191,17 +306,55 @@ const BookingDetails = ({ booking }) => {
   const isRefundable = rooms.some((room) => room.refundable === true);
 
   const price = meta.price ?? {};
-  const taxes = Array.isArray(meta.taxes)
-    ? meta.taxes.filter((tax) => tax && tax.description && Number.isFinite(Number(tax.amount)))
+  const rawTaxes = Array.isArray(meta.taxes) ? meta.taxes : [];
+  const taxes = rawTaxes.filter(
+    (tax) => tax && tax.description && Number.isFinite(Number(tax.amount)),
+  );
+  const taxesBreakdown = taxesAndFeesBreakdown(rawTaxes);
+  const includedTaxes = formatTaxTotals(taxesBreakdown.includedTotals);
+  const excludedTaxes = formatTaxTotals(taxesBreakdown.excludedTotals);
+
+  const flightPrice =
+    meta.priceBreakdown && typeof meta.priceBreakdown === "object"
+      ? meta.priceBreakdown
+      : null;
+  const flightCurrency = flightPrice?.currency || booking.currency;
+  const flightPriceRows = flightPrice
+    ? [
+        [
+          "Tickets",
+          formatMoney(
+            flightPrice.hasSplit ? flightPrice.base : flightPrice.subtotal,
+            flightCurrency,
+          ),
+        ],
+        Number(flightPrice.taxes) > 0
+          ? ["Taxes, fees & charges", formatMoney(flightPrice.taxes, flightCurrency)]
+          : null,
+        Number(flightPrice.serviceFee) > 0
+          ? ["Service fee", formatMoney(flightPrice.serviceFee, flightCurrency)]
+          : null,
+        Number(flightPrice.seats) > 0
+          ? ["Seats", formatMoney(flightPrice.seats, flightCurrency)]
+          : null,
+        Number(flightPrice.baggage) > 0
+          ? ["Baggage", formatMoney(flightPrice.baggage, flightCurrency)]
+          : null,
+        ["Total", formatMoney(flightPrice.total, flightCurrency)],
+      ].filter((row) => row && row[1])
     : [];
 
-  const priceRows = [
+  const hotelPriceRows = [
     ["Price per night", price.perNight ? formatMoney(price.perNight, price.currency) : ""],
+    includedTaxes ? ["Taxes & fees included", includedTaxes] : null,
+    excludedTaxes ? ["Payable at hotel", `+ ${excludedTaxes}`] : null,
     ...taxes.map((tax) => [
       tax.included ? tax.description : `${tax.description} (payable at hotel)`,
       formatMoney(tax.amount, tax.currency || price.currency),
     ]),
-  ].filter(([, value]) => Boolean(value));
+  ].filter((row) => row && row[1]);
+
+  const priceRows = [...flightPriceRows, ...hotelPriceRows];
 
   const vouchers = Array.isArray(meta.vouchers)
     ? meta.vouchers.filter((voucher) => voucher && voucher.url)
@@ -275,6 +428,20 @@ const BookingDetails = ({ booking }) => {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {serviceRows.length > 0 && (
+        <section className="bd-block">
+          <h5 className="bd-block-title">Seats & baggage</h5>
+          <dl className="bd-rows">
+            {serviceRows.map((row) => (
+              <div className="bd-row" key={row.key}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       )}
 

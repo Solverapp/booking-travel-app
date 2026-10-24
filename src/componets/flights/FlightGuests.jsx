@@ -1,23 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState } from "react";
 import GuestsContent from "../quest/GuestsContent";
-import { guestsDisplayText } from "../quest/guestsUtils";
+import AnchoredPopover from "../searchfields/AnchoredPopover";
+import { flightGuestsDisplayText } from "../quest/guestsUtils";
 import "./style.css";
 
-/* Пассажиры рейса (взрослые / дети / младенцы + класс) — попап в поле.
-   Значение контролируется родителем. */
 const FLIGHT_HINTS = { adults: "", children: "Ages 2-11", infants: "Under 2" };
 
 const FlightGuests = ({ value, onChange, cabin, onCabinChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const guests = value ?? { adults: 1, children: 0, infants: 0 };
 
@@ -26,10 +17,18 @@ const FlightGuests = ({ value, onChange, cabin, onCabinChange }) => {
       <p>Passengers</p>
       <div className="qb-wrapper" ref={ref}>
         <button type="button" className="dp" onClick={() => setOpen(!open)}>
-          <span>{guestsDisplayText(guests)}</span>
+          <span>{flightGuestsDisplayText(guests, cabin)}</span>
         </button>
-        {open && (
+
+        <AnchoredPopover
+          open={open}
+          anchorRef={ref}
+          onClose={() => setOpen(false)}
+          preferredWidth={378}
+          ariaLabel="Choose passengers and cabin"
+        >
           <GuestsContent
+            variant="anchored"
             mode="tour"
             value={guests}
             onChange={onChange}
@@ -38,7 +37,7 @@ const FlightGuests = ({ value, onChange, cabin, onCabinChange }) => {
             onCabinChange={onCabinChange}
             onDone={() => setOpen(false)}
           />
-        )}
+        </AnchoredPopover>
       </div>
     </div>
   );

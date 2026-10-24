@@ -1,24 +1,30 @@
-import { useSearchParams, NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { hotelPrebookService } from "../../../services/SupebasePrebookService";
+import { usePrebookHotel } from "../../../hooks/mutations/useHotelBookingMutations";
 import { CalendarMonth, Hotel, People, Security, Restaurant, ChevronLeft, RestoreOutlined } from '@mui/icons-material';
 import PageLoader from "../../loaders/PageLoader";
 import { getStoredCurrency } from "../../../utils/currency";
+import {
+  excludedTaxItems,
+  formatMoney,
+  formatTaxTotals,
+  taxesAndFeesBreakdown,
+} from "../../../utils/hotelRate";
 import "./style.css";
 
 const CheckoutPage = ({ offerItem }) => {
   const navigate = useNavigate();
+  const prebookHotel = usePrebookHotel();
   const offer = offerItem?.[0] || offerItem;
 
   const handleBack = () => {
-    if (!offer) return;
     const params = new URLSearchParams({
-      city: offer.city || '',
-      checkIn: offer.checkinDate || '',
-      checkOut: offer.checkoutDate || '',
-      adults: String(offer.adults || 2),
-      children: String(offer.childrens || 0),
-      pleaseId: offer.please || '',
+      city: city || '',
+      checkIn: checkin || '',
+      checkOut: checkout || '',
+      adults: String(adults || 2),
+      children: String(children || 0),
+      pleaseId: pleaseId || '',
     });
     navigate(`/hotels?${params.toString()}`);
   };
@@ -29,15 +35,30 @@ const CheckoutPage = ({ offerItem }) => {
   const checkout = offer?.checkoutDate;
   const adults = offer?.adults || 2;
   const children = offer?.childrens || 0;
+  const city = offer?.city || "";
+  const pleaseId = offer?.please || "";
   const roomName = offer?.roomName || "Standard Room";
   const retaliPrice = offer?.totalAmount || 0;
   const priceCurrency = offer?.priceInfo?.currency || getStoredCurrency();
   const mainPhoto = offer?.imgurl || offer?.main_photo;
+  const taxesBreakdown = taxesAndFeesBreakdown(offer?.taxes);
+  const includedTaxes = formatTaxTotals(taxesBreakdown.includedTotals);
+  const excludedTaxes = formatTaxTotals(taxesBreakdown.excludedTotals);
+  const excludedTaxLines = excludedTaxItems(offer?.taxes);
 
   const [step, setStep] = useState("guest-details");
   const [prebookData, setPrebookData] = useState(null);
   const [guestDetails, setGuestDetails] = useState({ firstName: "", lastName: "", email: "" });
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!offer) return;
+    try {
+      sessionStorage.setItem("hotelCheckoutOffer", JSON.stringify(offer));
+    } catch {
+      // Storage may be unavailable in private browsing; checkout still works.
+    }
+  }, [offer]);
 
   const handleGuestDetailsSubmit = async (e) => {
     e.preventDefault();
@@ -69,7 +90,7 @@ const CheckoutPage = ({ offerItem }) => {
 
     try {
       const body = { usePaymentSdk: true, offerId };
-      const data = await hotelPrebookService.fetchPreBook(body);
+      const data = await prebookHotel.mutateAsync(body);
 
       if (data?.error) {
         setError(data.error.description || "Failed to prebook");
@@ -79,7 +100,7 @@ const CheckoutPage = ({ offerItem }) => {
       setPrebookData(data?.data ?? null);
       setStep("payment");
     } catch (err) {
-      setError("Failed to process booking");
+      setError(err?.message || "Failed to process booking");
       setStep("guest-details");
     }
   };
@@ -98,13 +119,13 @@ const CheckoutPage = ({ offerItem }) => {
 
       // 🟢 Собираем параметры поиска, чтобы прокинуть их на страницу подтверждения
       const searchUrlParams = new URLSearchParams({
-        pleaseId: offer.please || '',
-        placeName: offer.hotelName || '',
-        checkIn: offer.checkinDate || '',
-        checkOut: offer.checkoutDate || '',
-        adults: String(offer.adults || 2),
-        children: String(offer.childrens || 0),
-        city: offer.city || ''
+        pleaseId,
+        placeName: hotelName,
+        checkIn: checkin || '',
+        checkOut: checkout || '',
+        adults: String(adults),
+        children: String(children),
+        city,
       }).toString();
 
       const config = {
@@ -129,7 +150,25 @@ const CheckoutPage = ({ offerItem }) => {
       const scriptEl = document.querySelector('script[src*="liteAPIPayment"]');
       if (scriptEl) scriptEl.remove();
     };
-  }, [step, prebookData]);
+  }, [step, prebookData, pleaseId, hotelName, checkin, checkout, adults, children, city]);
+
+  if (!offer) {
+    return (
+      <main className="checkout-main-content">
+        <div className="checkout-layout-container">
+          <div className="checkout-left-panel">
+            <button type="button" className="back-nav-btn" onClick={() => navigate("/hotels")}>
+              <ChevronLeft />
+              <span>Back to search results</span>
+            </button>
+            <div className="error-banner">
+              <p>Offer details are no longer available. Please select a room again.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (step === 'processing') {
     return <PageLoader text="Securing your room, please wait..." />;
@@ -297,8 +336,25 @@ const CheckoutPage = ({ offerItem }) => {
                 </div>
                 <div className="price-row">
                   <span>Taxes & Fees</span>
-                  <span className="green-text">Included</span>
+                  <span className="green-text">
+                    {includedTaxes ? `${includedTaxes} included` : "Included"}
+                  </span>
                 </div>
+                {excludedTaxes && (
+                  <div className="price-row">
+                    <span>Payable at hotel</span>
+                    <span className="checkout-tax-excluded">+ {excludedTaxes}</span>
+                  </div>
+                )}
+                {excludedTaxLines.map((tax) => (
+                  <div
+                    className="price-row checkout-tax-row"
+                    key={`${tax.description}-${tax.currency}`}
+                  >
+                    <span>{tax.description}</span>
+                    <span>{formatMoney(tax.amount, tax.currency)}</span>
+                  </div>
+                ))}
                 <div className="price-row total-row-highlight">
                   <span>Total amount</span>
                   <span>{Number(retaliPrice).toFixed(2)} {priceCurrency}</span>

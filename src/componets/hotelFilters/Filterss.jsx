@@ -1,10 +1,11 @@
 import "./style.css";
 import starIcon from "../../img/icons/tabicons/star.svg";
 import checked from "../../img/icons/tabicons/tick-circle.svg";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import FilterCheckbox from "./FilterCheckbox";
 // import { facilitService } from "../../services/facilitService";
 import facilitiesData from "../../mock/facilities";
+import { useHotelChains } from "../../hooks/queries/useHotelChains";
 
 
 const BED_TYPES = ["single", "double", "twin", "king", "queen"];
@@ -21,15 +22,6 @@ const BOARD_TYPE = [
   { value: "BLI", label: "Breakfast && Lunch Included" },
   { value: "LDI", label: "Lunch and Dinner Included" },
 ];
-const AVAILABLE_AMENITIES = [
-  { id: "wifi", label: "Free WiFi" },
-  { id: "pool", label: "Pool" },
-  { id: "parking", label: "Parking" },
-  { id: "mealType", label: "Breakfast" },
-  { id: "fitness", label: "Fitness center" },
-  { id: "nonsmoking", label: "Non-smoking rooms" },
-];
-
 const RATING_OPTIONS = [
   { id: 9, label: "Wonderful: 9+" },
   { id: 8, label: "Very Good: 8+" },
@@ -37,7 +29,7 @@ const RATING_OPTIONS = [
   { id: 6, label: "Pleasant: 6+" },
 ];
 
-const HotelFilters = ({ filters, onChange,  onClear }) => {
+const HotelFilters = ({ filters, onChange, onClear, placeId }) => {
   const relevantFacilities = facilitiesData
     .filter((item) => Number(item.sort) > 0 && Number(item.sort) <= 26)
     .sort((a, b) => Number(a.sort) - Number(b.sort));
@@ -45,7 +37,88 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
   const visibleFacilities = showAllFacilities
     ? relevantFacilities
     : relevantFacilities.slice(0, 8);
-  
+
+  const [chainUi, setChainUi] = useState({
+    placeId,
+    search: "",
+    showAll: false,
+  });
+  const {
+    data: chainsData = [],
+    isLoading: chainsLoading,
+  } = useHotelChains(placeId);
+
+  const chains = useMemo(
+    () =>
+      [...chainsData].sort(
+        (a, b) =>
+          (b.count || 0) - (a.count || 0) ||
+          String(a.name).localeCompare(String(b.name)),
+      ),
+    [chainsData],
+  );
+
+  const chainUiForPlace =
+    chainUi.placeId === placeId
+      ? chainUi
+      : { placeId, search: "", showAll: false };
+  const chainSearch = chainUiForPlace.search;
+  const showAllChains = chainUiForPlace.showAll;
+  const setChainSearch = (value) =>
+    setChainUi((previous) => {
+      const base =
+        previous.placeId === placeId
+          ? previous
+          : { placeId, search: "", showAll: false };
+      return {
+        ...base,
+        search: typeof value === "function" ? value(base.search) : value,
+      };
+    });
+  const setShowAllChains = (value) =>
+    setChainUi((previous) => {
+      const base =
+        previous.placeId === placeId
+          ? previous
+          : { placeId, search: "", showAll: false };
+      return {
+        ...base,
+        showAll: typeof value === "function" ? value(base.showAll) : value,
+      };
+    });
+
+  const selectedChainIds = useMemo(
+    () => (Array.isArray(filters.chainIds) ? filters.chainIds : []),
+    [filters.chainIds],
+  );
+
+  useEffect(() => {
+    if (!chains.length || selectedChainIds.length === 0) return;
+
+    const validIds = new Set(chains.map((chain) => chain.id));
+    const nextIds = selectedChainIds.filter((id) => validIds.has(id));
+
+    if (nextIds.length !== selectedChainIds.length) {
+      onChange({ ...filters, chainIds: nextIds });
+    }
+  }, [chains, selectedChainIds, filters, onChange]);
+
+  const chainList = useMemo(() => {
+    const query = chainSearch.trim().toLowerCase();
+    const selectedIds = new Set(selectedChainIds);
+    const selected = chains.filter((chain) => selectedIds.has(chain.id));
+    const matches = chains.filter(
+      (chain) =>
+        !selectedIds.has(chain.id) &&
+        (!query || String(chain.name).toLowerCase().includes(query)),
+    );
+    const combined = [...selected, ...matches];
+
+    if (query) return combined.slice(0, 60);
+    return showAllChains ? combined : combined.slice(0, 8);
+  }, [chains, chainSearch, selectedChainIds, showAllChains]);
+
+
 
   const toggleStar = (star) => {
     const stars = filters.starRating.includes(star)
@@ -85,14 +158,73 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
     onChange({ ...filters, boardType });
   };
 
-  
+  const toggleChain = (id) => {
+    const chainIds = selectedChainIds.includes(id)
+      ? selectedChainIds.filter((item) => item !== id)
+      : [...selectedChainIds, id];
+
+    onChange({ ...filters, chainIds });
+  };
+
+  const toggleRefundableOnly = () => {
+    onChange({ ...filters, refundableOnly: !filters.refundableOnly });
+  };
+
+  const handleClear = () => {
+    setChainSearch("");
+    setShowAllChains(false);
+    onClear();
+  };
 
   return (
     <div className="filter-box">
       <div className="fb-heder">
         <h3>Filters</h3>
-        <button onClick={onClear}>Clear all</button>
+        <button onClick={handleClear}>Clear all</button>
       </div>
+      {chainsLoading && (
+        <div className="fb-amenities">
+          <h4>Hotel chain</h4>
+          <span className="regular">Loading chains...</span>
+        </div>
+      )}
+      {chains.length > 0 && (
+        <div className="fb-amenities fb-chain">
+          <h4>Hotel chain</h4>
+          <input
+            type="search"
+            className="fb-chain-search"
+            value={chainSearch}
+            onChange={(e) => setChainSearch(e.target.value)}
+            placeholder="Search chain"
+            aria-label="Search hotel chain"
+          />
+          <div className="fb-chain-list">
+            {chainList.map((chain) => (
+              <FilterCheckbox
+                key={chain.id}
+                label={chain.name}
+                isChecked={selectedChainIds.includes(chain.id)}
+                onChange={() => toggleChain(chain.id)}
+              />
+            ))}
+          </div>
+          {chainSearch.trim() && chainList.length === 0 && (
+            <span className="regular">No chains found</span>
+          )}
+          {!chainSearch.trim() && chains.length > 8 && (
+            <button
+              type="button"
+              className="fb-showall"
+              onClick={() => setShowAllChains((value) => !value)}
+            >
+              {showAllChains
+                ? "Show less"
+                : `Show all (${chains.length})`}
+            </button>
+          )}
+        </div>
+      )}
       {/* <div className="fb-price">
         <h4>Price per night</h4>
         <div className="price-box">
@@ -199,6 +331,15 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
         ))}
       </div>
 
+      <div className="fb-amenities">
+        <h4>Rate conditions</h4>
+        <FilterCheckbox
+          label="Free cancellation only"
+          isChecked={Boolean(filters.refundableOnly)}
+          onChange={toggleRefundableOnly}
+        />
+      </div>
+
       <div className="fb-rating">
         <h4>Guest rating</h4>
         <div className="fb-rating-box">
@@ -224,58 +365,3 @@ const HotelFilters = ({ filters, onChange,  onClear }) => {
   );
 };
 export default HotelFilters;
-
-export function useFacilities() {
-  const [facilities, setFacilities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadFacilities = async () => {
-      try {
-        const response = await facilitService.fetchFacilitiesList();
-
-        const list = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.data)
-            ? response.data
-            : Array.isArray(response?.facilities)
-              ? response.facilities
-              : [];
-
-        const mapped = list
-          .map((item) => ({
-            id: item.id ?? item.facilityId ?? item.facility_id,
-            facility: item.facility ?? item.name ?? item.label,
-            sort: item.sort,
-          }))
-          .filter((item) => item.id != null && item.facility);
-
-        const unique = mapped.filter(
-          (item, index, array) =>
-            index === array.findIndex((other) => other.id === item.id),
-        );
-
-        if (mounted) setFacilities(unique);
-      } catch (err) {
-        console.error("Facilities fetch error:", err);
-        if (mounted) {
-          setFacilities([]);
-          setError(err.message || "Не удалось загрузить удобства");
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadFacilities();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return { facilities, loading, error };
-}

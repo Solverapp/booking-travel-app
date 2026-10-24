@@ -1,23 +1,28 @@
 import { useState } from "react";
+import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import PersonOutlineOutlined from "@mui/icons-material/PersonOutlineOutlined";
+import KeyboardArrowDownOutlined from "@mui/icons-material/KeyboardArrowDownOutlined";
 import BottomSheet from "../bottomsheet/BottomSheet";
-import AirportSearch from "./AirportSearch";
+import AirportPickerSheet from "./AirportPickerSheet";
 import FlightDates from "./FlightDates";
 import GuestsContent from "../quest/GuestsContent";
-import { guestsDisplayText } from "../quest/guestsUtils";
+import MobileSearchField from "../searchfields/MobileSearchField";
+import MobileDateRangeField from "../searchfields/MobileDateRangeField";
+import { flightGuestsDisplayText } from "../quest/guestsUtils";
 import { resolveSearchDates } from "../../utils/flightSearch";
+import { formatShortDate } from "../../utils/dateFormat";
 import revers from "../../img/icons/tabicons/arrow-2.svg";
-import sbtn from "../../img/icons/tabicons/search.svg";
 import "../searchfields/style.css";
+import "../searchfields/mobileSearchBlock.css";
 import "./style.css";
 
 const AIRPORT_HINT = "Select airports from the suggestions";
 const FLIGHT_GUEST_HINTS = { adults: "", children: "Ages 2-11", infants: "Under 2" };
 
-/* Мобильный поиск перелётов (≤968px, см. useMediaQuery).
-   variant="home"    — чипы Route/Dates/Passengers, у каждого своя шторка;
-   variant="results" — саммари-кнопка + одна шторка со всеми полями
-                       и Search в футере (страница /flights).
-   Значения — внутренний стейт; initial — стартовые (с /flights). */
+const airportValue = (airport) =>
+  airport?.city || airport?.name || airport?.iata || "";
+
 const MobileFlightSearch = ({
   variant = "home",
   initial,
@@ -26,6 +31,7 @@ const MobileFlightSearch = ({
   searchHint,
 }) => {
   const [sheet, setSheet] = useState(null);
+  const [routeField, setRouteField] = useState("from");
   const [origin, setOrigin] = useState(initial?.origin ?? null);
   const [destination, setDestination] = useState(initial?.destination ?? null);
   const [tripType, setTripType] = useState(initial?.tripType ?? "round");
@@ -37,21 +43,15 @@ const MobileFlightSearch = ({
   const [cabin, setCabin] = useState(initial?.cabin ?? "all");
 
   const closeSheet = () => setSheet(null);
+  const openRoute = (field) => {
+    setRouteField(field);
+    setSheet("route");
+  };
 
   const isRound = tripType === "round";
-  const fmt = (date) => (date ? date.toLocaleDateString() : "");
-
-  const routeValue =
-    origin?.iata && destination?.iata
-      ? `${origin.iata} → ${destination.iata}`
-      : "Choose route";
-  const datesValue = isRound
-    ? depart && returnDate
-      ? `${fmt(depart)} – ${fmt(returnDate)}`
-      : "Select dates"
-    : fmt(depart) || "Select date";
-  const guestsValue = guestsDisplayText(guests);
-  const summaryText = [routeValue, datesValue, guestsValue].join("  ·  ");
+  const departValue = formatShortDate(depart, { weekday: true });
+  const returnValue = formatShortDate(returnDate, { weekday: true });
+  const guestsValue = flightGuestsDisplayText(guests, cabin);
 
   const missingAirports = !(origin?.iata && destination?.iata);
   const disabled = missingAirports || searchDisabled;
@@ -69,154 +69,169 @@ const MobileFlightSearch = ({
   };
 
   const hintText = missingAirports ? AIRPORT_HINT : searchDisabled ? searchHint : null;
-  const hint = hintText ? <p className="msearch-hint">{hintText}</p> : null;
-
-  const searchButton = (
-    <button
-      type="button"
-      className={`msearch-btn${disabled ? " is-disabled" : ""}`}
-      disabled={disabled}
-      onClick={runSearch}
-    >
-      <img src={sbtn} alt="" />
-      <span>Search</span>
-    </button>
-  );
-
-  const routeGroup = (
-    <div className="bs-group">
-      <AirportSearch
-        variant="sheet"
-        label="From"
-        value={origin}
-        onSelect={setOrigin}
-        onEdit={() => setOrigin(null)}
-      />
-      <button
-        type="button"
-        className="airport-swap-btn"
-        aria-label="Swap airports"
-        onClick={handleSwap}
-      >
-        <img src={revers} alt="" />
-      </button>
-      <AirportSearch
-        variant="sheet"
-        label="To"
-        value={destination}
-        onSelect={setDestination}
-        onEdit={() => setDestination(null)}
-      />
-    </div>
-  );
-
-  const datesGroup = (
-    <div className="bs-group">
-      <FlightDates
-        variant="sheet"
-        tripType={tripType}
-        onTripTypeChange={setTripType}
-        depart={depart}
-        returnDate={returnDate}
-        onDepartChange={setDepart}
-        onReturnChange={setReturnDate}
-        onDone={variant === "home" ? closeSheet : undefined}
-      />
-    </div>
-  );
-
-  const guestsGroup = (
-    <div className="bs-group">
-      <p className="bs-label">Passengers</p>
-      <GuestsContent
-        variant="sheet"
-        mode="tour"
-        value={guests}
-        onChange={setGuests}
-        hints={FLIGHT_GUEST_HINTS}
-        cabin={cabin}
-        onCabinChange={setCabin}
-      />
-    </div>
-  );
-
-  if (variant === "results") {
-    return (
-      <div className="msearch msearch--results">
-        <button
-          type="button"
-          className="msummary-btn"
-          onClick={() => setSheet("all")}
-        >
-          <span className="msummary-text">{summaryText}</span>
-        </button>
-
-        {hint}
-
-        <BottomSheet
-          open={sheet === "all"}
-          onClose={closeSheet}
-          title={summaryText}
-          footer={searchButton}
-        >
-          {routeGroup}
-          {datesGroup}
-          {guestsGroup}
-        </BottomSheet>
-      </div>
-    );
-  }
 
   return (
-    <div className="msearch msearch--home">
-      <div className="mchips">
-        <button
-          type="button"
-          className="mchip"
-          onClick={() => setSheet("route")}
-        >
-          <span className="mchip-label">Route</span>
-          <span className="mchip-value">{routeValue}</span>
-        </button>
-        <button
-          type="button"
-          className="mchip"
-          onClick={() => setSheet("date")}
-        >
-          <span className="mchip-label">{isRound ? "Dates" : "When"}</span>
-          <span className="mchip-value">{datesValue}</span>
-        </button>
-        <button
-          type="button"
-          className="mchip"
+    <div
+      className={`msearch msearch--stacked ${
+        variant === "home" ? "msearch--home" : "msearch--results"
+      }`}
+    >
+      <div className="msb">
+        <div className="msb-route">
+          <button
+            type="button"
+            className="msb-route__row"
+            onClick={() => openRoute("from")}
+            aria-label="Choose departure airport"
+          >
+            <span className="msb-field__icon">
+              <LocationOnOutlined />
+            </span>
+            <span className="msb-field__text">
+              <span
+                className={`msb-field__value${
+                  origin ? "" : " is-placeholder"
+                }`}
+              >
+                {origin ? airportValue(origin) : "From"}
+              </span>
+            </span>
+            {origin?.iata ? (
+              <span className="msb-field__trailing">{origin.iata}</span>
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            className="msb-route__row"
+            onClick={() => openRoute("to")}
+            aria-label="Choose arrival airport"
+          >
+            <span className="msb-field__icon">
+              <LocationOnOutlined />
+            </span>
+            <span className="msb-field__text">
+              <span
+                className={`msb-field__value${
+                  destination ? "" : " is-placeholder"
+                }`}
+              >
+                {destination ? airportValue(destination) : "Where to?"}
+              </span>
+            </span>
+            {destination?.iata ? (
+              <span className="msb-field__trailing">{destination.iata}</span>
+            ) : null}
+          </button>
+
+          <button
+            type="button"
+            className="msb-swap"
+            aria-label="Swap airports"
+            onClick={handleSwap}
+          >
+            <img src={revers} alt="" />
+          </button>
+        </div>
+
+        <MobileDateRangeField
+          icon={<CalendarMonthOutlined />}
+          startValue={departValue}
+          endValue={returnValue}
+          startPlaceholder="Depart"
+          endPlaceholder="Return"
+          endText="One way"
+          endDisabled={!isRound}
+          showClear
+          onOpen={() => setSheet("date")}
+          onClear={() => {
+            setDepart(null);
+            setReturnDate(null);
+          }}
+          ariaLabel="Choose flight dates"
+        />
+
+        <MobileSearchField
+          icon={<PersonOutlineOutlined />}
+          value={guestsValue}
+          trailing={<KeyboardArrowDownOutlined />}
           onClick={() => setSheet("guests")}
+          ariaLabel="Choose passengers and cabin"
+        />
+
+        <button
+          type="button"
+          className="msb-btn"
+          disabled={disabled}
+          onClick={runSearch}
         >
-          <span className="mchip-label">Passengers</span>
-          <span className="mchip-value">{guestsValue}</span>
+          Search
         </button>
+
+        {hintText ? <p className="msb-hint">{hintText}</p> : null}
       </div>
 
-      {searchButton}
-      {hint}
-
-      <BottomSheet open={sheet === "route"} onClose={closeSheet} title="Route">
-        {routeGroup}
+      <BottomSheet
+        open={sheet === "route"}
+        onClose={closeSheet}
+        variant="airport"
+        showHandle={false}
+        showTitle={false}
+        ariaLabel="Choose airports"
+      >
+        <AirportPickerSheet
+          key={`route-${routeField}`}
+          open={sheet === "route"}
+          field={routeField}
+          origin={origin}
+          destination={destination}
+          onFieldChange={setRouteField}
+          onOriginChange={setOrigin}
+          onDestinationChange={setDestination}
+          onClose={closeSheet}
+        />
       </BottomSheet>
 
       <BottomSheet
         open={sheet === "date"}
         onClose={closeSheet}
-        title={isRound ? "Dates" : "When"}
+        title="Dates"
+        variant="search"
+        showHandle={false}
       >
-        {datesGroup}
+        <FlightDates
+          variant="sheet"
+          tripType={tripType}
+          onTripTypeChange={setTripType}
+          depart={depart}
+          returnDate={returnDate}
+          onDepartChange={setDepart}
+          onReturnChange={setReturnDate}
+          onDone={closeSheet}
+        />
       </BottomSheet>
 
       <BottomSheet
         open={sheet === "guests"}
         onClose={closeSheet}
         title="Passengers"
+        variant="search"
+        showHandle={false}
+        footer={
+          <button type="button" className="msb-sheet-done" onClick={closeSheet}>
+            Done
+          </button>
+        }
       >
-        {guestsGroup}
+        <GuestsContent
+          variant="sheet"
+          mode="tour"
+          value={guests}
+          onChange={setGuests}
+          hints={FLIGHT_GUEST_HINTS}
+          cabin={cabin}
+          onCabinChange={setCabin}
+        />
       </BottomSheet>
     </div>
   );

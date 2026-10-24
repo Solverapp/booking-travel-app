@@ -363,10 +363,10 @@
             flex-shrink: 0;
         }
         .rate-fact.is-meals .rate-fact-icon{
-            color: var(--green);
+            color: var(--green2);
         }
         .rate-fact.is-meals span{
-            color: var(--green);
+            color: var(--green2);
         }
         .rate-fact.is-off span{
             color: var(--gray_text);
@@ -639,9 +639,20 @@
     .rates-item .addCard {
         width: 100%;
     }
+    .rates-item .infoitem{
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 20px;
+    }
     .rates-item .addCard button {
         width: 100%;
         justify-content: center;
+    }
+    .rooms-item {
+    padding: 2px;
+    box-shadow: none;
     }
     .rd-popup {
         padding: 0;
@@ -678,5 +689,93 @@
     }
     .rd-cats {
         columns: 1;
+    }
+}
+
+/* Taxes and cancellation details */
+.rates-item .rate-taxes-excluded {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b26a00;
+}
+.rates-item .rate-taxes-desc {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--gray_text);
+}
+.rates-item .rate-cancel-fee {
+    max-width: 360px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--red);
+}
+
+/* Rate conditions in room details */
+.rd-rates {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.rd-rate {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--light_gray);
+    border-radius: 14px;
+    background: var(--white);
+}
+.rd-rate-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--black);
+}
+.rd-rate-head strong {
+    font-weight: 700;
+}
+.rd-rate-head span {
+    font-weight: 600;
+    white-space: nowrap;
+}
+.rd-rate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--gray_text);
+}
+.rd-rate-note {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray_text);
+}
+.rd-rate-subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gray_text);
+}
+.rd-perks,
+.rd-taxes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--light_gray);
+}
+
+@media (max-width: 640px) {
+    .rd-rate-head {
+        flex-direction: column;
+        gap: 2px;
     }
 }

@@ -431,3 +431,10 @@ enabled = true
 # Клиент обязан быть авторизован (JWT проверяется и платформой, и внутри функции).
 verify_jwt = true
 entrypoint = "./functions/flights-booking/index.ts"
+
+[functions.hotels-booking]
+enabled = true
+# Checkout отеля анонимный. Защита — capability prebookId + transactionId,
+# которые проверяются/хешируются внутри функции.
+verify_jwt = false
+entrypoint = "./functions/hotels-booking/index.ts"

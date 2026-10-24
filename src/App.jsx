@@ -20,6 +20,7 @@ import ProfilePage from './pages/profilePage.jsx';
 import CheckoutPage from './pages/checkoutpage.jsx';
 import ConfirmationPage from './pages/confirmation.jsx'
 import FlightPage from './pages/flightpage.jsx';
+import FlightSeatsPage from './pages/flightseats.jsx';
 import FlightCheckoutPage from './pages/flightcheckout.jsx';
 import FlightConfirmationPage from './pages/flightconfirmation.jsx';
 
@@ -45,6 +46,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FlightPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/flightseats/:sessionId" 
+            element={
+              <ProtectedRoute>
+                <FlightSeatsPage />
               </ProtectedRoute>
             } 
           />

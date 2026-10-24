@@ -1,5 +1,15 @@
 // Форматтеры для Flights UI (Sprint 2+)
 
+export const CABIN_OPTIONS = [
+  { id: "all", label: "Any cabin" },
+  { id: "economy", label: "Economy" },
+  { id: "business", label: "Business" },
+  { id: "first", label: "First class" },
+];
+
+export const cabinLabel = (value) =>
+  CABIN_OPTIONS.find((option) => option.id === value)?.label || "Any cabin";
+
 export const formatMinutes = (minutes) => {
   const total = Number(minutes);
   if (!Number.isFinite(total) || total <= 0) return "";
@@ -29,6 +39,26 @@ export const formatDateShort = (isoDateTime) => {
   const date = new Date(isoDateTime);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+};
+
+export const formatDateWeekday = (isoDateTime) => {
+  if (!isoDateTime) return "";
+  const date = new Date(isoDateTime);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+export const formatPrice = (value) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  return number.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
 };
 
 // +1 / +2 при переходе на следующий день

@@ -35,6 +35,30 @@ export const formatNumber = (value, digits = 0) => {
   });
 };
 
+export const formatMoney = (value, currency, digits = 2) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "";
+  const amount = formatNumber(num, digits);
+  return currency ? `${amount} ${currency}` : amount;
+};
+
+export const formatPolicyDeadline = (dateTime, timezone) => {
+  if (!dateTime) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(dateTime));
+  const date = match
+    ? new Date(Date.UTC(+match[1], +match[2] - 1, +match[3], +match[4], +match[5]))
+    : new Date(dateTime);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const time = date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+  return `${day}, ${time}${timezone ? ` ${timezone}` : ""}`;
+};
+
 const BOARD_LABELS = {
   RO: "No meals",
   BB: "Breakfast included",
@@ -77,16 +101,104 @@ export const paymentLabel = (paymentTypes) => {
   return null;
 };
 
-export const taxesAndFeesSummary = (rate) => {
-  const fees = Array.isArray(rate?.retailRate?.taxesAndFees)
-    ? rate.retailRate.taxesAndFees
-    : [];
+const sumTaxesByCurrency = (fees) => {
+  const totals = new Map();
+  fees.forEach((fee) => {
+    const amount = Number(fee?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    const currency = fee?.currency || "";
+    totals.set(currency, (totals.get(currency) || 0) + amount);
+  });
+  return [...totals.entries()].map(([currency, amount]) => ({ amount, currency }));
+};
+
+export const taxesAndFeesBreakdown = (input) => {
+  const fees = Array.isArray(input)
+    ? input
+    : Array.isArray(input?.retailRate?.taxesAndFees)
+      ? input.retailRate.taxesAndFees
+      : [];
+  const included = fees.filter((fee) => fee?.included === true);
   const excluded = fees.filter((fee) => fee?.included === false);
-  const amount = excluded.reduce((sum, fee) => sum + (Number(fee?.amount) || 0), 0);
-  if (!(amount > 0)) return null;
-  const currency =
-    excluded[0]?.currency || rate?.retailRate?.total?.[0]?.currency || "";
-  return { amount, currency };
+  return {
+    included,
+    excluded,
+    includedTotals: sumTaxesByCurrency(included),
+    excludedTotals: sumTaxesByCurrency(excluded),
+  };
+};
+
+export const formatTaxTotals = (totals) =>
+  (Array.isArray(totals) ? totals : [])
+    .map((total) => formatMoney(total.amount, total.currency))
+    .filter(Boolean)
+    .join(" + ");
+
+export const excludedTaxItems = (input) => {
+  const { excluded } = taxesAndFeesBreakdown(input);
+  const grouped = new Map();
+
+  excluded.forEach((fee) => {
+    const amount = Number(fee?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+
+    const description =
+      String(fee?.description || "").trim() || "Taxes and fees";
+    const currency = fee?.currency || "";
+    const key = `${description.toLowerCase()}|${currency}`;
+    const current = grouped.get(key);
+
+    if (current) {
+      current.amount += amount;
+    } else {
+      grouped.set(key, { description, amount, currency });
+    }
+  });
+
+  return [...grouped.values()];
+};
+
+export const formatTaxDescriptions = (items) => {
+  const seen = new Set();
+
+  return (Array.isArray(items) ? items : [])
+    .map((item) => String(item?.description || "").trim())
+    .filter((description) => {
+      const key = description.toLowerCase();
+      if (!description || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(", ");
+};
+
+export const rateCancelPolicies = (rate) => {
+  const policies = rate?.cancellationPolicies?.cancelPolicyInfos;
+  if (!Array.isArray(policies)) return [];
+  return policies
+    .filter(Boolean)
+    .map((policy) => ({
+      cancelTime: policy.cancelTime || "",
+      amount: Number(policy.amount) || 0,
+      currency: policy.currency || "",
+      timezone: policy.timezone || "",
+    }));
+};
+
+export const ratePerks = (rate) =>
+  Array.isArray(rate?.perks) ? rate.perks.filter(Boolean) : [];
+
+export const taxesAndFeesSummary = (rate) => {
+  const { excludedTotals } = taxesAndFeesBreakdown(rate);
+  if (!excludedTotals.length) return null;
+  const total = excludedTotals[0];
+  const items = excludedTaxItems(rate);
+  return {
+    amount: total.amount,
+    currency: total.currency || rate?.retailRate?.total?.[0]?.currency || "",
+    items,
+    descriptions: formatTaxDescriptions(items),
+  };
 };
 
 export const ratePriceInfo = (rate) => {

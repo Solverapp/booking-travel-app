@@ -10,6 +10,8 @@ import sbtn from "../../img/icons/tabicons/search.svg";
 
 import "./style.css";
 
+const HOTEL_LOCATION_HINT = "Select a city from the suggestions";
+
 const parseChildrenAges = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -101,6 +103,8 @@ const SearchOption = () => {
   };
 
   const handleSearchHotel = () => {
+    if (!pleaseId) return;
+
     const fmt = (date) => {
       if (!date) return "";
       const y = date.getFullYear();
@@ -152,6 +156,8 @@ const SearchOption = () => {
         guests={guestsHotel}
         onGuestsChange={handleGuestsChangeHotel}
         onSearch={handleSearchHotel}
+        searchDisabled={!pleaseId}
+        searchHint={HOTEL_LOCATION_HINT}
       />
     );
   }
@@ -174,7 +180,11 @@ const SearchOption = () => {
           value={guestsHotel}
           onGuestsChange={handleGuestsChangeHotel}
         />
-        <div className="sop-btn" onClick={handleSearchHotel}>
+        <div
+          className={`sop-btn${pleaseId ? "" : " is-disabled"}`}
+          aria-disabled={!pleaseId}
+          onClick={handleSearchHotel}
+        >
           <img src={sbtn} alt="sbtn" />
           <span>Search</span>
         </div>

@@ -152,6 +152,85 @@
     border-radius: 12px;
 }
 
+.calendar-plain {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+}
+
+.calendar-plain .dp-days {
+    margin-top: 0;
+}
+
+.calendar-plain .month {
+    height: auto;
+    padding-bottom: 8px;
+}
+
+.calendar-months {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+}
+
+.calendar-multi .calendar-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.calendar-sheet.calendar-multi .calendar-months {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+}
+
+.calendar-sheet.calendar-multi .calendar-month + .calendar-month {
+    padding-top: 20px;
+    border-top: 1px solid var(--light_gray);
+}
+
+.calendar-month {
+    min-width: 0;
+}
+
+.month__spacer {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+}
+
+.date-popover__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--light_gray);
+}
+
+.date-popover__btn {
+    min-height: 40px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.date-popover__btn--clear {
+    color: var(--gray_text);
+}
+
+.date-popover__btn--apply {
+    background-color: var(--red);
+    color: var(--white);
+}
+
 @media (max-width: 968px) {
     /* Попап привязан к половине поля дат отеля — сдвиг влево уводил его за экран */
     .date-wrapper {

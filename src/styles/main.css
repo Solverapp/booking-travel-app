@@ -21,6 +21,7 @@
 --gray_text: #454444;
 --yellow: #F5A207;
 --green2: #0D964B;
+--green_lite: #06d6a0;
 --greenbg: #f6ffed;
 --blue: #4367B0;
 --gray2: #F8F8F8;
@@ -52,7 +53,7 @@ html {
     /* Фон-фото на html: растягивается на ВЕСЬ документ (а не только вьюпорт),
        поэтому при открытой полосе прокрутки белой подложки не видно */
     background-color: var(--green);
-    background-image: url(../img/fon/startfon1x.webp);
+    background-image: url(../img/fon/bg8.webp);
     background-repeat: no-repeat;
     background-position: center top;
     background-size: cover;
@@ -102,7 +103,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	flex-wrap: wrap;
-	gap: 28px;
+	gap: 12px;
 	justify-items: center;
 	text-align: center;
 	margin-top: 28px;

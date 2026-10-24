@@ -12,6 +12,7 @@ import MobileFlightSearch from "../flights/MobileFlightSearch";
 import useMediaQuery from "../../utils/useMediaQuery";
 import defaultdates from "../../utils/defaultdates";
 import { buildFlightsParams } from "../../utils/flightSearch";
+import { DEFAULT_TOUR_CITY } from "../../mock/searchDestinations";
 
 import tur from "../../img/icons/tabicons/sun.svg";
 import hotel from "../../img/icons/tabicons/building-4.svg";
@@ -32,13 +33,13 @@ const Search = () => {
   const [checkInH, setCheckInH] = useState(null);
   const [checkOutH, setCheckOutH] = useState(null);
   const [pleaseId, setPleaseId] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(DEFAULT_TOUR_CITY.name);
   const [guestsHotel, setGuestsHotel] = useState({ adults: 1, children: 0, childrenAges: [],});
 
   const switchTab = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-    setCity("");
+    setCity(tab === "tour" ? DEFAULT_TOUR_CITY.name : "");
     setPleaseId("");
   };
 
@@ -110,7 +111,7 @@ const Search = () => {
       // checkOut: fmt(checkOutH) || defaultdates.dayAfterTomorrow,
       adults: String(guestsHotel.adults),
       children: String(guestsHotel.children),
-      infants: 0,
+      infants: String(guestsHotel.infants || 0),
     });
 
     navigate(`/tours?${params.toString()}`);

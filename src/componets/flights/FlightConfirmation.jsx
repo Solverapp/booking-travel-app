@@ -6,6 +6,7 @@ import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import PersonIcon from "@mui/icons-material/Person";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useAuthPrompt } from "../../context/authPrompt";
 import { useBookFlight } from "../../hooks/mutations/useFlightBookingMutations";
 import { formatDateShort, formatTimeHM } from "../../utils/flightFormatters";
 import { segmentLabelsByKey } from "../../utils/flightJourneys";
@@ -13,6 +14,7 @@ import "./style.css";
 
 const FlightConfirmation = () => {
   const navigate = useNavigate();
+  const { openAuthPrompt } = useAuthPrompt();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("sessionId") || "";
 
@@ -44,8 +46,9 @@ const FlightConfirmation = () => {
       } catch (err) {
         if (cancelled) return;
         if (err?.code === "UNAUTHORIZED") {
-          navigate("/login", {
-            state: { from: `/flightconfirmation?sessionId=${sessionId}` },
+          openAuthPrompt({
+            service: "flight",
+            from: `/flightconfirmation?sessionId=${sessionId}`,
           });
           return;
         }
@@ -73,7 +76,7 @@ const FlightConfirmation = () => {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, navigate, attempt, bookFlight]);
+  }, [sessionId, attempt, bookFlight, openAuthPrompt]);
 
   if (loading) {
     return (

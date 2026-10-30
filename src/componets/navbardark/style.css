@@ -22,27 +22,18 @@ z-index: 2000;
     width: 126px;
     height: 66px;
 }
-.nav-list-dark{
-    display: flex;
-    gap: 28px;
-    align-items: center;
-    height: 66px;
-    color: var(--white);
-    font-size: 16px;
-    font-weight: 600;
-    font-style: normal;
-
-}
-
 @media (max-width: 1200px) {
-    .nav-list-dark{
-        display: none;
-    }
     .navdark{
         min-height: 72px;
         padding: 8px var(--pad-page);
     }
     .logosite{
         height: auto;
+    }
+}
+
+@media (max-width: 968px) {
+    .navdark{
+        display: none;
     }
 }

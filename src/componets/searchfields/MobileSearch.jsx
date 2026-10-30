@@ -9,10 +9,7 @@ import CalendarGrid from "../datepicker/CalendarGrid";
 import GuestsContent from "../quest/GuestsContent";
 import MobileSearchField from "./MobileSearchField";
 import MobileDateRangeField from "./MobileDateRangeField";
-import {
-  guestsDisplayText,
-  hotelGuestsDisplayText,
-} from "../quest/guestsUtils";
+import { hotelGuestsDisplayText } from "../quest/guestsUtils";
 import { formatShortDate } from "../../utils/dateFormat";
 import { TOUR_DESTINATIONS } from "../../mock/searchDestinations";
 import "./style.css";
@@ -59,7 +56,6 @@ const MobileSearch = ({
       ? `${selectedCity.name}, ${selectedCity.country}`
       : city;
     const tourDateValue = formatShortDate(checkIn, { weekday: true });
-    const tourGuestsValue = guestsDisplayText(guests);
 
     return (
       <div
@@ -83,13 +79,6 @@ const MobileSearch = ({
             placeholder="Select date"
             onClick={() => setSheet("date")}
             ariaLabel="Choose tour date"
-          />
-          <MobileSearchField
-            icon={<PersonOutlineOutlined />}
-            label="Guests"
-            value={tourGuestsValue}
-            onClick={() => setSheet("guests")}
-            ariaLabel="Choose guests"
           />
           <button
             type="button"
@@ -137,29 +126,6 @@ const MobileSearch = ({
           />
         </BottomSheet>
 
-        <BottomSheet
-          open={sheet === "guests"}
-          onClose={closeSheet}
-          title="Guests"
-          variant="search"
-          showHandle={false}
-          footer={
-            <button
-              type="button"
-              className="msb-sheet-done"
-              onClick={closeSheet}
-            >
-              Done
-            </button>
-          }
-        >
-          <GuestsContent
-            variant="sheet"
-            mode="tour"
-            value={guests}
-            onChange={onGuestsChange}
-          />
-        </BottomSheet>
       </div>
     );
   }

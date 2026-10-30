@@ -3,8 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#153534" />
     <title>Solver</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("bigkey.theme");
+          var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : systemDark
+                ? "dark"
+                : "light";
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch (error) {
+          // Storage or matchMedia may be unavailable; fall back to the light theme.
+        }
+      })();
+    </script>
     <style>
       #boot-splash {
         position: fixed;

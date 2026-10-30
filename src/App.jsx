@@ -1,6 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { AuthPromptProvider } from './context/AuthPromptContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
+import AuthRequiredPrompt from './componets/auth/AuthRequiredPrompt.jsx';
 import ProtectedRoute from './componets/ProtectedRoute.jsx';
+import MobileNav from './componets/mobilenav/MobileNav.jsx';
 
 
 import './styles/main.css'
@@ -23,15 +27,20 @@ import FlightPage from './pages/flightpage.jsx';
 import FlightSeatsPage from './pages/flightseats.jsx';
 import FlightCheckoutPage from './pages/flightcheckout.jsx';
 import FlightConfirmationPage from './pages/flightconfirmation.jsx';
+import TourPaymentPage from './pages/tourpaymentpage.jsx';
+import TourConfirmationPage from './pages/tourconfirmationpage.jsx';
 
 function App() {
   
 
   return (
     <div className="App">
-      <AuthProvider>
-        <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <AuthPromptProvider>
         <ScrollToTop/>
+        <MobileNav />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/hotels" element={<Hotels />} />
@@ -74,7 +83,30 @@ function App() {
             } 
           />
           <Route path="/tourspage/:id" element={<Tourpage />} />
-          <Route path="/toursbookpage/" element={<TourBokpage />} />
+          <Route
+            path="/toursbookpage"
+            element={
+              <ProtectedRoute>
+                <TourBokpage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tourpayment/:prebookingId"
+            element={
+              <ProtectedRoute>
+                <TourPaymentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tourconfirmation"
+            element={
+              <ProtectedRoute>
+                <TourConfirmationPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route 
@@ -86,8 +118,11 @@ function App() {
             } 
           />
         </Routes>
-      </Router>
-      </AuthProvider>
+            <AuthRequiredPrompt />
+            </AuthPromptProvider>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
       
     </div>
   );

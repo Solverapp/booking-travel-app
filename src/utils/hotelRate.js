@@ -81,7 +81,7 @@ export const mealsIncluded = (boardType, boardName) => {
 export const cancellationLabel = (rate) => {
   const tag = rate?.cancellationPolicies?.refundableTag;
   if (!tag) return null;
-  return tag === "RFN" ? "Free cancellation" : "No free cancellation";
+  return tag === "RFN" ? "Refundable" : "Non refund";
 };
 
 const ONLINE_PAYMENT_TYPES = ["NUITEE_PAY", "CREDIT_CARD", "PAY_ONLINE"];

@@ -55,7 +55,7 @@
 	justify-content: space-between;
 	gap: 12px;
 	padding-bottom: 10px;
-	border-bottom: 1px solid var(--light_gray);
+	border-bottom: 1px solid var(--border);
 	flex-shrink: 0;
 }
 
@@ -63,7 +63,7 @@
 	margin: 0;
 	font-size: 18px;
 	font-weight: 600;
-	color: var(--black);
+	color: var(--text);
 	/* длинный саммари-текст не должен распирать шапку */
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -78,15 +78,15 @@
 	width: 44px;
 	height: 44px;
 	border-radius: 12px;
-	background: var(--white);
-	border: 1px solid var(--light_gray);
-	color: var(--black);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	color: var(--text);
 	cursor: pointer;
 	flex-shrink: 0;
 }
 
 .bottomsheet--search {
-	background: var(--white);
+	background: var(--surface);
 	padding-top: 12px;
 }
 
@@ -103,7 +103,7 @@
 }
 
 .bottomsheet--airport {
-	background: var(--gray2);
+	background: var(--surface-alt);
 }
 
 .bottomsheet-header--no-title {
@@ -129,7 +129,7 @@
 .bottomsheet-footer {
 	flex: 0 0 auto;
 	padding-top: 12px;
-	border-top: 1px solid var(--light_gray);
+	border-top: 1px solid var(--border);
 }
 
 /* Шторка живёт только на мобильных: шире — закрывается на resize,

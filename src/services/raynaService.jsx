@@ -8,6 +8,12 @@ export const roundTo = (num, places = 2) => {
   return Math.round(num * factor) / factor;
 };
 
+export const toBool = (value) => {
+  if (value === true || value === 1) return true;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "true" || normalized === "1";
+};
+
 // 🟢 1. НОВЫЙ МЕТОД: Проверка доступности тарифа через Supabase шлюз
 export async function fetchTourAvailability(params) {
   try {
@@ -120,15 +126,23 @@ export function processTourData(options, staticData, dbDiscounts = [], availabil
   return options.map((opt) => {
     const staticInfo = staticData.find((s) => cleanId(s.tourOptionId) === cleanId(opt.tourOptionId));
     
-    // Сверяем скидки Supabase
-    const discountOpt = dbDiscounts.find(
-      (d) => cleanId(d.tour_option_id) === cleanId(opt.tourOptionId)
-    );
+    // Сверяем скидки Supabase: тариф + трансфер (в таблице есть обе цены)
+    const discountOpt = dbDiscounts.find((d) => {
+      if (cleanId(d.tour_option_id) !== cleanId(opt.tourOptionId)) return false;
+      const discountTransfer = d.transfer_Id ?? d.transfer_id;
+      return (
+        discountTransfer == null ||
+        cleanId(discountTransfer) === cleanId(opt.transferId)
+      );
+    });
 
-    // 1. НАХОДИМ РЕЗУЛЬТАТ ДОСТУПНОСТИ СТРОГО ПО tourOptionId
+    // 1. НАХОДИМ РЕЗУЛЬТАТ ДОСТУПНОСТИ ПО тарифу + трансферу
     const availCheck = availabilityList && availabilityList.length > 0
       ? availabilityList.find(
-          (a) => cleanId(a.tourOptionId) === cleanId(opt.tourOptionId)
+          (a) =>
+            cleanId(a.tourOptionId) === cleanId(opt.tourOptionId) &&
+            (a.transferId == null ||
+              cleanId(a.transferId) === cleanId(opt.transferId))
         )
       : null;
 
@@ -150,6 +164,8 @@ export function processTourData(options, staticData, dbDiscounts = [], availabil
       ...opt,
       optionName: staticInfo?.optionName || "Unknown Option",
       childAge: staticInfo?.childAge || "2-7 years" ,
+      disableChild: toBool(opt.disableChild),
+      disableInfant: toBool(opt.disableInfant),
       isAvailable: isAvailable, // Наш защищенный флаг
       availabilityMessage: availCheck && availCheck.status !== "success" ? availCheck.message : "",
       prices: {

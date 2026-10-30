@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import QureyTour from "../qureytour/CityTour";
 import DatePickerOne from "../datepicker/DatePickerOne";
-import Questselector from "../Tourguest/TourGuestSelector";
 import MobileSearch from "../searchfields/MobileSearch";
 import useMediaQuery from "../../utils/useMediaQuery";
 import defaultdates from "../../utils/defaultdates";
@@ -17,21 +16,13 @@ const SearchOption = () => {
   const isMobile = useMediaQuery("(max-width: 968px)");
 
   const [checkIn, setCheckIn] = useState(null);
-  const [city, setCity] = useState(DEFAULT_TOUR_CITY.name);
-  const [guestsHotel, setGuestsHotel] = useState({
-    adults: 1,
-    children: 0,
-    infants: 0,
-  });
+  const [city, setCity] = useState(DEFAULT_TOUR_CITY);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Инициализируем из URL параметров при загрузке и при изменении searchParams
   useEffect(() => {
     const urlCheckIn = searchParams.get("checkIn");
     const urlCity = searchParams.get("city");
-    const urlAdults = searchParams.get("adults");
-    const urlChildren = searchParams.get("children");
-    const urlInfants = searchParams.get("infants");
 
     if (urlCheckIn) {
       const [y, m, d] = urlCheckIn.split("-");
@@ -41,29 +32,11 @@ const SearchOption = () => {
     if (urlCity) {
       setCity(urlCity);
     } else {
-      setCity(DEFAULT_TOUR_CITY.name);
-    }
-
-    if (urlAdults || urlChildren || urlInfants) {
-      setGuestsHotel({
-        adults: parseInt(urlAdults) || 1,
-        children: parseInt(urlChildren) || 0,
-        infants: parseInt(urlInfants) || 0,
-      });
-    } else {
-      setGuestsHotel({
-        adults: 1,
-        children: 0,
-        infants: 0,
-      });
+      setCity(DEFAULT_TOUR_CITY);
     }
 
     setIsInitialized(true);
   }, [searchParams]);
-
-  const handleGuestsChangeHotel = (newGuests) => {
-    setGuestsHotel(newGuests);
-  };
 
   const handleCityChange = (newCity) => {
     setCity(newCity);
@@ -81,9 +54,9 @@ const SearchOption = () => {
       const params = new URLSearchParams({
         city: city,
         checkIn: fmt(checkIn) || defaultdates.tomorrow,
-        adults: String(guestsHotel.adults),
-        children: String(guestsHotel.children),
-        infants: String(guestsHotel.infants || 0),
+        adults: "1",
+        children: "0",
+        infants: "0",
       });
 
       if (window.location.pathname.includes("/tours")) {
@@ -109,8 +82,6 @@ const SearchOption = () => {
         dateMode="single"
         checkIn={checkIn}
         onCheckInChange={setCheckIn}
-        guests={guestsHotel}
-        onGuestsChange={handleGuestsChangeHotel}
         onSearch={handleSearchHotel}
       />
     );
@@ -127,10 +98,6 @@ const SearchOption = () => {
         <DatePickerOne
           checkIn={checkIn}
           onCheckInChange={setCheckIn}
-        />
-        <Questselector
-          value={guestsHotel}
-          onGuestsChange={handleGuestsChangeHotel}
         />
         <div className="sop-btn" onClick={handleSearchHotel}>
           <img src={sbtn} alt="sbtn"  />

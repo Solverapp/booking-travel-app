@@ -103,6 +103,12 @@ const Login = () => {
                         <label className="toggle-link">Sign up</label>
                       </div>
                     </NavLink>
+                    <NavLink to={"/"}> 
+                      <div className="signup-prompt">
+                        
+                        <label className="toggle-link">Go Home</label>
+                      </div>
+                    </NavLink>
                   </div>
                 )}
 

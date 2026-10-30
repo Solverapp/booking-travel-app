@@ -16,8 +16,8 @@
 	padding: 0 14px;
 	border: 1px solid transparent;
 	border-radius: 12px;
-	background: var(--white);
-	color: var(--black);
+	background: var(--surface);
+	color: var(--text);
 	font-family: inherit;
 	font-size: 14px;
 	font-weight: 600;
@@ -41,7 +41,7 @@
 	width: 20px;
 	height: 20px;
 	flex: 0 0 20px;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 }
 
 .msb-field__icon svg,
@@ -61,7 +61,7 @@
 	font-size: 11px;
 	font-weight: 400;
 	line-height: 14px;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 }
 
 .msb-field__value {
@@ -75,7 +75,7 @@
 }
 
 .msb-field__value.is-placeholder {
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	font-weight: 400;
 }
 
@@ -85,7 +85,7 @@
 	gap: 6px;
 	flex: 0 0 auto;
 	margin-left: auto;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	font-size: 12px;
 	font-weight: 400;
 }
@@ -104,8 +104,8 @@
 	padding: 0 14px;
 	border: 1px solid transparent;
 	border-radius: 12px;
-	background: var(--white);
-	color: var(--black);
+	background: var(--surface);
+	color: var(--text);
 	font-family: inherit;
 	font-size: 14px;
 	font-weight: 600;
@@ -149,19 +149,19 @@
 }
 
 .msb-date__cell .is-placeholder {
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	font-weight: 400;
 }
 
 .msb-date__cell.is-disabled {
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	font-weight: 400;
 }
 
 .msb-date__divider {
 	width: 1px;
 	height: 24px;
-	background: var(--light_gray);
+	background: var(--surface-strong);
 }
 
 .msb-date__clear {
@@ -177,7 +177,7 @@
 	border: none;
 	border-radius: 50%;
 	background: var(--bg);
-	color: var(--gray_text);
+	color: var(--text-muted);
 	font-size: 16px;
 	cursor: pointer;
 	transform: translateY(-50%);
@@ -206,8 +206,8 @@
 }
 
 .msb-btn:disabled {
-	background: var(--light_gray);
-	color: var(--gray_text);
+	background: var(--surface-strong);
+	color: var(--text-muted);
 	cursor: not-allowed;
 }
 
@@ -231,7 +231,7 @@
 	box-sizing: border-box;
 	border: 1px solid transparent;
 	border-radius: 12px;
-	background: var(--white);
+	background: var(--surface);
 }
 
 .msb-route__row {
@@ -244,7 +244,7 @@
 	padding: 0 46px 0 14px;
 	border: none;
 	background: transparent;
-	color: var(--black);
+	color: var(--text);
 	font-family: inherit;
 	font-size: 14px;
 	font-weight: 600;
@@ -253,7 +253,7 @@
 }
 
 .msb-route__row + .msb-route__row {
-	border-top: 1px solid var(--light_gray);
+	border-top: 1px solid var(--border);
 }
 
 .msb-route__row .msb-field__value {
@@ -275,9 +275,9 @@
 	width: 34px;
 	height: 34px;
 	padding: 0;
-	border: 1px solid var(--light_gray);
+	border: 1px solid var(--border);
 	border-radius: 50%;
-	background: var(--white);
+	background: var(--surface);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 	cursor: pointer;
 	transform: translateY(-50%);
@@ -291,7 +291,7 @@
 .msearch--results .msb-field,
 .msearch--results .msb-date,
 .msearch--results .msb-route {
-	border-color: var(--light_gray);
+	border-color: var(--border);
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -326,4 +326,46 @@
 	.msb-sheet-done {
 		min-height: 48px;
 	}
+}
+
+/* Тёмная тема: поля и панели поиска должны читаться на градиенте */
+[data-theme="dark"] .msb-field,
+[data-theme="dark"] .msb-date,
+[data-theme="dark"] .msb-route {
+	border-color: rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.07);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.04),
+		0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="dark"] .msb-route__row + .msb-route__row {
+	border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .msb-date__divider {
+	background: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .msb-date__clear {
+	background: rgba(255, 255, 255, 0.1);
+	color: #d7e4e2;
+}
+
+[data-theme="dark"] .msb-swap {
+	border-color: rgba(255, 255, 255, 0.16);
+	background: #1a2b29;
+}
+
+[data-theme="dark"] .msb-btn:disabled {
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.08);
+	color: #c6d4d1;
+}
+
+[data-theme="dark"] .msb-hint {
+	padding: 6px 10px;
+	border: 1px solid rgba(255, 77, 79, 0.28);
+	background: rgba(255, 77, 79, 0.14);
+	color: #ff9a9c;
 }

@@ -11,6 +11,7 @@ import PageLoader from "../loaders/PageLoader";
 import FlightAmenities from "./FlightAmenities";
 import FlightPriceBreakdown from "./FlightPriceBreakdown";
 import { useAuth } from "../../context/AuthContext";
+import { useAuthPrompt } from "../../context/authPrompt";
 import { useFlightSession } from "../../hooks/queries/useFlightSession";
 import { usePrebookFlight } from "../../hooks/mutations/useFlightBookingMutations";
 import {
@@ -28,6 +29,14 @@ import {
 } from "../../utils/flightJourneys";
 import { offerBaggage } from "../../utils/flightOffers";
 import { buildPriceBreakdown } from "../../utils/flightPricing";
+import { resolveNationality } from "../../utils/nationality";
+import {
+  COUNTRIES,
+  PHONE_CODES,
+  getCountryCode,
+  isCountryCode,
+  normalizePhoneDigits,
+} from "../../utils/countries";
 import "./style.css";
 
 const TITLES = ["MR", "MS", "MRS", "MISS"];
@@ -35,21 +44,6 @@ const GENDERS = [
   { value: "M", label: "Male" },
   { value: "F", label: "Female" },
 ];
-const PHONE_CODES = [
-  { code: "971", label: "+971 AE" },
-  { code: "7", label: "+7 KZ" },
-  { code: "966", label: "+966 SA" },
-  { code: "44", label: "+44 GB" },
-  { code: "1", label: "+1 US" },
-  { code: "49", label: "+49 DE" },
-  { code: "33", label: "+33 FR" },
-  { code: "90", label: "+90 TR" },
-  { code: "380", label: "+380 UA" },
-  { code: "994", label: "+994 AZ" },
-  { code: "995", label: "+995 GE" },
-  { code: "998", label: "+998 UZ" },
-];
-
 const countsOf = (searchParams) => ({
   adults: Math.max(1, Number(searchParams?.adults) || 1),
   children: Math.max(0, Number(searchParams?.children) || 0),
@@ -125,24 +119,25 @@ const birthdayBounds = (type, travelDate) => {
   };
 };
 
-const emptyPassenger = () => ({
+const emptyPassenger = (nationality = "AE") => ({
   title: "MR",
   firstName: "",
   lastName: "",
   birthday: "",
   gender: "M",
-  nationality: "AE",
+  nationality,
   documentType: "passport",
   documentNumber: "",
-  documentIssueCountry: "AE",
+  documentIssueCountry: nationality,
   documentExpiry: "",
 });
 
 const buildPassengers = (counts, user) => {
   const total = counts.adults + counts.children + counts.infants;
+  const profileNationality = resolveNationality(user?.nationality);
   const list = [];
   for (let index = 0; index < total; index += 1) {
-    const passenger = emptyPassenger();
+    const passenger = emptyPassenger(profileNationality);
     if (index === 0) {
       passenger.firstName = user?.firstname || "";
       passenger.lastName = user?.lastname || "";
@@ -156,14 +151,21 @@ const contactFromSession = (saved, user) => ({
   firstName: saved?.firstName || user?.firstname || "",
   lastName: saved?.lastName || user?.lastname || "",
   email: saved?.email || user?.email || "",
-  phoneCountryCode: saved?.phoneCountryCode || "971",
-  phoneNumber: saved?.phoneNumber || "",
+  phoneCountryCode:
+    normalizePhoneDigits(saved?.phoneCountryCode) ||
+    user?.phoneCountryCode ||
+    "971",
+  phoneNumber: saved?.phoneNumber || user?.phoneNumber || "",
 });
 
 const passengersFromSession = (nextCounts, savedPassengers, user) =>
   buildPassengers(nextCounts, user).map((fallback, index) => {
     const saved = Array.isArray(savedPassengers) ? savedPassengers[index] : null;
     if (!saved) return fallback;
+    const savedNationality = String(saved.nationality || "").toUpperCase();
+    const nationality = isCountryCode(savedNationality)
+      ? savedNationality
+      : getCountryCode(saved.nationality) || fallback.nationality;
     return {
       ...fallback,
       title: TITLES.includes(saved.title) ? saved.title : fallback.title,
@@ -173,7 +175,7 @@ const passengersFromSession = (nextCounts, savedPassengers, user) =>
       gender: GENDERS.some((item) => item.value === saved.gender)
         ? saved.gender
         : fallback.gender,
-      nationality: saved.nationality || fallback.nationality,
+      nationality,
       documentType: saved.documentType || fallback.documentType,
       documentNumber: saved.documentNumber || "",
       documentIssueCountry:
@@ -292,6 +294,7 @@ const FlightDetails = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { openAuthPrompt } = useAuthPrompt();
   const [searchParams] = useSearchParams();
   const editMode = searchParams.get("edit") === "1";
 
@@ -465,7 +468,7 @@ const FlightDetails = () => {
       navigate(`/flightseats/${sessionId}`);
     } catch (err) {
       if (err?.code === "UNAUTHORIZED") {
-        navigate("/login", { state: { from: `/flightpage/${sessionId}` } });
+        openAuthPrompt({ service: "flight", from: `/flightpage/${sessionId}` });
         return;
       }
       if (err?.code === "OFFER_EXPIRED") {
@@ -680,17 +683,21 @@ const FlightDetails = () => {
                       </select>
                     </div>
                     <div className="input-field-wrapper">
-                      <label htmlFor={`fpax-nat-${index}`}>Nationality (code)</label>
-                      <input
+                      <label htmlFor={`fpax-nat-${index}`}>Nationality</label>
+                      <select
                         id={`fpax-nat-${index}`}
-                        type="text"
                         required
-                        maxLength={2}
                         value={passenger.nationality}
                         onChange={(event) =>
                           updatePassenger(index, { nationality: event.target.value })
                         }
-                      />
+                      >
+                        {COUNTRIES.map(({ code, name }) => (
+                          <option key={code} value={code}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="input-field-wrapper">
                       <label htmlFor={`fpax-doc-${index}`}>Passport number</label>
@@ -785,6 +792,7 @@ const FlightDetails = () => {
                   <label htmlFor="fcontact-code">Country code</label>
                   <select
                     id="fcontact-code"
+                    autoComplete="tel-country-code"
                     value={contact.phoneCountryCode}
                     onChange={(event) =>
                       updateContact({ phoneCountryCode: event.target.value })
@@ -804,6 +812,7 @@ const FlightDetails = () => {
                     type="tel"
                     required
                     inputMode="tel"
+                    autoComplete="tel-national"
                     value={contact.phoneNumber}
                     onChange={(event) => updateContact({ phoneNumber: event.target.value })}
                   />

@@ -1,23 +1,34 @@
-import { useParams, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Nav from "../componets/navbardark/Nav";
 import TourBook from "../componets/tourbook/TourBook";
-
+import PageLoader from "../componets/loaders/PageLoader";
+import { readTourCheckoutItem } from "../utils/tourCheckout";
 
 const TourBokpage = () => {
-  const { id } = useParams();
   const location = useLocation();
-  const initialCardItem = location.state?.cardItem ?? [];
-  
+  const navigate = useNavigate();
+  const [item] = useState(() => {
+    const stateItem = Array.isArray(location.state?.cardItem)
+      ? location.state.cardItem[0]
+      : location.state?.cardItem;
+    return stateItem ?? readTourCheckoutItem();
+  });
 
-  const [cardItem, setCardItem] = useState(initialCardItem);
+  useEffect(() => {
+    if (!item) {
+      navigate("/tours", { replace: true });
+    }
+  }, [item, navigate]);
 
-  
+  if (!item) {
+    return <PageLoader text="Redirecting to tours..." />;
+  }
 
   return (
-    <div>
+    <div className="hconteiner">
       <Nav />
-      <TourBook cardItem={cardItem} setCardItem={setCardItem} />
+      <TourBook item={item} />
     </div>
   );
 };

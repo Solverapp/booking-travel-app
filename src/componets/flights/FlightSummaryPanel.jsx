@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import FlightTakeoffOutlinedIcon from "@mui/icons-material/FlightTakeoffOutlined";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
@@ -7,11 +6,11 @@ import FlightAmenities from "./FlightAmenities";
 import {
   carriersOf,
   dayOffset,
+  legConnections,
   legDuration,
   legFlightNumbers,
   legStops,
   legsOf,
-  minutesBetween,
   segmentFlightLabel,
 } from "../../utils/flightJourneys";
 import {
@@ -47,6 +46,21 @@ const placeName = (segment, fallbackLabel, prefix) => {
     label,
     meta: [code, airportName].filter(Boolean).join(" · "),
   };
+};
+
+const stopMeta = (stop) => {
+  const departure = formatTimeHM(stop.departureTime);
+  const dayChange = dayChangeLabel(
+    dayOffset(stop.arrivalTime, stop.departureTime),
+  );
+  const departureLabel = departure
+    ? `Departs ${departure}${dayChange ? ` ${dayChange}` : ""}`
+    : "";
+  const layoverLabel =
+    Number.isFinite(stop.layoverMinutes) && stop.layoverMinutes > 0
+      ? `Layover ${formatDuration(stop.layoverMinutes)}`
+      : "";
+  return [stop.code, departureLabel, layoverLabel].filter(Boolean).join(" · ");
 };
 
 const FlightSummaryPanel = ({ journey, offer, routeLabels }) => {
@@ -141,6 +155,7 @@ const FlightSummaryPanel = ({ journey, offer, routeLabels }) => {
         const arrivalDayChange = dayChangeLabel(
           dayOffset(departure?.departureTime, arrival?.arrivalTime),
         );
+        const connections = legConnections(leg);
 
         return (
           <div className="ffsummary-card" key={`leg-${legIndex}`}>
@@ -183,6 +198,23 @@ const FlightSummaryPanel = ({ journey, offer, routeLabels }) => {
                 </div>
               </div>
 
+              {connections.map((stop) => (
+                <div className="ffroute-row ffroute-row--stop" key={stop.key}>
+                  <div className="ffroute-time">
+                    <strong>{formatTimeHM(stop.arrivalTime) || "--:--"}</strong>
+                    <span>{formatDateWeekday(stop.arrivalTime)}</span>
+                  </div>
+                  <div className="ffroute-track">
+                    <span className="ffroute-dot ffroute-dot--stop" />
+                    <span className="ffroute-line" />
+                  </div>
+                  <div className="ffroute-place">
+                    <strong>{stop.name || stop.code || "Stop"}</strong>
+                    <span>{stopMeta(stop)}</span>
+                  </div>
+                </div>
+              ))}
+
               <div className="ffroute-row">
                 <div className="ffroute-time">
                   <strong>
@@ -203,39 +235,28 @@ const FlightSummaryPanel = ({ journey, offer, routeLabels }) => {
 
             {leg.length > 1 ? (
               <div className="ffroute-segments">
-                {leg.map((segment, segmentIndex) => {
-                  const previous = leg[segmentIndex - 1] ?? null;
-                  const layover = previous
-                    ? minutesBetween(previous?.arrivalTime, segment?.departureTime)
-                    : null;
-                  return (
-                    <Fragment key={segment?.segmentKey ?? segmentIndex}>
-                      {previous && Number.isFinite(layover) && layover > 0 ? (
-                        <span className="ffroute-layover">
-                          Layover {formatDuration(layover)} in{" "}
-                          {segment?.originCode ?? ""}
-                        </span>
-                      ) : null}
-                      <div className="ffroute-seg">
-                        {segment?.carrier?.marketingLogo ? (
-                          <img
-                            src={segment.carrier.marketingLogo}
-                            alt=""
-                            loading="lazy"
-                          />
-                        ) : null}
-                        <span className="ffroute-seg-name">
-                          {segmentFlightLabel(segment) || "Flight"}
-                        </span>
-                        <span className="ffroute-seg-time">
-                          {formatTimeHM(segment?.departureTime)} {segment?.originCode ?? ""}
-                          {" → "}
-                          {formatTimeHM(segment?.arrivalTime)} {segment?.destinationCode ?? ""}
-                        </span>
-                      </div>
-                    </Fragment>
-                  );
-                })}
+                {leg.map((segment, segmentIndex) => (
+                  <div
+                    className="ffroute-seg"
+                    key={segment?.segmentKey ?? segmentIndex}
+                  >
+                    {segment?.carrier?.marketingLogo ? (
+                      <img
+                        src={segment.carrier.marketingLogo}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <span className="ffroute-seg-name">
+                      {segmentFlightLabel(segment) || "Flight"}
+                    </span>
+                    <span className="ffroute-seg-time">
+                      {formatTimeHM(segment?.departureTime)} {segment?.originCode ?? ""}
+                      {" → "}
+                      {formatTimeHM(segment?.arrivalTime)} {segment?.destinationCode ?? ""}
+                    </span>
+                  </div>
+                ))}
               </div>
             ) : null}
           </div>

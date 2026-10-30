@@ -8,6 +8,7 @@ import PageLoader from "../loaders/PageLoader";
 import star from "../../img/icons/tabicons/star.svg";
 import hotel from "../../img/icons/tabicons/not.svg";
 import formatPrice from "../../utils/priceFormater";
+import defaultdates from "../../utils/defaultdates";
 import "./style.css";
 
 // Импортируем наш новый сервис
@@ -23,10 +24,13 @@ const Tour = () => {
 
   const city = searchParams.get("city");
   const checkInParam = searchParams.get("checkIn");
-  const checkOutParam = searchParams.get("checkOut");
-  const adultsParams = searchParams.get("adults");
-  const childrenParams = searchParams.get("children");
-  const infantsParams = searchParams.get("infants");
+  const tourLinkParams = new URLSearchParams({
+    city: city || "",
+    checkIn: checkInParam || defaultdates.tomorrow,
+    adults: "1",
+    children: "0",
+    infants: "0",
+  });
 
   // --- ЭФФЕКТ: Чистый запрос к Bubble Service ---
   useEffect(() => {
@@ -94,7 +98,7 @@ const Tour = () => {
     <div className="maincontent">
       <SearchOption />
       <div className="mcontainer">
-        <FilterDrawer>
+        <FilterDrawer resultCount={filteredTours.length} resultNoun="tour">
           <TourFilters
             priceChange={handlePriceChange}
             selectedAmenities={selectedAmenities}
@@ -116,7 +120,7 @@ const Tour = () => {
               filteredTours.map((item) => (
                 <NavLink
                   key={`${item.tourId}`}
-                  to={`/tourspage/${item.tourId}?city=${city}&checkIn=${checkInParam}&adults=${adultsParams}&children=${childrenParams}&infants=${infantsParams}`}
+                  to={`/tourspage/${item.tourId}?${tourLinkParams.toString()}`}
                   state={{ tour: item }}
                 >
                   <div className="tourgrid-item">

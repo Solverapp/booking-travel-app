@@ -1,5 +1,5 @@
 ﻿import { useSearchParams, useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./style.css";
 import { Rating } from "@mui/material";
 import PageLoader from "../../loaders/PageLoader";
@@ -8,6 +8,7 @@ import SentimentBlock from "./SentimentBlock";
 import GuestReviews from "./GuestReviews";
 import PopularFacilities from "./PopularFacilities";
 import Rooms from "../rooms/Roomsnew";
+import { FavoriteBorder, Favorite } from "@mui/icons-material";
 
 import left from "../../../img/icons/tabicons/arrow-left.svg";
 import searchIcon from "../../../img/icons/tabicons/search-normal.svg";
@@ -18,20 +19,86 @@ import { useHotelDetail } from "../../../hooks/queries/useHotelDetail";
 import { useHotelDetailRates } from "../../../hooks/queries/useHotelDetailRates";
 import { normalizeHotelSearch } from "../../../utils/queryParams";
 import { getStoredCurrency } from "../../../utils/currency";
+import { resolveNationality } from "../../../utils/nationality";
 import { useAuth } from "../../../context/AuthContext";
+import { useFavorites } from "../../../hooks/queries/useFavorites";
 
 const HotelDetails = ({ id }) => {
+  const [favoritePending, setFavoritePending] = useState(false);
+  const hotelId = id?.id;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const hotelId = id?.id;
+  const { user, toggleFavorite } = useAuth();
+const { data: favorites } = useFavorites();
+const hotelFavKey = String(hotelId);
+const [hotelIsFav, setHotelIsFav] = useState(
+  favorites?.some((f) => f.service_type === "hotel" && String(f.item_id) === hotelFavKey) ?? false,
+);
+
+useEffect(() => {
+  if (!Array.isArray(favorites)) return;
+
+  setHotelIsFav(
+    favorites.some(
+      (favorite) =>
+        favorite.service_type === "hotel" &&
+        String(favorite.item_id) === hotelFavKey,
+    ),
+  );
+}, [favorites, hotelFavKey]);
+
+const handleToggleHotelFav = async () => {
+  if (!user || favoritePending) return;
+
+  const shouldBeFavorite = !hotelIsFav;
+  setHotelIsFav(shouldBeFavorite);
+  setFavoritePending(true);
+
+  try {
+    await toggleFavorite(
+      "hotel",
+      hotelId,
+      shouldBeFavorite,
+      {
+        item_name: hotel?.name || "",
+        item_image: Array.isArray(hotel?.hotelImages)
+          ? hotel.hotelImages[0]
+          : null,
+        item_city: hotel?.city || "",
+        item_country: hotel?.country || "",
+        item_price:
+          rates.length > 0 && rates[0]?.offerInitialPrice
+            ? rates[0].offerInitialPrice.amount
+            : null,
+      },
+      {
+        city: city || "",
+        pleaseId: placeId || "",
+        checkIn: checkIn || "",
+        checkOut: checkOut || "",
+        adults: String(adults),
+        children: String(children),
+        ...(childrenAges?.length > 0
+          ? { childrenAges: childrenAges.join(",") }
+          : {}),
+      },
+    );
+  } catch (error) {
+    setHotelIsFav(!shouldBeFavorite);
+    console.error("Не удалось обновить избранное:", error);
+  } finally {
+    setFavoritePending(false);
+  }
+};
+  
 
   const search = useMemo(() => normalizeHotelSearch(searchParams), [searchParams]);
   const { city, placeId, checkIn, checkOut, adults, children, childrenAges } = search;
   const currency = user?.currency || getStoredCurrency();
+  const nationality = resolveNationality(user?.nationality);
 
   const detailQuery = useHotelDetail(hotelId);
-  const ratesQuery = useHotelDetailRates({ hotelId, search, currency });
+  const ratesQuery = useHotelDetailRates({ hotelId, search, currency, nationality });
 
   const hotel = detailQuery.data;
   const images = hotel?.hotelImages || [];
@@ -98,7 +165,17 @@ const HotelDetails = ({ id }) => {
                 <img src={left} alt="back" />
                 <span>Back</span>
               </button>
-              </div>
+              <button
+                type="button"
+                className={`hotel-fav${hotelIsFav ? " is-active" : ""}`}
+                onClick={handleToggleHotelFav}
+                disabled={!user || favoritePending}
+                aria-label={hotelIsFav ? "Remove" : "Add to favorites"}
+              >
+                {hotelIsFav ? <Favorite /> : <FavoriteBorder />}
+                <span>{hotelIsFav ? "Remove" : "Add to favorites"}</span>
+              </button>
+            </div>
 
             <div className="hotel-hero">
               <div className="hotel-hero-media">

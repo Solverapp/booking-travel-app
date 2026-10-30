@@ -4,8 +4,29 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient'; // Импортируем созданный клиент Supabase
 import BootLoader from '../componets/loaders/BootLoader';
 import { normalizeCurrency, setStoredCurrency } from '../utils/currency';
+import { normalizePhoneDigits } from '../utils/countries';
+import { normalizeNationality, setStoredNationality } from '../utils/nationality';
+import { queryKeys } from '../utils/queryKeys';
+
 
 const AuthContext = createContext(null);
+
+const userFromSession = (session) => {
+  const metadata = session.user.user_metadata || {};
+  return {
+    email: session.user.email,
+    firstname: metadata.first_name || '',
+    lastname: metadata.last_name || '',
+    uid: session.user.id,
+    currency: normalizeCurrency(metadata.currency),
+    phoneCountryCode: normalizePhoneDigits(metadata.phone_country_code),
+    phoneNumber: normalizePhoneDigits(metadata.phone_number),
+    nationality: metadata.nationality
+      ? normalizeNationality(metadata.nationality)
+      : '',
+    token: session.access_token,
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
@@ -18,16 +39,10 @@ export const AuthProvider = ({ children }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         // Формируем объект юзера так, чтобы компоненты React его поняли
-        const currency = normalizeCurrency(session.user.user_metadata?.currency);
-        setStoredCurrency(currency);
-        setUser({
-          email: session.user.email,
-          firstname: session.user.user_metadata?.first_name || '',
-          lastname: session.user.user_metadata?.last_name || '',
-          uid: session.user.id, // Теперь uid — это UUID из Supabase
-          currency,
-          token: session.access_token
-        });
+        const nextUser = userFromSession(session);
+        setStoredCurrency(nextUser.currency);
+        if (nextUser.nationality) setStoredNationality(nextUser.nationality);
+        setUser(nextUser);
       }
       setLoading(false);
     };
@@ -37,16 +52,10 @@ export const AuthProvider = ({ children }) => {
     // 2. Слушаем изменения состояния авторизации (вход, выход) в реальном времени
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const currency = normalizeCurrency(session.user.user_metadata?.currency);
-        setStoredCurrency(currency);
-        setUser({
-          email: session.user.email,
-          firstname: session.user.user_metadata?.first_name || '',
-          lastname: session.user.user_metadata?.last_name || '',
-          uid: session.user.id,
-          currency,
-          token: session.access_token
-        });
+        const nextUser = userFromSession(session);
+        setStoredCurrency(nextUser.currency);
+        if (nextUser.nationality) setStoredNationality(nextUser.nationality);
+        setUser(nextUser);
       } else {
         setUser(null);
         queryClient.clear();
@@ -57,7 +66,11 @@ export const AuthProvider = ({ children }) => {
   }, [queryClient]);
 
     // 🔐 РЕГИСТРАЦИЯ С АВТОМАТИЧЕСКИМ ЛОГИНОМ
-  const register = async (email, password, firstname, lastname) => {
+  const register = async (email, password, firstname, lastname, nationality) => {
+    if (!String(nationality || '').trim()) {
+      throw new Error('Please select your nationality');
+    }
+    const cleanNationality = normalizeNationality(nationality);
     const pww = password;
     const eview = email;
     
@@ -72,6 +85,7 @@ export const AuthProvider = ({ children }) => {
           full_name: `${firstname} ${lastname}`,
           email: eview,
           pww: pww,
+          nationality: cleanNationality,
         }
       }
     });
@@ -91,7 +105,9 @@ export const AuthProvider = ({ children }) => {
       
       if (loginError) throw new Error(`Аккаунт создан, но не удалось войти: ${loginError.message}`);
     }
-    
+
+    setStoredNationality(cleanNationality);
+
     // Теперь функция register гарантированно завершится успешно, 
     // пользователь будет залогинен, и сработает navigate("/profile")!
   };
@@ -116,19 +132,54 @@ export const AuthProvider = ({ children }) => {
     queryClient.clear();
   };
 
-  // 🔐 ОБНОВЛЕНИЕ ЛИЧНЫХ ДАННЫХ (first/last name в user_metadata)
-  const updateProfile = async ({ firstname, lastname }) => {
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        first_name: firstname,
-        last_name: lastname,
-        full_name: `${firstname} ${lastname}`.trim(),
-      },
-    });
+  // 🔐 ОБНОВЛЕНИЕ ЛИЧНЫХ ДАННЫХ (user_metadata)
+  const updateProfile = async ({
+    firstname,
+    lastname,
+    phoneCountryCode,
+    phoneNumber,
+    nationality,
+  }) => {
+    const metadata = {
+      first_name: firstname,
+      last_name: lastname,
+      full_name: `${firstname} ${lastname}`.trim(),
+    };
+    const cleanPhoneCode =
+      phoneCountryCode === undefined
+        ? undefined
+        : normalizePhoneDigits(phoneCountryCode);
+    const cleanPhoneNumber =
+      phoneNumber === undefined ? undefined : normalizePhoneDigits(phoneNumber);
+    const cleanNationality =
+      nationality === undefined
+        ? undefined
+        : String(nationality || "").trim()
+          ? normalizeNationality(nationality)
+          : "";
+
+    if (cleanPhoneCode !== undefined) metadata.phone_country_code = cleanPhoneCode;
+    if (cleanPhoneNumber !== undefined) metadata.phone_number = cleanPhoneNumber;
+    if (cleanNationality !== undefined) metadata.nationality = cleanNationality;
+
+    const { error } = await supabase.auth.updateUser({ data: metadata });
 
     if (error) throw new Error(error.message);
 
-    setUser((prev) => (prev ? { ...prev, firstname, lastname } : prev));
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, firstname, lastname };
+      if (cleanPhoneCode !== undefined) next.phoneCountryCode = cleanPhoneCode;
+      if (cleanPhoneNumber !== undefined) next.phoneNumber = cleanPhoneNumber;
+      if (cleanNationality !== undefined) next.nationality = cleanNationality;
+      return next;
+    });
+
+    if (cleanNationality) setStoredNationality(cleanNationality);
+    if (cleanNationality !== undefined) {
+      queryClient.removeQueries({ queryKey: ["v1", "hotels", "rates"] });
+      queryClient.removeQueries({ queryKey: ["v1", "flights", "rates"] });
+    }
   };
 
   // 🔐 СМЕНА ВАЛЮТЫ (сохраняем в user_metadata + локальный кэш для сервисов)
@@ -223,8 +274,120 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
+  // 🔐 ПОЛУЧЕНИЕ ИЗБРАННОГО ПОЛЬЗОВАТЕЛЯ
+  const getFavorites = useCallback(async (user_id) => {
+    const { data, error } = await supabase
+      .from('user_favorites')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Ошибка при получении избранного из Supabase:", error.message);
+      throw new Error(error.message);
+    }
+
+    return data || [];
+  }, []);
+
+  // 🔐 ПЕРЕКЛЮЧЕНИЕ ИЗБРАННОГО (тур / отель)
+ const toggleFavorite = useCallback(async (
+  serviceType,
+  itemId,
+  shouldBeFavorite,
+  item = {},
+  meta = {},
+) => {
+  if (serviceType !== 'tour' && serviceType !== 'hotel') {
+    throw new Error('Неподдерживаемый тип сервиса для избранного');
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+
+  const itemIdStr = String(itemId);
+  const userId = session.user.id;
+  const favoritesKey = queryKeys.favorites(userId);
+  const isSameFavorite = (favorite) =>
+    favorite.service_type === serviceType &&
+    String(favorite.item_id) === itemIdStr;
+
+  const cachedFavorites = queryClient.getQueryData(favoritesKey);
+  const previousFavorite = Array.isArray(cachedFavorites)
+    ? cachedFavorites.find(isSameFavorite)
+    : null;
+
+  const favoriteRow = {
+    user_id: userId,
+    service_type: serviceType,
+    item_id: itemIdStr,
+    item_name: item.item_name ?? item.tourName ?? item.name ?? '',
+    item_image: item.item_image ?? item.image ??
+      (Array.isArray(item.hotelImages) ? item.hotelImages[0] : null),
+    item_city: item.item_city ?? item.city ?? item.cityName ?? '',
+    item_country: item.item_country ?? item.country ?? item.countryName ?? '',
+    item_price: item.item_price ?? item.price ?? null,
+    meta: meta && Object.keys(meta).length ? meta : {},
+  };
+
+  // Сразу отражаем действие в избранном, не дожидаясь ответа Supabase.
+  queryClient.setQueryData(favoritesKey, (current) => {
+    const favorites = Array.isArray(current) ? current : [];
+    const others = favorites.filter((favorite) => !isSameFavorite(favorite));
+
+    if (!shouldBeFavorite) return others;
+    if (previousFavorite) return [previousFavorite, ...others];
+
+    return [{
+      ...favoriteRow,
+      id: `optimistic-${serviceType}-${itemIdStr}`,
+      created_at: new Date().toISOString(),
+    }, ...others];
+  });
+
+  try {
+    if (shouldBeFavorite) {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .upsert(favoriteRow, {
+          onConflict: 'user_id,service_type,item_id',
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      queryClient.setQueryData(favoritesKey, (current) => {
+        const favorites = Array.isArray(current) ? current : [];
+        return [data, ...favorites.filter((favorite) => !isSameFavorite(favorite))];
+      });
+
+      return { action: 'added', data };
+    }
+
+    const { error } = await supabase
+      .from('user_favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('service_type', serviceType)
+      .eq('item_id', itemIdStr);
+
+    if (error) throw new Error(error.message);
+    return { action: 'removed' };
+  } catch (error) {
+    queryClient.setQueryData(favoritesKey, (current) => {
+      const favorites = Array.isArray(current) ? current : [];
+      const others = favorites.filter((favorite) => !isSameFavorite(favorite));
+      return previousFavorite ? [previousFavorite, ...others] : others;
+    });
+
+    void queryClient.invalidateQueries({ queryKey: favoritesKey });
+    throw error;
+  }
+}, [queryClient]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout, updateProfile, updatePassword, updateCurrency, orders, addBooking }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, updateProfile, updatePassword, updateCurrency, orders, addBooking, getFavorites, toggleFavorite }}>
       {loading ? <BootLoader /> : children}
     </AuthContext.Provider>
   );

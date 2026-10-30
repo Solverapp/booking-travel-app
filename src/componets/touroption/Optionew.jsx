@@ -1,16 +1,18 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import "./style.css";
 import transferData from "../../mock/transfers";
 import Loader from "../loaders/loading";
 import Slots from "../slots/Slotsnew";
 import RateConter from "../Tourguest/guestCounter";
-import {FamilyRestroom, People, NotInterestedOutlined, Block, Group, DirectionsCar,ErrorOutlined} from '@mui/icons-material';
+import { AccessTime, Block, Group, DirectionsCar, ErrorOutlined, Person, ChildCare, ArrowForward } from '@mui/icons-material';
 
-import guest from "../../img/icons/Hotelicons/Guest.svg";
 // Импортируем наши обновленные сервисы
-import { fetchTourOptions, fetchTourStatic, processTourData, fetchTourAvailability } from "../../services/raynaService";
+import { fetchTourOptions, fetchTourStatic, processTourData, fetchTourAvailability, roundTo, toBool } from "../../services/raynaService";
 import { supabaseTourService } from "../../services/supabaseTourService"; // <--- Наш сервис скидок
+import { formatAedAmount, formatTourTime, saveTourCheckoutItem, transferTypeOf } from "../../utils/tourCheckout";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthPrompt } from "../../context/authPrompt";
 
 const transferIcons = {
   block: Block,
@@ -18,125 +20,137 @@ const transferIcons = {
   car: DirectionsCar,
 };
 
-const Rates = ({ id, tur }) => {
+const Rates = ({ id, tur, tour }) => {
   const tourid = id;
-  const tName = tur;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { openAuthPrompt } = useAuthPrompt();
 
   const city = searchParams.get("city");
   const checkInParam = searchParams.get("checkIn");
-  const checkOutParam = searchParams.get("checkOut");
   const adultsParams = searchParams.get("adults");
   const childrenParams = searchParams.get("children");
-  const infantsParams = searchParams.get("infants");
 
-  const adults = parseInt(adultsParams || "1");
-  const childern = parseInt(childrenParams || "0");
-  const infants = parseInt(infantsParams || "0");
-  const quests = adults + childern + infants;
-
-  
+  const adults = parseInt(adultsParams || "1", 10) || 1;
+  const childern = parseInt(childrenParams || "0", 10) || 0;
 
   const [rawOptions, setRawOptions] = useState([]);
   const [staticData, setStaticData] = useState([]);
-  const [dbDiscounts, setDbDiscounts] = useState([]); // <--- СТЕЙТ ДЛЯ ХРАНЕНИЯ СКИДОК ИЗ БАЗЫ
+  const [dbDiscounts, setDbDiscounts] = useState([]);
   const [transfer, setTransfer] = useState();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
+  const [metaTourId, setMetaTourId] = useState(null);
+  const [optionsTourId, setOptionsTourId] = useState(null);
   const [adultsTotal, setAdultsTotal] = useState(adults);
   const [childsTotal, setChildsTotal] = useState(childern);
   const [totals, setTotals] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState([]);
   const [cartItem, setcartItem] = useState([]);
+  const [availabilityData, setAvailabilityData] = useState(null);
+  const requestIdRef = useRef(0);
 
   const activTab = (tab) => { setTransfer(tab); };
 
-  const queryParams = {
-    tourId: tourid,
-    travelDate: checkInParam,
-    adults: adultsTotal,
-    children: childsTotal,
-    infants: infants,
-  };
-   const [availabilityData, setAvailabilityData] = useState(null); // Стейт для хранения статусов доступности
-
-  // --- ЭФФЕКТ 1: Инициализация данных (Склеиваем API, Скидки и Доступность) ---
   useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const [options, statics, discounts] = await Promise.all([
-          fetchTourOptions(queryParams),
-          fetchTourStatic(tourid),
-          supabaseTourService.fetchDiscountRates(tourid)
-        ]);
+    let cancelled = false;
 
-        setDbDiscounts(discounts);
+    const loadMeta = async () => {
+      try {
+        const [statics, discounts] = await Promise.all([
+          fetchTourStatic(tourid),
+          supabaseTourService.fetchDiscountRates(tourid),
+        ]);
+        if (cancelled) return;
         setStaticData(statics);
+        setDbDiscounts(discounts);
+      } catch {
+        if (cancelled) return;
+        setStaticData([]);
+        setDbDiscounts([]);
+      } finally {
+        if (!cancelled) setMetaTourId(tourid);
+      }
+    };
+
+    loadMeta();
+    return () => { cancelled = true; };
+  }, [tourid]);
+
+  const metaReady =
+    metaTourId !== null && String(metaTourId) === String(tourid);
+  const optionsReady =
+    optionsTourId !== null && String(optionsTourId) === String(tourid);
+
+  useEffect(() => {
+    const requestId = ++requestIdRef.current;
+    let cancelled = false;
+
+    const loadOptions = async () => {
+      setSelectedSlot([]);
+
+      try {
+        const options = await fetchTourOptions({
+          tourId: tourid,
+          travelDate: checkInParam,
+          adults: adultsTotal,
+          children: childsTotal,
+          infants: 0,
+        });
+
+        if (cancelled || requestId !== requestIdRef.current) return;
         setRawOptions(options);
 
-        // 🟢 МАССОВАЯ ПРОВЕРКА ДОСТУПНОСТИ ВСЕХ ТАРИФОВ ОДНОВРЕМЕННО
-        if (options && options.length > 0) {
-          const availPromises = options.map(async (opt) => {
+        if (!options || options.length === 0) {
+          setAvailabilityData([]);
+          setOptionsTourId(tourid);
+          return;
+        }
+
+        const availResults = await Promise.all(
+          options.map(async (opt) => {
+            const childAllowed = !toBool(opt.disableChild);
             const check = await fetchTourAvailability({
               tourId: tourid,
               tourOptionId: opt.tourOptionId,
               transferId: opt.transferId,
               travelDate: checkInParam,
               adults: adultsTotal,
-              children: childsTotal,
-              infants: infants
+              children: childAllowed ? childsTotal : 0,
+              infants: 0,
             });
             return {
               tourOptionId: opt.tourOptionId,
               transferId: opt.transferId,
               status: check.status,
-              message: check.message
+              message: check.message,
             };
-          });
+          }),
+        );
 
-          const availResults = await Promise.all(availPromises);
-          setAvailabilityData(availResults);
-        }
-
-        if (options && options.length > 0) {
-          setTransfer(options[0].transferId);
-        }
-      } catch (err) {
-        setError('Failed to load tour details');
-      } finally {
-        setLoading(false);
+        if (cancelled || requestId !== requestIdRef.current) return;
+        setAvailabilityData(availResults);
+        setTransfer((prev) =>
+          options.some((op) => String(op.transferId) === String(prev))
+            ? prev
+            : options[0].transferId,
+        );
+        setOptionsTourId(tourid);
+      } catch {
+        if (cancelled || requestId !== requestIdRef.current) return;
+        setRawOptions([]);
+        setAvailabilityData([]);
+        setOptionsTourId(tourid);
       }
     };
-    loadInitialData();
-  }, [id]);
+
+    loadOptions();
+    return () => { cancelled = true; };
+  }, [tourid, checkInParam, adultsTotal, childsTotal]);
 
   // --- ОПТИМИЗАЦИЯ: Передаем массив availabilityData в процессор данных ---
   const processedOptions = useMemo(() => {
-    // Теперь процессор берет и скидки, и данные о доступности!
     return processTourData(rawOptions, staticData, dbDiscounts, availabilityData);
   }, [rawOptions, staticData, dbDiscounts, availabilityData]);
-
-  // --- ЭФФЕКТ 2: Обновление цен при изменении счетчиков гостей ---
-  useEffect(() => {
-    const updatePrices = async () => {
-      setLoading(true);
-      try {
-        const options = await fetchTourOptions(queryParams);
-        setRawOptions(options);
-      } catch (err) {
-        setError('Failed to load rates details');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (staticData.length > 0) {
-      updatePrices();
-    }
-  }, [adultsTotal, childsTotal]);
 
   
 
@@ -159,12 +173,13 @@ const Rates = ({ id, tur }) => {
   const handleCounthange = (key, newCounts, newPrice, type) => {
     const p = Number(newPrice || 0);
     const c = Number(newCounts || 0);
-    const t = p * c;
+    const t = roundTo(p * c, 2);
     const ty = type;
 
+    if (ty === "adult") setAdultsTotal(c);
+    if (ty === "child") setChildsTotal(c);
+
     setTotals((prev) => {
-      if (ty === "adult") setAdultsTotal(c);
-      if (ty === "child") setChildsTotal(c);
       const exists = prev.some((item) => item.id === key);
       if (exists) {
         return prev.map((item) =>
@@ -176,33 +191,79 @@ const Rates = ({ id, tur }) => {
   };
 
   const addToCart = (option, rateTotal, optionName, slotId) => {
-    const comission = 1 + 15 / 100;
+    if (!user) {
+      openAuthPrompt({
+        service: "tour",
+        from: `${window.location.pathname}${window.location.search}`,
+      });
+      return;
+    }
+    const transferInfo = transferData.find(
+      (item) => Number(item.transferId) === Number(option.transferId),
+    );
+    const transferName = option.transferName || transferInfo?.name || "";
+    const transferType = transferTypeOf({
+      transferId: option.transferId,
+      transferName,
+    });
+
+    const childAllowed = !toBool(option.disableChild);
+    const optionChild = childAllowed ? childsTotal : 0;
+    const optionInfant = 0;
+    const adultB2c = Number(option.prices?.adult || 0);
+    const childB2c = Number(option.prices?.child || 0);
+    const adultB2b = Number(option.adultPrice || 0);
+    const childB2b = Number(option.childPrice || 0);
+    const infantB2b = Number(option.infantPrice || 0);
+    const computedB2cTotal = roundTo(
+      adultB2c * adultsTotal + childB2c * optionChild,
+      2,
+    );
+    const b2cTotal =
+      Number.isFinite(Number(rateTotal)) && Number(rateTotal) > 0
+        ? roundTo(Number(rateTotal), 2)
+        : computedB2cTotal;
+
     const newItem = {
       tourId: tourid,
-      optionId: option.tourOptionId,
-      transferId: option.transferId,
-      optionName: optionName,
       tourName: tur,
+      tourImage: tour?.image || "",
+      city: tour?.cityName || city || "",
+      country: tour?.countryName || "",
+      optionId: option.tourOptionId,
+      optionName,
+      transferId: option.transferId,
+      transferName,
+      transferType,
       tourDate: checkInParam,
-      tourTime: slotId?.time || "10:00",
+      startTime: option.startTime || "",
+      tourTime: slotId?.time || option.startTime || "10:00",
       slotId: slotId?.id || 0,
+      slotTime: slotId?.time || "",
+      isSlot: toBool(option.isSlot),
       adult: adultsTotal,
-      child: childsTotal,
-      adultb2b: option.adultPrice,
-      adultb2c: Math.round(option.adultPrice * comission),
-      childb2b: option.childPrice,
-      childb2c: option.childPrice * comission,
-      b2cTotal: rateTotal,
-      b2bTotal:
-        option.adultPrice * adultsTotal + option.childPrice * childsTotal,
-      referNo: Math.floor(100000 + Math.random() * 900000),
-      uniqNo: Math.floor(100000 + Math.random() * 900000),
-      leadPassangers: adultsTotal + childsTotal,
-      city: city,
+      child: optionChild,
+      infant: optionInfant,
+      adultb2b: adultB2b,
+      adultb2c: adultB2c,
+      childb2b: childB2b,
+      childb2c: childB2c,
+      infantb2b: infantB2b,
+      b2cTotal,
+      b2bTotal: roundTo(
+        adultB2b * adultsTotal +
+          childB2b * optionChild +
+          infantB2b * optionInfant,
+        2,
+      ),
+      finalAmount: Number(option.finalAmount || 0),
+      leadPassengers: adultsTotal + optionChild + optionInfant,
     };
+
     const next = [...cartItem, newItem];
     setcartItem(next);
-    navigate("/toursbookpage/", { state: { cardItem: next } });
+    saveTourCheckoutItem(newItem);
+    navigate("/toursbookpage", { state: { cardItem: next } });
   };
 
   return (
@@ -233,55 +294,63 @@ const Rates = ({ id, tur }) => {
         </div>
         <div className="content-row">
           <div className="option-content">
-            {loading && rawOptions.length === 0 ? (
+            {!metaReady || !optionsReady ? (
               <div className="option-not">
                 <Loader />
                 <span>Please wait..</span>
               </div>
-            ) : !Array.isArray(filteredOptions) ||
-              filteredOptions.length === 0 ? (
+            ) : filteredOptions.length === 0 ? (
               <div className="option-not">
-                < NotInterestedOutlined/>
-                <h3>Nothing found matching your request</h3>
+                < ErrorOutlined/>
+                <h3>Not found</h3>
                 <span>Please specify other search parameters</span>
               </div>
             ) : (
                           filteredOptions.map((opt, index) => {
+                const adultKey = opt.tourOptionId + "adult" + opt.transferId;
+                const childKey = opt.tourOptionId + "child" + opt.transferId;
+                const childAllowed = !toBool(opt.disableChild);
                 const adultTotal =
-                  totals.find(
-                    (it) =>
-                      it.id === opt.tourOptionId + "adult" + opt.transferId,
-                  )?.total || 0;
-                const childTotal =
-                  totals.find(
-                    (it) =>
-                      it.id === opt.tourOptionId + "child" + opt.transferId,
-                  )?.total || 0;
-                const rateTotal = adultTotal + childTotal;
-                const isSlot = opt.isSlot || false;
+                  totals.find((it) => it.id === adultKey)?.total || 0;
+                const childTotal = childAllowed
+                  ? totals.find((it) => it.id === childKey)?.total || 0
+                  : 0;
+                const hasGuestTotals = totals.some(
+                  (it) =>
+                    it.id === adultKey || (childAllowed && it.id === childKey),
+                );
+                const rawOptionTotal = hasGuestTotals
+                  ? adultTotal + childTotal
+                  : opt.prices.totalAuto;
+                const optionTotal = roundTo(Number(rawOptionTotal) || 0, 2);
+                const optionGuestCount =
+                  adultsTotal + (childAllowed ? childsTotal : 0);
+                const departureLabel =
+                  String(opt.departureTime || "").trim() ||
+                  (opt.startTime ? formatTourTime(opt.startTime) : "");
+                const isSlot = toBool(opt.isSlot);
                 const slotDisabled =
                   selectedSlot.opId !== opt.tourOptionId || null;
 
                 return (
-                  /* 🟢 Если тариф недоступен, делаем блок полупрозрачным */
                   <div
-                    className={`option-box ${!opt.isAvailable ? "tour-disabled" : ""}`}
+                    className={`option-box${!opt.isAvailable ? " tour-disabled" : ""}`}
                     key={`${opt.tourOptionId}-${opt.transferId}-${index}`}
-                    style={{ opacity: !opt.isAvailable ? 0.5 : 1, transition: 'all 0.3s' }}
                   >
-                    <div className="option-info">
-                      <h4>
-                        {opt.optionName} - {opt.tourOptionId} - {opt.transferId}
-                      </h4>
-
-                      {/* 🟢 КРАСИВЫЙ БЛОК ОШИБКИ ИЗ API RAYNA TOUR */}
+                    <div className="tour-option-head">
+                      <h4>{opt.optionName}</h4>
+                      {departureLabel ? (
+                        <p className="tour-option-departure">
+                          <AccessTime />
+                          <span>Departure: {departureLabel}</span>
+                        </p>
+                      ) : null}
                       {!opt.isAvailable && (
-                        <div className="availability-alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4d4f', fontSize: '13px', marginTop: '10px', background: 'rgba(255, 77, 79, 0.08)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255, 77, 79, 0.15)', textAlign: 'left' }}>
-                          <ErrorOutlined style={{ fontSize: '18px' }} />
+                        <div className="availability-alert">
+                          <ErrorOutlined />
                           <span>{opt.availabilityMessage}</span>
                         </div>
                       )}
-
                       {isSlot === true && opt.isAvailable && (
                         <Slots
                           option={opt}
@@ -290,105 +359,95 @@ const Rates = ({ id, tur }) => {
                           selectedSlot={selectedSlot}
                           handleSlotToggle={handleSlotToggle}
                           setSelectedSlot={setSelectedSlot}
-                          count={quests}
+                          count={optionGuestCount}
                         />
                       )}
                     </div>
-                    <div className="rate-box">
-                      <div className="rate-item">
-                        <div className="rate-guest">
-                          {/* <People /> */}
-                          <span>Adult</span>
-                          <span>{opt.prices.adult} AED</span>
+                    <div className="tour-guest-list">
+                      <div className="tour-guest-row tour-guest-row--adult">
+                        <span className="tour-guest-avatar">
+                          <Person />
+                        </span>
+                        <div className="tour-guest-info">
+                          <span className="tour-guest-name">Adult</span>
+                          <span className="tour-guest-price">
+                            {formatAedAmount(opt.prices.adult)} AED
+                          </span>
                         </div>
-                        <div className="inforate">
-                          <div
-                            className="rate-counter"
-                            id={opt.tourOptionId + "adult"}
-                          >
-                            <RateConter
-                              id={opt.tourOptionId + "adult" + opt.transferId}
-                              onRoomChange={(newCounts, newPrice) =>
-                                handleCounthange(
-                                  opt.tourOptionId + "adult" + opt.transferId,
-                                  newCounts,
-                                  newPrice,
-                                  "adult",
-                                )
-                              }
-                              count={10}
-                              price={opt.prices.adult}
-                              rateCount={opt.isAvailable ? adultsTotal : 0}
-                              disabled={!opt.isAvailable}
-                            />
-                          </div>
-                          {/* <div className="rprice">
-                            <h4>{opt.isAvailable ? adultTotal : 0}</h4>
-                          </div> */}
-                        </div>
-                      </div>
-                      <div className="rate-item">
-                        <div className="rate-guest">
-                          {/* <FamilyRestroom/> */}
-                          <span>Child({opt.childAge})</span>
-                          <span>{opt.prices.child} AED</span>
-                        </div>
-                        <div className="inforate">
-                          <div
-                            className="rate-counter"
-                            id={opt.tourOptionId + "child"}
-                          >
-                            <RateConter
-                              id={opt.tourOptionId + "child" + opt.transferId}
-                              onRoomChange={(newCounts, newPrice) =>
-                                handleCounthange(
-                                  opt.tourOptionId + "child" + opt.transferId,
-                                  newCounts,
-                                  newPrice,
-                                  "child",
-                                )
-                              }
-                              count={10}
-                              price={opt.prices.child}
-                              rateCount={opt.isAvailable ? childsTotal : 0}
-                              disabled={!opt.isAvailable}
-                            />
-                          </div>
-                          {/* (<div className="rprice">
-                            <h4>{opt.isAvailable ? childTotal : 0}</h4>
-                          </div>) */}
-                        </div>
-                      </div>
-
-                      <div className="rate-button">
-                        <h2>
-                          Total{" "}
-                          {!opt.isAvailable 
-                            ? "0.00" 
-                            : (opt.transferId === 41865 ? rateTotal : opt.prices.totalAuto)}{" "}
-                          AED
-                        </h2>
-                        
-                        {/* 🟢 БЛОКИРУЕМ КНОПКУ, ЕСЛИ ТАРИФ НЕ ДОСТУПЕН */}
-                        <button
-                          disabled={(isSlot === true && slotDisabled) || !opt.isAvailable}
-                          onClick={() =>
-                            addToCart(
-                              opt,
-                              rateTotal,
-                              opt.optionName,
-                              selectedSlot || 0,
+                        <RateConter
+                          id={opt.tourOptionId + "adult" + opt.transferId}
+                          onRoomChange={(newCounts, newPrice) =>
+                            handleCounthange(
+                              opt.tourOptionId + "adult" + opt.transferId,
+                              newCounts,
+                              newPrice,
+                              "adult",
                             )
                           }
-                          style={{
-                            backgroundColor: !opt.isAvailable ? '#2d3748' : '',
-                            color: !opt.isAvailable ? '#a0aec0' : '',
-                            cursor: !opt.isAvailable ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          {!opt.isAvailable ? "Not Available" : "Buy Now"}
-                        </button>
+                          type="adult"
+                          count={10}
+                          price={opt.prices.adult}
+                          rateCount={adultsTotal}
+                          disabled={!opt.isAvailable}
+                        />
                       </div>
+                      {childAllowed && (
+                        <div className="tour-guest-row tour-guest-row--child">
+                          <span className="tour-guest-avatar">
+                            <ChildCare />
+                          </span>
+                          <div className="tour-guest-info">
+                            <span className="tour-guest-name">
+                              Child({opt.childAge})
+                            </span>
+                            <span className="tour-guest-price">
+                              {formatAedAmount(opt.prices.child)} AED
+                            </span>
+                          </div>
+                          <RateConter
+                            id={opt.tourOptionId + "child" + opt.transferId}
+                            onRoomChange={(newCounts, newPrice) =>
+                              handleCounthange(
+                                opt.tourOptionId + "child" + opt.transferId,
+                                newCounts,
+                                newPrice,
+                                "child",
+                              )
+                            }
+                            type="child"
+                            count={10}
+                            price={opt.prices.child}
+                            rateCount={childsTotal}
+                            disabled={!opt.isAvailable}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="tour-option-footer">
+                      <div className="tour-option-total">
+                        <span>Total</span>
+                        <h2>
+                          {!opt.isAvailable
+                            ? "0.00"
+                            : formatAedAmount(optionTotal)}{" "}
+                          AED
+                        </h2>
+                      </div>
+                      <button
+                        className="tour-buy-btn"
+                        disabled={(isSlot && slotDisabled) || !opt.isAvailable}
+                        onClick={() =>
+                          addToCart(
+                            opt,
+                            optionTotal,
+                            opt.optionName,
+                            selectedSlot || 0,
+                          )
+                        }
+                      >
+                        {!opt.isAvailable ? "Not Available" : "Buy Now"}
+                        {opt.isAvailable && <ArrowForward />}
+                      </button>
                     </div>
                   </div>
                 );

@@ -11,6 +11,7 @@ import BackpackOutlinedIcon from "@mui/icons-material/BackpackOutlined";
 import LuggageOutlinedIcon from "@mui/icons-material/LuggageOutlined";
 import PageLoader from "../loaders/PageLoader";
 import FlightPriceBreakdown from "./FlightPriceBreakdown";
+import { useAuthPrompt } from "../../context/authPrompt";
 import { useFlightSession } from "../../hooks/queries/useFlightSession";
 import { useAttachFlightServices } from "../../hooks/mutations/useFlightBookingMutations";
 import {
@@ -211,6 +212,7 @@ const SeatMap = ({
 const FlightSeats = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { openAuthPrompt } = useAuthPrompt();
   const sessionQuery = useFlightSession(sessionId);
   const attachServices = useAttachFlightServices();
 
@@ -496,7 +498,7 @@ const FlightSeats = () => {
       navigate(`/flightcheckout/${sessionId}`);
     } catch (err) {
       if (err?.code === "UNAUTHORIZED") {
-        navigate("/login", { state: { from: `/flightseats/${sessionId}` } });
+        openAuthPrompt({ service: "flight", from: `/flightseats/${sessionId}` });
         return;
       }
       setSubmitError(

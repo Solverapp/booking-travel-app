@@ -18,25 +18,16 @@ z-index: 2000;
     width: 126px;
     height: 66px;
 }
-.nav-list{
-    display: flex;
-    gap: 28px;
-    align-items: center;
-    height: 66px;
-    color: var(--white);
-    font-size: 16px;
-    font-weight: 600;
-    font-style: normal;
-
-}
-
 @media (max-width: 1200px) {
-    .nav-list{
-        display: none;
-    }
     .nav{
         margin-top: 16px;
         padding: 14px var(--pad-page);
         min-height: auto;
+    }
+}
+
+@media (max-width: 968px) {
+    .nav{
+        display: none;
     }
 }

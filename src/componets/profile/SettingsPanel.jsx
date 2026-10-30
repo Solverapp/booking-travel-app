@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/useTheme";
 import { CURRENCIES, DEFAULT_CURRENCY } from "../../utils/currency";
+import {
+  COUNTRIES,
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_CODES,
+  normalizePhoneDigits,
+} from "../../utils/countries";
 import "./style.css";
 
 const SettingsMessage = ({ message }) =>
@@ -12,9 +19,16 @@ const SettingsMessage = ({ message }) =>
 
 const SettingsPanel = () => {
   const { user, updateProfile, updatePassword, updateCurrency } = useAuth();
+  const { preference: themePreference, setPreference: setThemePreference } =
+    useTheme();
 
   const [firstname, setFirstname] = useState(user?.firstname || "");
   const [lastname, setLastname] = useState(user?.lastname || "");
+  const [phoneCountryCode, setPhoneCountryCode] = useState(
+    user?.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE,
+  );
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
+  const [nationality, setNationality] = useState(user?.nationality || "");
   const [profileState, setProfileState] = useState({ saving: false, message: null });
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -25,14 +39,36 @@ const SettingsPanel = () => {
   const [currency, setCurrency] = useState(user?.currency || DEFAULT_CURRENCY);
   const [currencyState, setCurrencyState] = useState({ saving: false, message: null });
 
+  const savedPhoneCode = user?.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE;
+  const savedPhoneNumber = normalizePhoneDigits(user?.phoneNumber || "");
+  const phoneDigits = normalizePhoneDigits(phoneNumber);
   const profileChanged =
-    firstname.trim() !== (user?.firstname || "") || lastname.trim() !== (user?.lastname || "");
+    firstname.trim() !== (user?.firstname || "") ||
+    lastname.trim() !== (user?.lastname || "") ||
+    phoneCountryCode !== savedPhoneCode ||
+    phoneDigits !== savedPhoneNumber ||
+    nationality !== (user?.nationality || "");
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
+    if (phoneDigits && (phoneDigits.length < 6 || phoneDigits.length > 15)) {
+      setProfileState({
+        saving: false,
+        message: { tone: "error", text: "Please enter a valid phone number" },
+      });
+      return;
+    }
+
     setProfileState({ saving: true, message: null });
     try {
-      await updateProfile({ firstname: firstname.trim(), lastname: lastname.trim() });
+      await updateProfile({
+        firstname: firstname.trim(),
+        lastname: lastname.trim(),
+        phoneCountryCode: normalizePhoneDigits(phoneCountryCode),
+        phoneNumber: phoneDigits,
+        nationality,
+      });
+      setPhoneNumber(phoneDigits);
       setProfileState({ saving: false, message: { tone: "ok", text: "Personal details saved" } });
     } catch (err) {
       setProfileState({
@@ -113,6 +149,54 @@ const SettingsPanel = () => {
                 autoComplete="family-name"
                 onChange={(e) => setLastname(e.target.value)}
               />
+            </label>
+
+            <div className="ps-field ps-field--full">
+              <span className="ps-label">Phone number</span>
+              <div className="ps-phone-row">
+                <select
+                  className="ps-input ps-select ps-phone-code"
+                  aria-label="Phone country code"
+                  autoComplete="tel-country-code"
+                  value={phoneCountryCode}
+                  onChange={(e) => setPhoneCountryCode(e.target.value)}
+                >
+                  {PHONE_CODES.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="ps-input"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="50 123 4567"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+              </div>
+              <span className="ps-hint">
+                Used to prefill flight and tour booking forms
+              </span>
+            </div>
+
+            <label className="ps-field ps-field--full">
+              <span className="ps-label">Nationality</span>
+              <select
+                className="ps-input ps-select"
+                autoComplete="country-name"
+                value={nationality}
+                onChange={(e) => setNationality(e.target.value)}
+              >
+                <option value="">Select nationality</option>
+                {COUNTRIES.map(({ code, name }) => (
+                  <option key={code} value={code}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="ps-field ps-field--full">
@@ -207,6 +291,22 @@ const SettingsPanel = () => {
             </select>
             <span className="ps-hint">
               Used for hotel and flight prices in new searches (falls back to AED if unsupported)
+            </span>
+          </label>
+
+          <label className="ps-field">
+            <span className="ps-label">Appearance</span>
+            <select
+              className="ps-input ps-select"
+              value={themePreference}
+              onChange={(e) => setThemePreference(e.target.value)}
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+            <span className="ps-hint">
+              System follows your device setting
             </span>
           </label>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import ThemeToggle from "../theme/ThemeToggle.jsx";
 import "./style.css";
 import hotel from "../../img/icons/Navicons/building-4.svg";
 import tours from "../../img/icons/Navicons/sun.svg";
@@ -70,6 +71,7 @@ const MobileMenu = ({ user }) => {
           <img src={profil} alt="" />
           <p>{user?.firstname || "Log in"}</p>
         </NavLink>
+        <ThemeToggle showLabel />
       </nav>
     </>
   );

@@ -1,5 +1,6 @@
 import defaultdates from "./defaultdates";
 import { getStoredCurrency } from "./currency";
+import { resolveNationality } from "./nationality";
 
 // URL-хелперы поиска перелётов: /flights?... — единственный источник истины
 
@@ -119,12 +120,12 @@ export const buildRatesRequest = (params, { currency } = {}) => {
     });
   }
 
-  // currency — из настроек профиля (fallback AED), country — sandbox аккаунт AE
+  // currency — из настроек профиля (fallback AED), country — nationality (fallback AE)
   const request = {
     legs,
     adults: Math.max(1, params.adults || 1),
     currency: currency || getStoredCurrency(),
-    country: "AE",
+    country: resolveNationality(params.nationality),
   };
   if (params.children > 0) request.children = params.children;
   if (params.infants > 0) request.infants = params.infants;

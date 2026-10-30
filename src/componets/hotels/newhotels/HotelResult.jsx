@@ -7,7 +7,7 @@ import { SORT_OPTIONS } from "../sorting/sortOptions";
 import { Rating } from "@mui/material";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
-import ReplayIcon from "@mui/icons-material/Replay";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import SwapVertOutlinedIcon from "@mui/icons-material/SwapVertOutlined";
 import SearchOption from "../../hotelsearch/NewHotelSearch";
@@ -37,6 +37,7 @@ import { useHotelListRates } from "../../../hooks/queries/useHotelListRates";
 import { hotelDetailQueryOptions } from "../../../hooks/queries/useHotelDetail";
 import { normalizeHotelSearch } from "../../../utils/queryParams";
 import { getStoredCurrency } from "../../../utils/currency";
+import { resolveNationality } from "../../../utils/nationality";
 
 const DEFAULT_FILTERS = {
   starRating: [],
@@ -65,9 +66,10 @@ const HotelList = () => {
   const search = useMemo(() => normalizeHotelSearch(searchParams), [searchParams]);
   const { city, placeId, checkIn, checkOut, adults, children, childrenAges } = search;
   const currency = user?.currency || getStoredCurrency();
+  const nationality = resolveNationality(user?.nationality);
   const quests = adults + children;
 
-  const ratesQuery = useHotelListRates({ search, filters, currency });
+  const ratesQuery = useHotelListRates({ search, filters, currency, nationality });
   const hotels = useMemo(
     () => (Array.isArray(ratesQuery.data?.data?.hotels) ? ratesQuery.data.data.hotels : []),
     [ratesQuery.data],
@@ -167,7 +169,11 @@ const HotelList = () => {
       <SearchOption />
       <div className="mcontainer">
         <div className="mcontrols">
-          <FilterDrawer>
+          <FilterDrawer
+            resultCount={hotels.length}
+            resultNoun="hotel"
+            resultLoading={updating}
+          >
             <HotelFilters
               filters={filters}
               onChange={setFilters}
@@ -283,61 +289,63 @@ const HotelList = () => {
                         </div>
                         <div className="card-footer">
                           {!user && (
-                            <>
-                              <div className="hc-deal-row">
-                                <p className="hc-deal-text">
-                                  <span
-                                    className="hc-deal-link"
-                                    role="link"
-                                    tabIndex={0}
-                                    onClick={handleSignInClick}
-                                    onKeyDown={(event) => {
-                                      if (event.key === "Enter") {
-                                        handleSignInClick(event);
-                                      }
-                                    }}
-                                  >
-                                    Sign in
-                                  </span>{" "}
-                                  and save
-                                  <span className="hc-deal-chip">
-                                    {MEMBER_SAVE_PERCENT}%
-                                  </span>
-                                </p>
-                                <span className="hc-member-badge">
-                                  Member Price
+                            <div className="hc-deal-row">
+                              <p className="hc-deal-text">
+                                <span
+                                  className="hc-deal-link"
+                                  role="link"
+                                  tabIndex={0}
+                                  onClick={handleSignInClick}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                      handleSignInClick(event);
+                                    }
+                                  }}
+                                >
+                                  Sign in
+                                </span>{" "}
+                                and save
+                                <span className="hc-deal-chip">
+                                  {MEMBER_SAVE_PERCENT}%
                                 </span>
-                              </div>
-                              <div className="hc-divider" />
-                            </>
-                          )}
-                          <div className="hc-rate-row">
-                            <div className="hc-rate-room">
-                              <p className="hc-room-name">{rate?.name || "—"}</p>
+                              </p>
+                              <span className="hc-member-badge">
+                                Member Price
+                              </span>
                             </div>
-                            <div className="hc-rate-conditions">
+                          )}
+                          <div className="hc-bottom-panel">
+                            <div className="hc-perks">
                               {board && (
-                                <div className="hc-cond-row">
-                                  <RestaurantIcon />
-                                  <span>{board}</span>
+                                <div className="hc-perk">
+                                  <span className="hc-perk-icon">
+                                    <RestaurantIcon />
+                                  </span>
+                                  <span className="hc-perk-label">{board}</span>
                                 </div>
                               )}
                               {cancellation && (
                                 <div
-                                  className={`hc-cond-row${
-                                    cancellation === "Free cancellation"
+                                  className={`hc-perk${
+                                    cancellation === "Refundable"
                                       ? " is-positive"
                                       : ""
                                   }`}
                                 >
-                                  <ReplayIcon />
-                                  <span>{cancellation}</span>
+                                  <span className="hc-perk-icon">
+                                    <AccessTimeIcon />
+                                  </span>
+                                  <span className="hc-perk-label">
+                                    {cancellation}
+                                  </span>
                                 </div>
                               )}
                               {payment && (
-                                <div className="hc-cond-row">
-                                  <CreditCardIcon />
-                                  <span>{payment}</span>
+                                <div className="hc-perk">
+                                  <span className="hc-perk-icon">
+                                    <CreditCardIcon />
+                                  </span>
+                                  <span className="hc-perk-label">{payment}</span>
                                 </div>
                               )}
                             </div>
@@ -349,6 +357,7 @@ const HotelList = () => {
                                 </p>
                               )}
                               <p className="hc-total-price">
+                                <span className="hc-price-from">From</span>{" "}
                                 {price.amount != null
                                   ? `${formatNumber(price.amount)} ${price.currency}`
                                   : "N/A"}

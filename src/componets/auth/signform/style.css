@@ -36,8 +36,8 @@
 }
 
 .login-wrapper {
-  --blob-1-color: #ff5e00;
-  --blob-2-color: #7000ff;
+  --blob-1-color: #09603b;
+  --blob-2-color: #336f64;
   --btn-hover-glow: rgba(112, 0, 255, 0.25);
   --input-focus-glow: rgba(112, 0, 255, 0.15);
   position: relative;
@@ -60,7 +60,7 @@
   position: relative;
   width: 100%;
   max-width: 430px;
-  background-color: #0d0f14;
+  background-color: #153534;
   border-radius: 24px;
   padding: 36px 28px;
   overflow: hidden;
@@ -248,6 +248,15 @@
   border-color: rgba(255, 255, 255, 0.25);
   box-shadow: 0 0 20px var(--input-focus-glow);
   transform: translateY(-2px);
+}
+
+select.input-field {
+  cursor: pointer;
+}
+
+select.input-field option {
+  background: #ffffff;
+  color: #111111;
 }
 
 .forgot-link {

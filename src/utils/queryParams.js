@@ -1,3 +1,5 @@
+import { resolveNationality } from "./nationality";
+
 const parseChildrenAges = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -73,6 +75,7 @@ export const buildHotelRatesBody = ({
   search,
   filters,
   currency,
+  nationality,
   hotelIds,
   maxRatesPerHotel,
   limit = 5000,
@@ -86,7 +89,7 @@ export const buildHotelRatesBody = ({
   const body = {
     occupancies,
     currency,
-    guestNationality: "US",
+    guestNationality: resolveNationality(nationality),
     checkin: search.checkIn,
     checkout: search.checkOut,
     roomMapping: true,

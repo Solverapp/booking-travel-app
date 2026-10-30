@@ -4,7 +4,7 @@
   gap: 32px;
   padding: 32px 24px 32px 24px;
   border-radius: 30px;
-  background-color: var(--white);
+  background-color: var(--surface);
   
 
   width: 100%;
@@ -14,34 +14,34 @@
 .filter-box h3{
     font-size: 20px;
     font-weight: 700;
-    color: var(--black);
+    color: var(--text);
 }
 .filter-box h4{
     font-size: 18px;
     font-weight: 700;
-    color: var(--black);
+    color: var(--text);
 }
 .filter-box p.semi{
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
 }
 .filter-box p.bold{
     font-size: 16px;
     font-weight: 700;
-    color: var(--black);
+    color: var(--text);
 }
 .filter-box span.regular{
     font-size: 14px;
     font-weight: 400;
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 
 .fb-heder{
     display: flex;
     justify-content: space-between;
     padding-bottom: 38px;
-    border-bottom: solid 1px var(--gray_stoke);
+    border-bottom: solid 1px var(--border-strong);
     height: 55px;
 }
 .fb-heder button{
@@ -71,7 +71,7 @@ color: var(--red);
     width: 100%;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
 }
 .price-box input:focus{
     outline: none;
@@ -84,9 +84,9 @@ color: var(--red);
     padding-top: 6px;
     padding-bottom: 6px;
     padding-left: 24px;
-    border-top: solid 1px var(--gray_stoke);
-    border-left: solid 1px var(--gray_stoke);
-    border-bottom: solid 1px var(--gray_stoke);
+    border-top: solid 1px var(--border-strong);
+    border-left: solid 1px var(--border-strong);
+    border-bottom: solid 1px var(--border-strong);
     border-top-left-radius: 15px;
     border-bottom-left-radius: 15px;
     flex: 1;
@@ -101,7 +101,7 @@ color: var(--red);
     padding-bottom: 6px;
     padding-left: 24px;
     padding-right: 16px;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-top-right-radius: 15px;
     border-bottom-right-radius: 15px;
     flex: 1;
@@ -121,7 +121,7 @@ color: var(--red);
     font-family: inherit;
     font-size: 15px;
     font-weight: 600;
-    color: var(--green);
+    color: var(--accent);
     text-decoration: underline;
     cursor: pointer;
     text-align: left;
@@ -154,14 +154,14 @@ color: var(--red);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-radius: 15px;
     padding-left: 16px;
     padding-right: 12px;
     transition: all 0.4ms ease-in;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     /* flex-basis: 0 (как было у flex: 1) не даёт flex-wrap сработать —
        элементы всегда «влезают» в строку и сжимаются. Нужен реальный basis */
     flex: 1 1 160px;
@@ -188,7 +188,7 @@ color: var(--red);
     transition: all 0.4ms ease-in;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     flex: 1 1 160px;
     min-width: 160px;
     height: 52px;
@@ -280,7 +280,7 @@ color: var(--red);
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-radius: 15px;
     
     width: 100%;
@@ -297,7 +297,7 @@ color: var(--red);
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-radius: 15px;
     
     width: 100%;
@@ -392,20 +392,20 @@ color: var(--red);
     width: 100%;
     height: 48px;
     padding: 0 16px;
-    border: 1px solid var(--gray_stoke);
+    border: 1px solid var(--border-strong);
     border-radius: 15px;
-    background: var(--white);
+    background: var(--surface);
     font-family: inherit;
     font-size: 15px;
     font-weight: 500;
-    color: var(--black);
+    color: var(--text);
     outline: none;
 }
 .fb-chain-search:focus {
     border-color: var(--green);
 }
 .fb-chain-search::placeholder {
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 .fb-chain-list {
     display: flex;
@@ -425,4 +425,22 @@ color: var(--red);
     .fb-chain-list {
         max-height: 220px;
     }
+}
+[data-theme="dark"] .rating-btn-active,
+[data-theme="dark"] .fb-rating-box button:hover,
+[data-theme="dark"] .fb-chain-search:focus {
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .rating-item-actived {
+  background-color: var(--accent);
+  color: #052a27;
+}
+
+[data-theme="dark"] .rating-item-actived p.bold {
+  color: #052a27;
+}
+
+[data-theme="dark"] .rating-btn-active img {
+  filter: brightness(0) invert(1);
 }

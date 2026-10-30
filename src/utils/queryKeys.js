@@ -3,7 +3,14 @@ export const queryKeys = {
   hotelChains: (placeId) => ["v1", "hotels", "chains", placeId],
   hotelDetail: (hotelId) => ["v1", "hotels", "detail", hotelId],
   hotelReviews: (hotelId, limit = 200) => ["v1", "hotels", "reviews", hotelId, limit],
-  hotelPlaceRates: ({ placeId, stayKey, occupancyKey, currency, filtersKey }) => [
+  hotelPlaceRates: ({
+    placeId,
+    stayKey,
+    occupancyKey,
+    currency,
+    nationality,
+    filtersKey,
+  }) => [
     "v1",
     "hotels",
     "rates",
@@ -12,9 +19,10 @@ export const queryKeys = {
     stayKey,
     occupancyKey,
     currency,
+    nationality,
     filtersKey,
   ],
-  hotelRates: (hotelId, { stayKey, occupancyKey, currency }) => [
+  hotelRates: (hotelId, { stayKey, occupancyKey, currency, nationality }) => [
     "v1",
     "hotels",
     "rates",
@@ -23,8 +31,10 @@ export const queryKeys = {
     stayKey,
     occupancyKey,
     currency,
+    nationality,
   ],
   flightRates: (params) => ["v1", "flights", "rates", params],
   flightSession: (userId, sessionId) => ["v1", "flights", "session", userId, sessionId],
   bookings: (userId) => ["v1", "bookings", "user", userId],
+  favorites: (userId) => ["v1", "favorites", "user", userId],
 };

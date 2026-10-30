@@ -9,6 +9,8 @@ import FlightCard from "./FlightCard";
 import FlightDetailsDrawer from "./FlightDetailsDrawer";
 import FlightFaresModal from "./FlightFaresModal";
 import useMediaQuery from "../../utils/useMediaQuery";
+import { useAuth } from "../../context/AuthContext";
+import { useAuthPrompt } from "../../context/authPrompt";
 import { useFlightRates } from "../../hooks/queries/useFlightRates";
 import { useVerifyFlight } from "../../hooks/mutations/useFlightBookingMutations";
 import {
@@ -20,6 +22,7 @@ import {
 } from "../../utils/flightSearch";
 import { fareOptions } from "../../utils/flightOffers";
 import { getStoredCurrency } from "../../utils/currency";
+import { resolveNationality } from "../../utils/nationality";
 import {
   journeyOffer,
   journeyPrice,
@@ -79,8 +82,14 @@ const FlightsResult = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useMediaQuery("(max-width: 968px)");
+  const { user } = useAuth();
+  const { openAuthPrompt } = useAuthPrompt();
 
-  const params = useMemo(() => parseFlightsParams(searchParams), [searchParams]);
+  const nationality = resolveNationality(user?.nationality);
+  const params = useMemo(
+    () => ({ ...parseFlightsParams(searchParams), nationality }),
+    [searchParams, nationality],
+  );
   const searchKey = searchParams.toString();
 
   const [sort, setSort] = useState("cheapest");
@@ -211,6 +220,10 @@ const FlightsResult = () => {
 
   const handleSelectOffer = async (offer) => {
     if (!offer?.offerId || verifyFlight.isPending) return;
+    if (!user) {
+      openAuthPrompt({ service: "flight", from: `/flights?${searchKey}` });
+      return;
+    }
     setBookingError(null);
     try {
       const verified = await verifyFlight.mutateAsync({
@@ -220,7 +233,7 @@ const FlightsResult = () => {
       navigate(`/flightpage/${verified.sessionId}`);
     } catch (err) {
       if (err?.code === "UNAUTHORIZED") {
-        navigate("/login", { state: { from: `/flights?${searchKey}` } });
+        openAuthPrompt({ service: "flight", from: `/flights?${searchKey}` });
         return;
       }
       setBookingError(
@@ -410,7 +423,10 @@ const FlightsResult = () => {
       )}
 
       <div className="flights-layout">
-        <FilterDrawer>
+        <FilterDrawer
+          resultCount={validSearch ? filtered.length : null}
+          resultNoun="flight"
+        >
           <FlightFilters
             filters={filters}
             onChange={setFilters}

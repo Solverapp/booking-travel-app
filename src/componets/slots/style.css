@@ -11,7 +11,7 @@
     justify-content: flex-start;
     padding: 8px 12px;
     cursor: pointer;
-    border: solid 1px var(--light_gray);
+    border: solid 1px var(--border);
     border-radius: 15px;
     font-size: 16px;
     font-weight: 600;

@@ -9,9 +9,9 @@
 	top: 38px;
     text-align:left ;
     padding: 16px 12px 12px 12px;
-    border: solid 1px var(--light_gray);
+    border: solid 1px var(--border);
     border-radius: 30px;
-    background-color: var(--white);
+    background-color: var(--surface);
     z-index: 1;
     width: 332px;
     max-width: calc(100vw - 32px);
@@ -68,7 +68,7 @@
     padding: 0 2px 10px 2px;
     font-size: 16px;
     font-weight: 600;
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 .days{
     display: grid;
@@ -87,7 +87,7 @@
     padding: 0;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     cursor: pointer;
     border: none;
    
@@ -100,7 +100,7 @@
     
 }
 .disabled {
-  color: var(--gray_stoke) !important;
+  color: var(--text-subtle) !important;
   cursor: not-allowed !important;
   background-color: transparent !important;
   pointer-events: none !important;
@@ -187,7 +187,7 @@
 
 .calendar-sheet.calendar-multi .calendar-month + .calendar-month {
     padding-top: 20px;
-    border-top: 1px solid var(--light_gray);
+    border-top: 1px solid var(--border);
 }
 
 .calendar-month {
@@ -207,7 +207,7 @@
     gap: 8px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid var(--light_gray);
+    border-top: 1px solid var(--border);
 }
 
 .date-popover__btn {
@@ -223,7 +223,7 @@
 }
 
 .date-popover__btn--clear {
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 
 .date-popover__btn--apply {

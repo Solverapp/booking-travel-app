@@ -11,7 +11,7 @@
     width: auto;
 }
 .sop-box-dpicker span {
-    color: var(--black);
+    color: var(--text);
     font-size: 16px;
     font-weight: 600;
     min-width: 0;
@@ -27,9 +27,9 @@
     padding-top: 12px;
     padding-bottom: 12px;
     padding-left: 16px;
-    border-top: solid 1px var(--gray_stoke);
-    border-left: solid 1px var(--gray_stoke);
-    border-bottom: solid 1px var(--gray_stoke);
+    border-top: solid 1px var(--border-strong);
+    border-left: solid 1px var(--border-strong);
+    border-bottom: solid 1px var(--border-strong);
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
     flex: 1 1 0;
@@ -44,7 +44,7 @@
     padding-bottom: 12px;
     padding-left: 16px;
     padding-right: 16px;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;
     flex: 1 1 0;

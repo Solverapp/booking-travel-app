@@ -1,5 +1,6 @@
 import PersonOutlineOutlined from "@mui/icons-material/PersonOutlineOutlined";
 import ShoppingBagOutlined from "@mui/icons-material/ShoppingBagOutlined";
+import FavoriteOutlined from "@mui/icons-material/FavoriteOutlined";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlined from "@mui/icons-material/LogoutOutlined";
 import { useAuth } from "../../context/AuthContext";
@@ -8,6 +9,7 @@ import "./style.css";
 const TABS = [
   { id: "overview", label: "Overview", icon: PersonOutlineOutlined },
   { id: "bookings", label: "Bookings", icon: ShoppingBagOutlined },
+  { id: "favorites", label: "Favorites", icon: FavoriteOutlined },
   { id: "settings", label: "Settings", icon: SettingsOutlined },
 ];
 

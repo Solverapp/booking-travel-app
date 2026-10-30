@@ -47,13 +47,26 @@ const FlightFilters = ({ filters, onChange, onClear, airlines, currency }) => {
     </div>
   );
 
+  const hasActiveFilters =
+    filters.stops.length > 0 ||
+    filters.airlines.length > 0 ||
+    filters.departTime.length > 0 ||
+    filters.arriveTime.length > 0 ||
+    Number(filters.priceMin) > 0 ||
+    Number(filters.priceMax) > 0 ||
+    Boolean(filters.handBaggage) ||
+    Boolean(filters.checkedBaggage) ||
+    Boolean(filters.refundableOnly);
+
   return (
     <div className="filter-box">
       <div className="fb-heder">
         <h3>Filters</h3>
-        <button type="button" onClick={onClear}>
-          Clear all
-        </button>
+        {hasActiveFilters && (
+          <button type="button" onClick={onClear}>
+            Clear all
+          </button>
+        )}
       </div>
 
       <div className="fb-price">

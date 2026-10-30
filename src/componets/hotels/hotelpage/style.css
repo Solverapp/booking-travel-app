@@ -30,6 +30,30 @@
     width: 20px;
     height: 20px;
 }
+.hotel-fav{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    border-radius: 12px;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: solid 1px var(--light_gray);
+    height: 45px;
+    width: auto;
+}
+.hotel-fav.is-active{
+    border-color: var(--green3);
+    background-color: var(--green3);
+    color: var(--white);
+}
+.hotel-fav:disabled{
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 /* Страница отеля: карточка с галереей во всю ширину в край (углы сетки режутся по радиусу карточки), инфо под сеткой */
 .hotel-hero{
@@ -651,6 +675,11 @@
     color: var(--black);
 }
 
+[data-theme="dark"] .gr-who-icon {
+    background-color: var(--surface-strong);
+    color: var(--text);
+}
+
 .gr-sort{
     display: flex;
     justify-content: flex-end;
@@ -980,4 +1009,144 @@
     .checkin-out-row {
         min-width: 120px;
     }
+}
+
+/* ============ Dark theme: hotel detail ============ */
+
+[data-theme="dark"] .backoption button {
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text);
+}
+
+[data-theme="dark"] .backoption img {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+[data-theme="dark"] .hotel-hero,
+[data-theme="dark"] .hotel-about,
+[data-theme="dark"] .sent-block,
+[data-theme="dark"] .gr-block {
+    background-color: var(--surface);
+}
+
+[data-theme="dark"] .hotel-hero-head h1,
+[data-theme="dark"] .hotel-hero-price h2,
+[data-theme="dark"] .hotel-about h2,
+[data-theme="dark"] .sent-block h2,
+[data-theme="dark"] .sent-block h3,
+[data-theme="dark"] .sent-score-info strong,
+[data-theme="dark"] .sent-score-value,
+[data-theme="dark"] .sent-cat-name,
+[data-theme="dark"] .sent-cat-rating,
+[data-theme="dark"] .sent-details-link,
+[data-theme="dark"] .fac-seeall,
+[data-theme="dark"] .gr-block h2,
+[data-theme="dark"] .gr-block h3,
+[data-theme="dark"] .gr-score-info strong,
+[data-theme="dark"] .gr-who-label,
+[data-theme="dark"] .gr-who-pct,
+[data-theme="dark"] .gr-item-who strong,
+[data-theme="dark"] .gr-item-text {
+    color: var(--text);
+}
+
+[data-theme="dark"] .hotel-hero-loc,
+[data-theme="dark"] .hotel-hero-loc button {
+    color: var(--accent);
+}
+
+[data-theme="dark"] .hotel-hero-loc img {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+[data-theme="dark"] .hotel-hero-rating,
+[data-theme="dark"] .hotel-hero-price span {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .sent-chip--pro,
+[data-theme="dark"] .gr-chip {
+    background-color: rgba(53, 181, 166, 0.14);
+    color: #8ee9de;
+}
+
+[data-theme="dark"] .sent-chip--con {
+    background-color: rgba(229, 83, 60, 0.16);
+    color: #ffb0a2;
+}
+
+[data-theme="dark"] .sent-bar {
+    background-color: var(--surface-strong);
+}
+
+[data-theme="dark"] .hinfo-box span,
+[data-theme="dark"] .hinfo-box .checkin-out-value,
+[data-theme="dark"] .checkin-out-special {
+    color: var(--text);
+}
+
+[data-theme="dark"] .facti-btn {
+    border-color: var(--border);
+    color: var(--text);
+}
+
+[data-theme="dark"] .fac-popup-card {
+    background-color: var(--surface);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .fac-popup-head {
+    border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .fac-popup-head h3,
+[data-theme="dark"] .fac-popup-section h4,
+[data-theme="dark"] .fac-pop-item,
+[data-theme="dark"] .fac-cat-head,
+[data-theme="dark"] .fac-cat-list li {
+    color: var(--text);
+}
+
+[data-theme="dark"] .fac-popup-close {
+    color: var(--text);
+}
+
+[data-theme="dark"] .fac-popup-close:hover {
+    background-color: var(--surface-strong);
+}
+
+[data-theme="dark"] .fac-popup-divider {
+    background-color: var(--border);
+}
+
+[data-theme="dark"] .gr-sort select {
+    border-color: var(--border);
+    background-color: var(--surface-alt);
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f2f6f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    color: var(--text);
+}
+
+[data-theme="dark"] .gr-list-box {
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .gr-item {
+    border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .gr-list-foot {
+    background-color: var(--surface-alt);
+}
+
+[data-theme="dark"] .gr-load {
+    border-color: var(--border);
+    background-color: var(--surface-alt);
+    color: var(--text);
+}
+
+[data-theme="dark"] .gr-load:hover {
+    background-color: var(--surface-strong);
 }

@@ -11,9 +11,9 @@
     gap: 10px;
     text-align: left;
     padding: 32px 24px;
-    border: solid 1px var(--light_gray);
+    border: solid 1px var(--border);
     border-radius: 20px;
-    background-color: var(--white);
+    background-color: var(--surface);
     z-index: 1;
     width: 362px;
     max-width: calc(100vw - 32px);
@@ -58,13 +58,13 @@
 .gcontent .selector-item p {
     font-size: 16px;
     font-weight: 700;
-    color: var(--black);
+    color: var(--text);
 }
 
 .gcontent .selector-item span {
     font-size: 14px;
     font-weight: 400;
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 
 .gcontent .item-left {
@@ -102,6 +102,10 @@
     height: 46px;
 }
 
+[data-theme="dark"] .gcontent .counter-btn img {
+    filter: brightness(0) invert(1);
+}
+
 .gcontent .selector-ages {
     display: flex;
     flex-direction: column;
@@ -123,15 +127,15 @@
 
 .gcontent .ages-box span {
     font-size: 14px;
-    color: var(--gray_text);
+    color: var(--text-muted);
 }
 
 .gcontent .age-select {
-    border: solid 1px var(--gray_text);
+    border: solid 1px var(--border-strong);
     border-radius: 8px;
     padding: 6px 8px;
     min-height: 36px;
-    background: var(--white);
+    background: var(--surface);
     font-size: 15px;
 }
 
@@ -155,7 +159,7 @@
 .gcontent .cabin-label {
     font-size: 16px;
     font-weight: 700;
-    color: var(--black);
+    color: var(--text);
 }
 
 .gcontent .cabin-pills {
@@ -168,12 +172,12 @@
     min-height: 44px;
     padding: 8px 16px;
     border-radius: 12px;
-    border: 1px solid var(--gray_stoke);
-    background-color: var(--white);
+    border: 1px solid var(--border-strong);
+    background-color: var(--surface);
     font-family: inherit;
     font-size: 15px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     cursor: pointer;
 }
 

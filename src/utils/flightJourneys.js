@@ -80,6 +80,23 @@ export const legStops = (leg) => {
   return connections + technical;
 };
 
+export const legConnections = (leg) => {
+  const segments = Array.isArray(leg) ? leg : [];
+  return segments.slice(1).map((segment, index) => {
+    const previous = segments[index];
+    const arrivalTime = previous?.arrivalTime ?? "";
+    const departureTime = segment?.departureTime ?? "";
+    return {
+      key: `${previous?.segmentKey ?? index}->${segment?.segmentKey ?? index + 1}`,
+      code: segment?.originCode || previous?.destinationCode || "",
+      name: segment?.originName || previous?.destinationName || "",
+      arrivalTime,
+      departureTime,
+      layoverMinutes: minutesBetween(arrivalTime, departureTime),
+    };
+  });
+};
+
 export const legFlightNumbers = (leg) => {
   const numbers = new Set();
   (Array.isArray(leg) ? leg : []).forEach((segment) => {

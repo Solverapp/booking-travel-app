@@ -1,9 +1,122 @@
-/* Остался только .rsel-box — он нужен guestCounter.jsx (RateConter).
-   Стили селектора гостей переехали в ../quest/guests.css (общий GuestsContent),
-   оболочка полей — в src/styles/field-common.css. */
+.tour-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 132px;
+  min-height: 48px;
+  padding: 4px;
+  border-radius: 999px;
+  background-color: var(--white);
+  box-shadow: 0 2px 10px rgba(16, 31, 54, 0.12);
+}
 
-.rsel-box {
-    display: flex;
-    flex-direction: column;
-    min-width: 100px;
+.tour-stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: #f2f6fb;
+  color: #2563c9;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.tour-stepper-btn--plus {
+  background-color: #e2edff;
+}
+
+.tour-stepper-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tour-stepper-btn:hover:not(:disabled) {
+  background-color: #dbe8fb;
+}
+
+.tour-stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tour-stepper-value {
+  min-width: 24px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.tour-stepper--child .tour-stepper-btn {
+  background-color: #eaf8ef;
+  color: #1e8b50;
+}
+
+.tour-stepper--child .tour-stepper-btn--plus {
+  background-color: #d9f2e3;
+}
+
+.tour-stepper--child .tour-stepper-btn:hover:not(:disabled) {
+  background-color: #cfeddc;
+}
+
+@media (max-width: 640px) {
+  .tour-stepper {
+    width: 120px;
+    min-height: 46px;
+    gap: 4px;
+  }
+
+  .tour-stepper-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tour-stepper-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .tour-stepper-value {
+    font-size: 15px;
+  }
+}
+
+[data-theme="dark"] .tour-stepper {
+  background-color: var(--surface);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .tour-stepper-btn {
+  background-color: rgba(74, 144, 226, 0.16);
+  color: #8ec5ff;
+}
+
+[data-theme="dark"] .tour-stepper-btn--plus {
+  background-color: rgba(74, 144, 226, 0.26);
+}
+
+[data-theme="dark"] .tour-stepper-btn:hover:not(:disabled) {
+  background-color: rgba(74, 144, 226, 0.34);
+}
+
+[data-theme="dark"] .tour-stepper-value {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .tour-stepper--child .tour-stepper-btn {
+  background-color: rgba(53, 181, 166, 0.14);
+  color: var(--accent);
+}
+
+[data-theme="dark"] .tour-stepper--child .tour-stepper-btn--plus {
+  background-color: rgba(53, 181, 166, 0.24);
+}
+
+[data-theme="dark"] .tour-stepper--child .tour-stepper-btn:hover:not(:disabled) {
+  background-color: rgba(53, 181, 166, 0.32);
 }

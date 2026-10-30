@@ -1,10 +1,10 @@
 import Loader from "./loading";
 import "./style.css";
 
-const PageLoader = ({ text = "Please wait", embedded = false }) => {
+const PageLoader = ({ text = "Please wait", embedded = false, loaderColor }) => {
     const block = (
         <div className="loader-not">
-            <Loader />
+            <Loader color={loaderColor} />
             <span>{text}</span>
         </div>
     );

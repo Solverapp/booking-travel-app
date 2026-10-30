@@ -438,3 +438,22 @@ enabled = true
 # которые проверяются/хешируются внутри функции.
 verify_jwt = false
 entrypoint = "./functions/hotels-booking/index.ts"
+
+[functions.tours-booking]
+enabled = true
+# Tour checkout is authenticated. The function verifies the JWT again and
+# creates a pre-booking only; it never calls Rayna /booking.
+verify_jwt = true
+entrypoint = "./functions/tours-booking/index.ts"
+
+[functions.tours-payment]
+enabled = true
+# Authenticated PaymentIntent creation/status/sync for tour pre-bookings.
+verify_jwt = true
+entrypoint = "./functions/tours-payment/index.ts"
+
+[functions.tours-stripe-webhook]
+enabled = true
+# Stripe webhook: no Supabase JWT; Stripe-Signature is verified inside.
+verify_jwt = false
+entrypoint = "./functions/tours-stripe-webhook/index.ts"

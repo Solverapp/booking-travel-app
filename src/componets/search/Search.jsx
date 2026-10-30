@@ -33,13 +33,13 @@ const Search = () => {
   const [checkInH, setCheckInH] = useState(null);
   const [checkOutH, setCheckOutH] = useState(null);
   const [pleaseId, setPleaseId] = useState("");
-  const [city, setCity] = useState(DEFAULT_TOUR_CITY.name);
+  const [city, setCity] = useState(DEFAULT_TOUR_CITY);
   const [guestsHotel, setGuestsHotel] = useState({ adults: 1, children: 0, childrenAges: [],});
 
   const switchTab = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-    setCity(tab === "tour" ? DEFAULT_TOUR_CITY.name : "");
+    setCity(tab === "tour" ? DEFAULT_TOUR_CITY : "");
     setPleaseId("");
   };
 
@@ -109,9 +109,9 @@ const Search = () => {
       city: city,
       checkIn: fmt(checkIn) || defaultdates.tomorrow,
       // checkOut: fmt(checkOutH) || defaultdates.dayAfterTomorrow,
-      adults: String(guestsHotel.adults),
-      children: String(guestsHotel.children),
-      infants: String(guestsHotel.infants || 0),
+      adults: "1",
+      children: "0",
+      infants: "0",
     });
 
     navigate(`/tours?${params.toString()}`);
@@ -129,21 +129,29 @@ const Search = () => {
           className={`tab-btn ${activeTab === "tour" ? "actives" : ""}`}
           onClick={activtab}
         >
-          <img src={tur} alt="tur" />
+          <img src={tur} className="tab-icon tab-icon--tour" alt="tur" />
           <span>Tour</span>
         </div>
         <div
           className={`tab-btn ${activeTab === "hotel" ? "actives" : ""}`}
           onClick={activtabH}
         >
-          <img src={activeTab === "hotel" ? hotelactiv : hotel} alt="tur" />
+          <img
+            src={activeTab === "hotel" ? hotelactiv : hotel}
+            className="tab-icon tab-icon--hotel"
+            alt="tur"
+          />
           <span>Hotels</span>
         </div>
         <div
           className={`tab-btn ${activeTab === "air" ? "actives" : ""}`}
           onClick={activtabA}
         >
-          <img src={activeTab === "air" ? airdark : air} alt="tur" />
+          <img
+            src={activeTab === "air" ? airdark : air}
+            className="tab-icon tab-icon--flight"
+            alt="tur"
+          />
           <span>Flights</span>
         </div>
       </div>

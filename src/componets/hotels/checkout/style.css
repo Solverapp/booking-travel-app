@@ -25,14 +25,14 @@ color: var(--red);
 }
 
 .checkout-tax-excluded {
-  color: #fbbf24;
+  color: var(--co-warning-strong);
   font-weight: 600;
 }
 
 .checkout-tax-row {
   padding-left: 12px;
   font-size: 13px;
-  color: var(--gray_text);
+  color: var(--text-muted);
 }
 
 .checkout-tax-row span:last-child {

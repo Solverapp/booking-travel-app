@@ -99,11 +99,21 @@ const TourFilters = ({
     }
   };
 
+  const hasActiveFilters =
+    selectedStars.length > 0 ||
+    Boolean(selectedAmenities) ||
+    Number(priceMin) > 0 ||
+    Number(priceMax) > 0;
+
   return (
     <div className="filter-box">
       <div className="fb-heder">
         <h3>Filters</h3>
-        <button onClick={handleClearAll}>Clear all</button>
+        {hasActiveFilters && (
+          <button type="button" onClick={handleClearAll}>
+            Clear all
+          </button>
+        )}
       </div>
       <div className="fb-rating">
         <h4>Sort by</h4>

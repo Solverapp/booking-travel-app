@@ -92,6 +92,15 @@ const HotelFilters = ({ filters, onChange, onClear, placeId }) => {
     [filters.chainIds],
   );
 
+  const hasActiveFilters =
+    (Array.isArray(filters.starRating) && filters.starRating.length > 0) ||
+    Number(filters.minRating) > 0 ||
+    (Array.isArray(filters.facilities) && filters.facilities.length > 0) ||
+    (Array.isArray(filters.bedTypes) && filters.bedTypes.length > 0) ||
+    (Array.isArray(filters.boardType) && filters.boardType.length > 0) ||
+    selectedChainIds.length > 0 ||
+    Boolean(filters.refundableOnly);
+
   useEffect(() => {
     if (!chains.length || selectedChainIds.length === 0) return;
 
@@ -180,7 +189,11 @@ const HotelFilters = ({ filters, onChange, onClear, placeId }) => {
     <div className="filter-box">
       <div className="fb-heder">
         <h3>Filters</h3>
-        <button onClick={handleClear}>Clear all</button>
+        {hasActiveFilters && (
+          <button type="button" onClick={handleClear}>
+            Clear all
+          </button>
+        )}
       </div>
       {chainsLoading && (
         <div className="fb-amenities">

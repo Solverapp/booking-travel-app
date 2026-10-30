@@ -8,9 +8,16 @@ import {
   hotelStayKey,
 } from "../../utils/queryParams";
 import { queryKeys } from "../../utils/queryKeys";
+import { resolveNationality } from "../../utils/nationality";
 import { useDebouncedValue } from "../useDebouncedValue";
 
-export const useHotelListRates = ({ search, filters, currency, enabled = true }) => {
+export const useHotelListRates = ({
+  search,
+  filters,
+  currency,
+  nationality,
+  enabled = true,
+}) => {
   const debouncedFilters = useDebouncedValue(filters, 400);
   const filtersKey = useMemo(
     () => hotelFiltersKey(debouncedFilters),
@@ -18,6 +25,7 @@ export const useHotelListRates = ({ search, filters, currency, enabled = true })
   );
   const stayKey = hotelStayKey(search);
   const occupancyKey = hotelOccupancyKey(search);
+  const guestNationality = resolveNationality(nationality);
   const placeId = search.placeId;
   const canFetch = Boolean(
     enabled && placeId && search.checkIn && search.checkOut,
@@ -29,6 +37,7 @@ export const useHotelListRates = ({ search, filters, currency, enabled = true })
       stayKey,
       occupancyKey,
       currency,
+      nationality: guestNationality,
       filtersKey,
     }),
     queryFn: ({ signal }) => {
@@ -36,6 +45,7 @@ export const useHotelListRates = ({ search, filters, currency, enabled = true })
         search,
         filters: debouncedFilters,
         currency,
+        nationality: guestNationality,
         maxRatesPerHotel: 1,
         limit: 5000,
       });

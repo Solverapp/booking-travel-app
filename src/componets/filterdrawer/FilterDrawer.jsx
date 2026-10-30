@@ -5,7 +5,13 @@ import "./style.css";
 
 const DESKTOP_BREAKPOINT = 1200;
 
-const FilterDrawer = ({ children, label = "Filters" }) => {
+const FilterDrawer = ({
+  children,
+  label = "Filters",
+  resultCount = null,
+  resultNoun = "result",
+  resultLoading = false,
+}) => {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -32,6 +38,14 @@ const FilterDrawer = ({ children, label = "Filters" }) => {
   }, []);
 
   const close = useCallback(() => setOpen(false), []);
+
+  const hasResultCount = Number.isFinite(resultCount);
+  const resultNounLabel = `${resultNoun}${resultCount === 1 ? "" : "s"}`;
+  const resultText = resultLoading
+    ? "Updating results…"
+    : resultCount === 0
+      ? `No ${resultNounLabel} found`
+      : `Show ${resultCount} ${resultNounLabel}`;
 
   return (
     <div className="filter-drawer">
@@ -62,6 +76,19 @@ const FilterDrawer = ({ children, label = "Filters" }) => {
           </button>
         </div>
         <div className="filter-drawer-body">{children}</div>
+
+        {hasResultCount && (
+          <div className="filter-drawer-footer">
+            <button
+              type="button"
+              className="filter-drawer-apply"
+              onClick={close}
+              aria-busy={resultLoading ? "true" : undefined}
+            >
+              <span aria-live="polite">{resultText}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

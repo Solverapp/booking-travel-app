@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import "./style.css";
-import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ShoppingCart, Restaurant, KingBed, MeetingRoom } from '@mui/icons-material';
+import { RoundedCorner, People, Wifi, LocalParking, AcUnit, FitnessCenter, Pool, SmokeFree, TaskAlt, Tv, CoffeeMaker, ArrowForward, Restaurant, KingBed, MeetingRoom, EnergySavingsLeaf, Block, CalendarMonth, InfoOutlined } from '@mui/icons-material';
 import RoomDetailsPopup from "./RoomDetailsPopup";
+import { useAuth } from "../../../context/AuthContext";
+import { useAuthPrompt } from "../../../context/authPrompt";
 import { getStoredCurrency } from "../../../utils/currency";
 import {
   excludedTaxItems,
@@ -27,6 +29,8 @@ const roomImageFor = (mappedRoomId, roomsdata, hotel) => {
 const Rooms = ({ hotel, rooms, rates }) => {
 const [searchParams] = useSearchParams();
 const navigate = useNavigate();
+  const { user } = useAuth();
+  const { openAuthPrompt } = useAuthPrompt();
   const adults = searchParams.get("adults");
   const children = searchParams.get("children");
   const checkin = searchParams.get("checkIn");
@@ -87,6 +91,13 @@ const navigate = useNavigate();
   };
 
   const addCheckout = (offerId, roomname, totalamount, rate, roomInfo) => {
+    if (!user) {
+      openAuthPrompt({
+        service: "hotel",
+        from: `${window.location.pathname}${window.location.search}`,
+      });
+      return;
+    }
     const guests = (Number(adults) || 0) + (Number(children) || 0);
     const cancelInfo = rate?.cancellationPolicies?.cancelPolicyInfos?.[0] ?? null;
     const totalInfo = rate?.retailRate?.total?.[0] ?? null;
@@ -207,10 +218,18 @@ const navigate = useNavigate();
                     {room.offers.map((item, idx) => {
                       const key = `${idx}`;
                       const bedroom = room.roomInfos[0] || {};
-                      const ratePrice = item.rate.retailRate?.total?.[0]?.amount?.toFixed(2) || 'N/A';
-                      const rateCurrency = item.rate.retailRate?.total?.[0]?.currency || getStoredCurrency();
+                      const totalEntry = item.rate.retailRate?.total?.[0] ?? null;
+                      const ratePrice = totalEntry?.amount?.toFixed(2) || 'N/A';
+                      const rateCurrency = totalEntry?.currency || getStoredCurrency();
+                      const displayPrice = totalEntry?.amount != null
+                        ? formatMoney(totalEntry.amount, rateCurrency)
+                        : `${ratePrice} ${rateCurrency}`;
                       const isRefundable = item.rate.cancellationPolicies?.refundableTag === "RFN";
-                      const cancelTime = item.rate.cancellationPolicies?.cancelPolicyInfos?.[0]?.cancelTime || "";
+                      const cancelInfo = item.rate.cancellationPolicies?.cancelPolicyInfos?.[0] ?? null;
+                      const cancelDeadline = formatPolicyDeadline(
+                        cancelInfo?.cancelTime,
+                        cancelInfo?.timezone,
+                      );
                       const hasMeals = mealsIncluded(item.rate.boardType, item.rate.boardName);
                       const isSmokeFree = (bedroom.roomAmenities || []).some((amenity) =>
                         /non-?smok/i.test(amenity?.name || ""),
@@ -226,31 +245,33 @@ const navigate = useNavigate();
                       );
 
                       return (
-                        <div className="rates-item" key={key}>
-                          <div className="infoitem">
-                            <div className="infoprice">
-                              <h2>{ratePrice} {rateCurrency}</h2>
-                              <span>
+                        <div
+                          className={`rates-item ${isRefundable ? "is-refundable" : "is-nonrefundable"}`}
+                          key={key}
+                        >
+                          <div className="rate-head">
+                            <div className="rate-price-block">
+                              <h2>{displayPrice}</h2>
+                              <span className="rate-tax-included">
                                 Including taxes and fees
                                 {includedTaxes ? `: ${includedTaxes}` : ""}
                               </span>
                               {excludedTaxes && (
-                                <>
+                                <div className="rate-tax-extra">
                                   <span className="rate-taxes-excluded">
                                     + {excludedTaxes}
                                   </span>
-                                  {excludedTaxDescriptions && (
-                                    <span className="rate-taxes-desc">
-                                      {excludedTaxDescriptions}
-                                    </span>
-                                  )}
-                                </>
+                                  <InfoOutlined
+                                    className="rate-tax-info"
+                                    titleAccess={excludedTaxDescriptions || "Taxes and fees"}
+                                  />
+                                </div>
                               )}
-                              <div className="canseletion">
-                                <span className={`rfn ${isRefundable ? "rf" : ""}`}>
-                                  {isRefundable ? `Refund to ${cancelTime}` : 'Non-refundable'}
+                              {excludedTaxDescriptions && (
+                                <span className="rate-taxes-desc">
+                                  {excludedTaxDescriptions}
                                 </span>
-                              </div>
+                              )}
                               {penaltyPolicy && (
                                 <span className="rate-cancel-fee">
                                   Cancellation fee{" "}
@@ -262,36 +283,58 @@ const navigate = useNavigate();
                                 </span>
                               )}
                             </div>
-                            <div className="rate-amenit">
-                              <div className={`rate-fact${hasMeals ? " is-meals" : " is-off"}`}>
-                                {hasMeals ? (
-                                  <Restaurant className="rate-fact-icon" />
-                                ) : (
-                                  <MeetingRoom className="rate-fact-icon" />
-                                )}
-                                <span>
-                                  {hasMeals ? (item.rate.boardName || "Meals included") : "Room Only"}
-                                </span>
-                              </div>
-                              <div className="rate-fact">
-                                <KingBed className="rate-fact-icon" />
-                                <span>
-                                  {bedroom.bedTypes?.[0]?.bedType || "Standard bed"}
-                                </span>
-                              </div>
-                              {isSmokeFree && (
-                                <div className="rate-fact">
-                                  <SmokeFree className="rate-fact-icon" />
-                                  <span>Non-smoking room</span>
+                            {isRefundable ? (
+                              <div className="rate-policy rate-policy--refundable">
+                                <div className="rate-policy-row">
+                                  <EnergySavingsLeaf />
+                                  <span>Refundable</span>
                                 </div>
-                              )}
+                                <div className="rate-policy-row">
+                                  <CalendarMonth />
+                                  <span>
+                                    {cancelDeadline
+                                      ? `Free cancellation until ${cancelDeadline}`
+                                      : "Free cancellation"}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="rate-policy rate-policy--nonrefundable">
+                                <Block />
+                                <span>Non-refundable</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="rate-amenit">
+                            <div className={`rate-fact${hasMeals ? " is-meals" : ""}`}>
+                              <span className="rate-fact-icon-wrap">
+                                {hasMeals ? <Restaurant /> : <MeetingRoom />}
+                              </span>
+                              <span>
+                                {hasMeals ? (item.rate.boardName || "Meals included") : "Room Only"}
+                              </span>
                             </div>
+                            <div className="rate-fact">
+                              <span className="rate-fact-icon-wrap">
+                                <KingBed />
+                              </span>
+                              <span>
+                                {bedroom.bedTypes?.[0]?.bedType || "Standard bed"}
+                              </span>
+                            </div>
+                            {isSmokeFree && (
+                              <div className="rate-fact">
+                                <span className="rate-fact-icon-wrap">
+                                  <SmokeFree />
+                                </span>
+                                <span>Non-smoking room</span>
+                              </div>
+                            )}
                           </div>
                           <div className="addCard">
                             <button onClick={() => addCheckout(item.offerId, roomName, ratePrice, item.rate, bedroom)}>
-                              <ShoppingCart />
-                              Choose room
-                              
+                              <span>Choose room</span>
+                              <ArrowForward />
                             </button>
                           </div>
                         </div>

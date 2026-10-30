@@ -28,6 +28,7 @@ import {
   statusLabel,
 } from "./bookingUtils";
 import { formatTaxTotals, taxesAndFeesBreakdown } from "../../utils/hotelRate";
+import { formatTourTime } from "../../utils/tourCheckout";
 import "./style.css";
 
 const groupSegments = (segments) => {
@@ -280,6 +281,45 @@ const BookingDetails = ({ booking }) => {
     .filter(Boolean)
     .join(" · ");
 
+  const tour = meta.tour && typeof meta.tour === "object" ? meta.tour : null;
+  const tourGuests = tour
+    ? [
+        Number(tour.adults) ? `${tour.adults} adult${Number(tour.adults) > 1 ? "s" : ""}` : "",
+        Number(tour.children)
+          ? `${tour.children} child${Number(tour.children) > 1 ? "ren" : ""}`
+          : "",
+        Number(tour.infants)
+          ? `${tour.infants} infant${Number(tour.infants) > 1 ? "s" : ""}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+  const tourRows = tour
+    ? [
+        ["Tour", tour.name],
+        ["Option", tour.optionName],
+        ["Date", tour.date ? formatBookingDate(tour.date) : ""],
+        ["Start time", formatTourTime(tour.startTime)],
+        ["Guests", tourGuests],
+        ["Transfer", [tour.transferType, tour.transferName].filter(Boolean).join(" · ")],
+        ["Pickup", tour.pickup],
+        ["Provider reference", tour.uniqueNo],
+        [
+          "Service total",
+          Number(meta.serviceTotal) > 0
+            ? formatMoney(meta.serviceTotal, booking.currency)
+            : "",
+        ],
+        [
+          "Payment fee",
+          Number(meta.paymentFee) > 0
+            ? formatMoney(meta.paymentFee, booking.currency)
+            : "",
+        ],
+      ].filter(([, value]) => Boolean(value))
+    : [];
+
   const hotel = meta.hotel ?? {};
   const firstRoom = rooms[0] ?? {};
   const nights = Number(meta.nights) || 0;
@@ -378,6 +418,20 @@ const BookingDetails = ({ booking }) => {
           {groups.map((group) => (
             <FlightLeg key={group.id} group={group} />
           ))}
+        </section>
+      )}
+
+      {tourRows.length > 0 && (
+        <section className="bd-block">
+          <h5 className="bd-block-title">Tour details</h5>
+          <dl className="bd-rows">
+            {tourRows.map(([label, value]) => (
+              <div className="bd-row" key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       )}
 

@@ -3,8 +3,8 @@
 	z-index: 3000;
 	visibility: hidden;
 	box-sizing: border-box;
-	background: var(--white);
-	border: 1px solid var(--light_gray);
+	background: var(--surface);
+	border: 1px solid var(--border);
 	border-radius: 16px;
 	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
 	overflow-x: hidden;
@@ -23,7 +23,7 @@
 .search-popover__section + .search-popover__section {
 	margin-top: 8px;
 	padding-top: 8px;
-	border-top: 1px solid var(--light_gray);
+	border-top: 1px solid var(--border);
 }
 
 .search-popover__section-head {
@@ -40,7 +40,7 @@
 	font-weight: 600;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 }
 
 .search-popover__action {
@@ -54,7 +54,7 @@
 }
 
 .search-popover__action:disabled {
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	cursor: default;
 }
 
@@ -62,7 +62,7 @@
 	padding: 16px 10px;
 	font-size: 14px;
 	line-height: 20px;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	text-align: center;
 }
 
@@ -94,7 +94,7 @@
 	width: 36px;
 	height: 36px;
 	flex: 0 0 36px;
-	color: var(--gray_text);
+	color: var(--text-muted);
 }
 
 .sug-item__icon--boxed {
@@ -119,7 +119,7 @@
 	font-size: 14px;
 	font-weight: 600;
 	line-height: 18px;
-	color: var(--black);
+	color: var(--text);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -130,7 +130,7 @@
 	font-size: 12px;
 	font-weight: 400;
 	line-height: 16px;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -142,10 +142,14 @@
 	gap: 8px;
 	flex: 0 0 auto;
 	font-size: 12px;
-	color: var(--gray_stoke);
+	color: var(--text-subtle);
 }
 
 .sug-item__check {
 	color: var(--green2) !important;
 	font-size: 20px !important;
+}
+
+[data-theme="dark"] .sug-item__check {
+  color: var(--accent) !important;
 }

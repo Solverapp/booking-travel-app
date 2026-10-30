@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../../../context/AuthContext"; // Шаг назад в папку context
 import { useNavigate, NavLink } from "react-router-dom";
 import Loader from "../../loaders/loading"; // Подключаем твой лоадер
+import { COUNTRIES } from "../../../utils/countries";
+import { getDefaultNationality } from "../../../utils/nationality";
 import "./style.css";
 
 export const RegisterForm = () => {
@@ -11,6 +13,7 @@ export const RegisterForm = () => {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [nationality, setNationality] = useState(getDefaultNationality);
   const [error, setError] = useState(""); // Добавили стейт ошибки
   const [loading, setLoading] = useState(false); // Добавили стейт лоадера
 
@@ -20,7 +23,7 @@ export const RegisterForm = () => {
     setLoading(true); // Включаем загрузку
     
     try {
-      await register(email, password, firstName, lastName);
+      await register(email, password, firstName, lastName, nationality);
       setTimeout(() => {
         navigate("/profile"); // Перенаправляем в личный кабинет
       }, 800);
@@ -81,6 +84,21 @@ export const RegisterForm = () => {
                           placeholder="Last Name" 
                           required 
                         />
+                      </div>
+                      <div className="input-group">
+                        <select
+                          value={nationality}
+                          onChange={(e) => setNationality(e.target.value)}
+                          className="input-field"
+                          aria-label="Nationality"
+                          required
+                        >
+                          {COUNTRIES.map((country) => (
+                            <option key={country.code} value={country.code}>
+                              {country.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="input-group">
                         <input 

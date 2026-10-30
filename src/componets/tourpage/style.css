@@ -151,6 +151,15 @@
     font-weight: 600;
     cursor: pointer;
 }
+.tour-hero-fav.is-active{
+    border-color: var(--green3);
+    background-color: var(--green3);
+    color: var(--white);
+}
+.tour-hero-fav:disabled{
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 .tour-hero-price{
     display: flex;
     align-items: baseline;
@@ -284,6 +293,67 @@
     line-height: 1.5;
     letter-spacing: 0.00938em;
     text-align: start;
+}
+
+[data-theme="dark"] .tabsoption-pill {
+    background-color: var(--surface-alt);
+}
+
+[data-theme="dark"] .tabsoption-pill .tr-btn {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .tabsoption-pill .activee {
+    background-color: var(--green);
+    color: var(--white);
+}
+
+[data-theme="dark"] .acord-box {
+    background-color: var(--surface);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .tab-panel {
+    color: var(--text);
+}
+
+[data-theme="dark"] .backoption button {
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text);
+}
+
+[data-theme="dark"] .backoption img {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+[data-theme="dark"] .tour-hero {
+    background-color: var(--surface);
+}
+
+[data-theme="dark"] .tour-hero-head h1,
+[data-theme="dark"] .tour-hero-price h2 {
+    color: var(--text);
+}
+
+[data-theme="dark"] .tour-hero-rating,
+[data-theme="dark"] .tour-hero-price span {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .tour-hero-loc {
+    color: var(--accent);
+}
+
+[data-theme="dark"] .tour-hero-fav {
+    border-color: var(--border);
+    background-color: var(--surface-alt);
+    color: var(--text);
+}
+
+[data-theme="dark"] .tour-hero-fav:hover {
+    background-color: var(--surface-strong);
 }
 
 /* ============ Адаптив: табы информации ============ */

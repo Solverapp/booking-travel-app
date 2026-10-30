@@ -19,14 +19,14 @@
     justify-content: space-between;
     align-items: center;
     gap: 6px;
-    border: solid 1px var(--gray_stoke);
+    border: solid 1px var(--border-strong);
     border-radius: 15px;
     padding-left: 16px;
     padding-right: 12px;
     transition: all 0.4ms ease-in;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     width: auto;
     height: 38px;
 }
@@ -34,14 +34,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: solid 1px var(--green);
+    border: solid 1px var(--accent);
     border-radius: 15px;
     padding-left: 16px;
     padding-right: 12px;
     transition: all 0.4ms ease-in;
     font-size: 16px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     width: auto;
     height: 38px;
 }
@@ -50,7 +50,12 @@
     height: 20px;
 }
 .sorting-box button:hover{
-    border-color: var(--green);
+    border-color: var(--accent);
+}
+
+[data-theme="dark"] .sorting-btn-active img,
+[data-theme="dark"] .sort-sheet-btn.is-active img {
+    filter: brightness(0) invert(1);
 }
 
 /* ============ Адаптив ============ */
@@ -88,17 +93,17 @@
     width: 100%;
     min-height: 52px;
     padding: 14px 16px;
-    border: 1px solid var(--light_gray);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: var(--white);
+    background: var(--surface);
     font-size: 15px;
     font-weight: 600;
-    color: var(--black);
+    color: var(--text);
     text-align: left;
     cursor: pointer;
 }
 .sort-sheet-btn.is-active {
-    border-color: var(--green);
+    border-color: var(--accent);
 }
 .sort-sheet-btn img {
     width: 20px;

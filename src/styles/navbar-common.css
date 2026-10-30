@@ -24,6 +24,49 @@
 	flex-shrink: 0;
 }
 
+/* Правый блок: пользователь + переключатель темы (+ бургер на планшете) */
+.nav-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.nav-user,
+.nav-user:link,
+.nav-user:visited,
+.nav-user:hover {
+	display: flex;
+	align-items: center;
+	color: var(--white);
+	font-size: 16px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.nav-user .nav-list-item {
+	padding: 4px 18px 4px 0;
+}
+
+.nav-user-name {
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--white);
+}
+
+@media (max-width: 1200px) {
+	.nav-user-name {
+		display: none;
+	}
+	.nav-user .nav-list-item {
+		padding-right: 0;
+		border-right: 0;
+	}
+}
+
 /* Кнопка бургера */
 .nav-burger {
 	display: none;

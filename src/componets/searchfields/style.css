@@ -15,7 +15,7 @@
 }
 
 .msearch--results {
-    background: var(--white);
+    background: var(--surface);
     padding: 12px var(--pad-page);
 }
 

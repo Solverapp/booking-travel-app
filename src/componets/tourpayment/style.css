@@ -1,0 +1,94 @@
+.tpayment-page {
+  min-height: 100vh;
+}
+
+.tpayment-state {
+  max-width: 620px;
+  margin: 40px auto;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.tpayment-state .loader-not,
+.tpayment-state .loader-not span {
+  color: var(--co-text);
+}
+
+.tpayment-state.form-card-ui {
+  align-items: stretch;
+  text-align: left;
+}
+
+.tpayment-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.tpayment-form {
+  width: 100%;
+}
+
+.tpayment-card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.tpayment-card .form-card-header p {
+  color: var(--co-note);
+  line-height: 1.5;
+}
+
+.tpayment-element {
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 10px;
+}
+
+.tpayment-element .StripeElement {
+  width: 100%;
+}
+
+.tpayment-submit {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.tpayment-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.tpayment-card .secure-badge-info {
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.tpayment-card .secure-badge-info svg {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .tpayment-state {
+    margin: 20px auto;
+  }
+
+  .tpayment-element {
+    padding: 12px;
+  }
+
+  .tpayment-state-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tpayment-state-actions .action-submit-btn {
+    width: 100%;
+  }
+}

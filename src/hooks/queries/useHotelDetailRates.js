@@ -6,18 +6,26 @@ import {
   hotelStayKey,
 } from "../../utils/queryParams";
 import { queryKeys } from "../../utils/queryKeys";
+import { resolveNationality } from "../../utils/nationality";
 
-export const useHotelDetailRates = ({ hotelId, search, currency }) => {
+export const useHotelDetailRates = ({ hotelId, search, currency, nationality }) => {
   const stayKey = hotelStayKey(search);
   const occupancyKey = hotelOccupancyKey(search);
+  const guestNationality = resolveNationality(nationality);
 
   return useQuery({
-    queryKey: queryKeys.hotelRates(hotelId, { stayKey, occupancyKey, currency }),
+    queryKey: queryKeys.hotelRates(hotelId, {
+      stayKey,
+      occupancyKey,
+      currency,
+      nationality: guestNationality,
+    }),
     queryFn: async ({ signal }) => {
       const body = buildHotelRatesBody({
         search,
         filters: {},
         currency,
+        nationality: guestNationality,
         hotelIds: [hotelId],
       });
       const response = await fetchHotelRatesWithFallback(body, { signal });

@@ -128,172 +128,184 @@
     min-width: 0;
 }
 .option-box{
-    flex: 1;
+    position: relative;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px;
-    border: solid 1px var(--gray2);
-    background-color: var(--white);
-    box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.15);
-    border-radius: 30px;
+    gap: 18px;
+    width: 100%;
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid #e8eef6;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(196, 224, 255, 0.45), transparent 42%),
+        radial-gradient(circle at 0 100%, rgba(196, 224, 255, 0.35), transparent 38%),
+        var(--white);
+    box-shadow: 0 8px 28px rgba(16, 31, 54, 0.08);
+    overflow: hidden;
+    transition: opacity 0.3s ease, box-shadow 0.3s ease;
+}
+.option-box:hover{
+    box-shadow: 0 10px 34px rgba(16, 31, 54, 0.12);
+}
+.option-box.tour-disabled{
+    opacity: 0.6;
+}
+.tour-option-head{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     min-width: 0;
 }
-.option-info{
-    
+.tour-option-head h4{
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--green);
+}
+.tour-option-departure{
     display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    gap: 16px;
     align-items: flex-start;
-    padding: 16px;
-    width: 100%;
+    gap: 6px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #5a6b7b;
+    text-align: left;
+}
+.tour-option-departure svg{
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.availability-alert{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 77, 79, 0.18);
+    border-radius: 10px;
+    background-color: rgba(255, 77, 79, 0.08);
+    color: #d9363e;
+    font-size: 13px;
+    line-height: 1.35;
+    text-align: left;
+}
+.availability-alert svg{
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.tour-guest-list{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.tour-guest-row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 18px;
+}
+.tour-guest-row--adult{
+    background-color: #edf5fe;
+}
+.tour-guest-row--child{
+    background-color: #eaf8ef;
+}
+.tour-guest-avatar{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.75);
+    color: #2563c9;
+}
+.tour-guest-row--child .tour-guest-avatar{
+    color: #1e8b50;
+}
+.tour-guest-avatar svg{
+    width: 30px;
+    height: 30px;
+}
+.tour-guest-info{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
     min-width: 0;
-    
-
-   
-    h4{
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--green);
-    }
-    span{
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--red);
-    }
 }
-
-.rate-box{
-    
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 15px;
-    background-color: var(--gray2);
-
+.tour-guest-name{
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--green);
 }
-.rate-item{
+.tour-guest-price{
+    font-size: 14px;
+    font-weight: 400;
+    color: #5a6b7b;
+}
+.tour-option-footer{
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     flex-wrap: wrap;
-    justify-content: start;
-    align-items: start;
-    padding: 20px 16px 16px 20px;
-    border: solid var(--green) 1.5px;
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
-    border-right: dotted 1px;
-    background-color: var(--white);
-    min-height: 80px;
-    height: fit-content;
-    width: 100%;
-
-    h2{
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--black);
-    }
-    span {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--gray_text);
-    }
-    .rate-guest{
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        width: fit-content;
-        height: 44px;
-
-        img{
-            width: 24px;
-            height: 24px;
-        }
-    }
-     
-    .inforate{
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 50px;
-
-        .rprice{
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap;
-            justify-content: center;
-            
-            align-items: flex-start;
-            gap: 4px;
-            width: fit-content;
-            
-        }
-        
-        .rate-counter{
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap;
-            justify-content: center;
-            
-            align-items: flex-start;
-            gap: 12px;
-            width: fit-content;
-            button{
-                display: flex;
-                gap: 12px;
-            }
-            img {
-                width: 27px;
-                height: 20px;
-            }
-        }
-    }
-
+    padding-top: 4px;
 }
-.rate-button{
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-items: flex-end;
-            gap: 10px;
-            width: 100%;
-           h2{
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--black);
-        
-    }
-    
-    span {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--gray_text);
-    }
-
-            button{
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 8px 12px;
-                border-radius: 15px;
-                background-color: var(--red);
-                color: var(--white);
-                min-width: 200px;
-                height: 48px;
-            }
-            button:disabled{
-                opacity: 0.35;
-                cursor: not-allowed;
-
-            }
-        }
+.tour-option-total{
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.tour-option-total span{
+    font-size: 16px;
+    font-weight: 400;
+    color: #5a6b7b;
+}
+.tour-option-total h2{
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--green);
+}
+.tour-buy-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 180px;
+    min-height: 50px;
+    padding: 12px 28px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #13c3e6 0%, #2f6bff 100%);
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.2s ease;
+}
+.tour-buy-btn:hover:not(:disabled){
+    filter: brightness(1.05);
+}
+.tour-buy-btn:active:not(:disabled){
+    transform: translateY(1px);
+}
+.tour-buy-btn:disabled{
+    background: linear-gradient(90deg, #9aa7b8 0%, #7c8ba1 100%);
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.tour-buy-btn svg{
+    width: 22px;
+    height: 22px;
+}
 
 .transferoption{
 display: grid;
@@ -347,6 +359,14 @@ background-color: var(--gray2);
     color: var(--white);
 }
 
+[data-theme="dark"] .transferoption .tr-btn {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .transferoption .tr-btn.activee {
+    color: var(--white);
+}
+
 
 .option-not{
 display: flex;
@@ -355,6 +375,7 @@ flex-wrap: wrap;
 gap: 8px;
 justify-content: center;
 align-items: center;
+padding: 20px;
 
 }
 .option-not h3{
@@ -367,9 +388,9 @@ font-size: 16px;
 font-weight: 400;
 color: var(--black);
 }
-.option-not img{
-  width: 100px;
-  height: 100px;
+.option-not svg{
+  width: 50px;
+  height: 50px;
 }
 
 /* ============ Адаптив: опции тура ============ */
@@ -427,23 +448,113 @@ color: var(--black);
         font-size: 16px !important;
     }
     .option-box {
-        padding: 4px;
+        padding: 16px;
         border-radius: 20px;
+        gap: 14px;
     }
-    .option-info {
+    .tour-option-head h4 {
+        font-size: 20px;
+    }
+    .tour-option-departure {
+        font-size: 13px;
+    }
+    .availability-alert {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+    .tour-guest-row {
+        gap: 10px;
         padding: 12px;
     }
+    .tour-guest-avatar {
+        width: 46px;
+        height: 46px;
+    }
+    .tour-guest-avatar svg {
+        width: 26px;
+        height: 26px;
+    }
+    .tour-guest-name {
+        font-size: 16px;
+    }
+    .tour-guest-price {
+        font-size: 13px;
+    }
+    .tour-option-footer {
+        gap: 12px;
+    }
+    .tour-option-total h2 {
+        font-size: 22px;
+    }
+    .tour-buy-btn {
+        flex: 1;
+        min-width: 0;
+        min-height: 48px;
+        padding: 12px 18px;
+        font-size: 15px;
+    }
+}
 
-    .rate-box {
-        padding: 0px;
-    }
-    .rate-item {
-        padding: 10px;
-    }
-    .rate-button h2 {
-        font-size: 20px;
-    
-    }
-    
+/* ============ Dark theme: tour options ============ */
+
+[data-theme="dark"] .option-box {
+    border-color: var(--border);
+    background:
+        radial-gradient(circle at 100% 0, rgba(53, 181, 166, 0.12), transparent 42%),
+        radial-gradient(circle at 0 100%, rgba(53, 181, 166, 0.08), transparent 38%),
+        var(--surface-alt);
+    box-shadow: var(--card-shadow);
+}
+
+[data-theme="dark"] .option-box:hover {
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .tour-option-head h4,
+[data-theme="dark"] .tour-guest-name,
+[data-theme="dark"] .tour-option-total h2 {
+    color: var(--accent);
+}
+
+[data-theme="dark"] .tour-option-departure,
+[data-theme="dark"] .tour-guest-price,
+[data-theme="dark"] .tour-option-total span {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .availability-alert {
+    border-color: rgba(229, 83, 60, 0.3);
+    background-color: rgba(229, 83, 60, 0.14);
+    color: #ffb0a2;
+}
+
+[data-theme="dark"] .tour-guest-row--adult {
+    background-color: rgba(74, 144, 226, 0.12);
+}
+
+[data-theme="dark"] .tour-guest-row--child {
+    background-color: rgba(53, 181, 166, 0.1);
+}
+
+[data-theme="dark"] .tour-guest-avatar {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #8ec5ff;
+}
+
+[data-theme="dark"] .tour-guest-row--child .tour-guest-avatar {
+    color: var(--accent);
+}
+
+[data-theme="dark"] .option-not h3 {
+    color: var(--text);
+}
+
+[data-theme="dark"] .option-not span {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .option-not img {
+    filter: brightness(0) invert(1);
+    opacity: 0.65;
 }
 
